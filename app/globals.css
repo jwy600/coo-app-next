@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply min-h-screen overflow-x-hidden;
+  }
+}
+
+@layer components {
+  /* Contenteditable placeholder */
+  [contenteditable][data-placeholder]:empty:before {
+    content: attr(data-placeholder);
+    @apply text-gray-400 pointer-events-none;
+  }
+
+  /* Text selection marks */
+  mark.anno {
+    @apply bg-yellow-200 rounded-sm;
+  }
+
+  /* KaTeX overrides */
+  .katex {
+    @apply text-base;
+  }
+
+  .katex-display {
+    @apply my-4;
+  }
+}
+
+@layer utilities {
+  /* Smooth scrolling for thread */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Ambient orbs (optional background decoration) */
+  .ambient {
+    display: none; /* Hidden by default, can be enabled with custom styling */
+  }
+
+  .orb {
+    display: none;
+  }
+}

@@ -11,6 +11,7 @@ node_modules/
 # Testing
 coverage/
 .vitest-cache/
+tests/core/
 
 # Build
 .vercel
@@ -28,3 +29,9 @@ Thumbs.db
 # Config
 data/supabaseConfig.js
 
+# Legacy code (preserved for reference, archived in Phase 10)
+legacy/
+legacy-archive/
+
+# Claude
+.Claude

@@ -1,0 +1,69 @@
+'use client';
+
+import { useRef, useEffect } from 'react';
+
+/**
+ * Client Component - Contenteditable input with text selection capture
+ * Reference: MIGRATION_PLAN.md Section 10.2, legacy/app.js lines 858-897
+ * Needs 'use client' for contenteditable, text selection, onChange
+ *
+ * CRITICAL: Uses contenteditable (not textarea) to support text selection capture
+ */
+interface PromptInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSelectionCapture?: (element: HTMLElement | null) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+export function PromptInput({
+  value,
+  onChange,
+  onSelectionCapture,
+  placeholder = 'Try: Draft a product vision for a mindful calendar app.',
+  disabled = false,
+}: PromptInputProps) {
+  const inputRef = useRef<HTMLDivElement>(null);
+
+  // Sync value to DOM (preserve cursor position)
+  useEffect(() => {
+    if (inputRef.current && inputRef.current.textContent !== value) {
+      inputRef.current.textContent = value;
+    }
+  }, [value]);
+
+  const handleInput = () => {
+    if (inputRef.current) {
+      const text = inputRef.current.textContent || '';
+      onChange(text.replace(/\u00a0/g, ' ').trim());
+    }
+  };
+
+  const handleSelectionCapture = () => {
+    if (!onSelectionCapture) return;
+
+    // Pass the input element to the handler from useTextSelection
+    // The hook will handle all the DOM manipulation
+    onSelectionCapture(inputRef.current);
+  };
+
+  return (
+    <div
+      ref={inputRef}
+      id="prompt"
+      contentEditable={!disabled}
+      onInput={handleInput}
+      onMouseUp={handleSelectionCapture}
+      onKeyUp={handleSelectionCapture}
+      className={`min-h-[2.5rem] px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+        disabled ? 'bg-gray-100 cursor-not-allowed' : ''
+      }`}
+      data-placeholder={placeholder}
+      role="textbox"
+      aria-multiline="true"
+      aria-label="Prompt"
+      suppressContentEditableWarning
+    />
+  );
+}

@@ -1,0 +1,58 @@
+/**
+ * TypeScript types for Supabase database schema
+ * Based on legacy/supabase/schema.sql
+ */
+
+export interface DbThread {
+  id: string;
+  title: string;
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+}
+
+export interface DbMessage {
+  id: string;
+  thread_id: string;
+  role: 'user' | 'assistant';
+  created_at: string; // ISO timestamp
+  meta: Record<string, unknown>;
+}
+
+export interface DbBlock {
+  id: string;
+  thread_id: string;
+  message_id: string;
+  position: number;
+  type: 'paragraph' | 'list' | 'code';
+  text: string;
+  edited: boolean;
+  selections: string[]; // JSONB array
+  prev_text: string | null;
+  is_rewritten: boolean;
+}
+
+/**
+ * Data structure for persisting a thread snapshot
+ */
+export interface ThreadPersistData {
+  threadId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  message: {
+    id: string;
+    role: 'user' | 'assistant';
+    createdAt: number;
+    meta?: Record<string, unknown>;
+  };
+  blocks: Array<{
+    id: string;
+    messageId: string;
+    type: 'paragraph' | 'list' | 'code';
+    text: string;
+    edited: boolean;
+    selections: string[];
+    prevText: string | null;
+    isRewritten: boolean;
+  }>;
+}

@@ -1,0 +1,42 @@
+import { apiFetch } from './client';
+import type { BlockAction, BlockActionRequest, BlockActionResponse } from '@/types/api';
+
+/**
+ * Fetch block action transformation from OpenAI
+ *
+ * @param action - Type of transformation (translate, eli5, expand, etc.)
+ * @param blockText - Text content to transform
+ * @param prompt - Optional prompt for 'ask' and 'rewrite' actions
+ * @returns Promise with transformed text
+ * @throws ApiClientError on validation or API errors
+ */
+export async function fetchBlockAction(
+  action: BlockAction,
+  blockText: string,
+  prompt?: string
+): Promise<BlockActionResponse> {
+  // Local validation
+  const trimmedBlockText = blockText.trim();
+
+  if (!trimmedBlockText) {
+    throw new Error('Block text cannot be empty');
+  }
+
+  if ((action === 'ask' || action === 'rewrite') && !prompt?.trim()) {
+    throw new Error(`Action '${action}' requires a prompt`);
+  }
+
+  // Build request
+  const requestBody: BlockActionRequest = {
+    action,
+    blockText: trimmedBlockText,
+    prompt: prompt?.trim(),
+    mode: 'block',
+  };
+
+  // Call API
+  return apiFetch<BlockActionResponse>('/api/block-action', {
+    method: 'POST',
+    body: JSON.stringify(requestBody),
+  });
+}

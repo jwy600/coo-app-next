@@ -1,0 +1,28 @@
+{
+  "name": "coo-app",
+  "version": "1.0.0",
+  "description": "Blockwise AI Chat - Edit AI answers in place",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jwy600/coo-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jwy600/coo-app/issues"
+  },
+  "homepage": "https://github.com/jwy600/coo-app#readme",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.17",
+    "vitest": "^4.0.17"
+  }
+}

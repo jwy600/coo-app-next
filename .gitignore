@@ -1,0 +1,30 @@
+# Environment
+.env.local
+.env
+.env.*
+.env*.local
+.env.secrets.local
+
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+.vitest-cache/
+
+# Build
+.vercel
+.next/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config
+data/supabaseConfig.js
+

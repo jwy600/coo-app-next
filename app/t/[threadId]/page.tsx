@@ -10,8 +10,18 @@
 
 'use client';
 
-import { use, Suspense } from 'react';
-import { ThreadPageClient } from './page-client';
+import dynamicImport from 'next/dynamic';
+import { use } from 'react';
+
+// Disable SSR for ThreadPageClient to prevent hydration mismatches
+const ThreadPageClient = dynamicImport(() => import('./page-client').then(mod => ({ default: mod.ThreadPageClient })), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-gray-500">Loading...</div>
+    </div>
+  ),
+});
 
 export const dynamic = 'force-dynamic'; // Always fetch fresh data
 
@@ -21,20 +31,8 @@ interface ThreadPageProps {
   }>;
 }
 
-function LoadingFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-gray-500">Loading thread...</div>
-    </div>
-  );
-}
-
 export default function ThreadPage({ params }: ThreadPageProps) {
   const { threadId } = use(params);
 
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <ThreadPageClient threadId={threadId} />
-    </Suspense>
-  );
+  return <ThreadPageClient threadId={threadId} />;
 }

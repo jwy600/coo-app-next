@@ -14,7 +14,6 @@ import {
   extractCodeContent,
   getCodeLanguage,
   isOrderedListItem,
-  isUnorderedListItem,
 } from '@/lib/rendering/blocks';
 import { Math } from './Math';
 
@@ -97,29 +96,84 @@ function renderList(text: string, className?: string): React.ReactElement {
     return <div className={className}>{text}</div>;
   }
 
-  const hasOrdered = items.some((item) => isOrderedListItem(item.marker));
-  const hasUnordered = items.some((item) => isUnorderedListItem(item.marker));
-  const ListTag = hasOrdered && !hasUnordered ? 'ol' : 'ul';
+  type ListItemNode = {
+    content: MarkdownSegment[];
+    children: ListNode[];
+  };
 
-  return (
-    <ListTag className={`doc-list ${className || ''}`}>
-      {items.map((item, index) => {
-        const segments = parseInlineMarkdown(item.content);
-        const listStyleType = isOrderedListItem(item.marker) ? 'decimal' : 'disc';
-        return (
-          <li
-            key={index}
-            style={{
-              marginLeft: `${item.indent * 0.5}rem`,
-              listStyleType,
-            }}
-          >
-            {segments.map((segment, segIndex) => renderSegment(segment, segIndex))}
-          </li>
-        );
-      })}
-    </ListTag>
-  );
+  type ListNode = {
+    ordered: boolean;
+    items: ListItemNode[];
+  };
+
+  const getLevel = (indent: number) => Math.floor(indent / 2);
+  const listRoots: ListNode[] = [];
+  const listStack: ListNode[] = [];
+  const itemStack: ListItemNode[] = [];
+
+  items.forEach((item) => {
+    const level = getLevel(item.indent);
+    const ordered = isOrderedListItem(item.marker);
+
+    while (listStack.length > level + 1) {
+      listStack.pop();
+      itemStack.pop();
+    }
+
+    const currentList = listStack[level];
+    const needsNewList = !currentList || currentList.ordered !== ordered;
+    let targetList = currentList;
+
+    if (needsNewList) {
+      targetList = { ordered, items: [] };
+
+      if (level === 0) {
+        listRoots.push(targetList);
+      } else {
+        const parentItem = itemStack[level - 1];
+        if (parentItem) {
+          parentItem.children.push(targetList);
+        } else {
+          listRoots.push(targetList);
+        }
+      }
+
+      listStack[level] = targetList;
+      listStack.length = level + 1;
+      itemStack.length = level;
+    }
+
+    const node: ListItemNode = {
+      content: parseInlineMarkdown(item.content),
+      children: [],
+    };
+
+    targetList.items.push(node);
+    itemStack[level] = node;
+  });
+
+  const renderListNodes = (nodes: ListNode[]): React.ReactNode => {
+    return nodes.map((node, nodeIndex) => {
+      const ListTag = node.ordered ? 'ol' : 'ul';
+
+      return (
+        <ListTag
+          key={nodeIndex}
+          className={`doc-list ${className || ''}`}
+          style={{ listStyleType: node.ordered ? 'decimal' : 'disc' }}
+        >
+          {node.items.map((item, index) => (
+            <li key={index}>
+              {item.content.map((segment, segIndex) => renderSegment(segment, segIndex))}
+              {item.children.length > 0 && renderListNodes(item.children)}
+            </li>
+          ))}
+        </ListTag>
+      );
+    });
+  };
+
+  return <>{renderListNodes(listRoots)}</>;
 }
 
 /**

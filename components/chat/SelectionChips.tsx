@@ -28,17 +28,13 @@ export function SelectionChips({
   const rewriteLabel = block.isRewritten ? 'Undo' : 'Rewrite';
 
   return (
-    <div className="mt-2 flex flex-wrap gap-2 items-center">
+    <div className="block-chips">
       {block.selections.map((text, index) => (
-        <span
-          key={index}
-          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 rounded text-sm"
-          title={text}
-        >
-          <span className="max-w-[200px] truncate">{text}</span>
+        <span key={index} className="chip" title={text}>
+          <span className="chip-text">{text}</span>
           <button
             type="button"
-            className="text-blue-700 hover:text-blue-900 font-bold"
+            className="chip-remove"
             onClick={() => onRemoveSelection?.(index)}
             aria-label="Remove selection"
           >
@@ -49,7 +45,7 @@ export function SelectionChips({
 
       <button
         type="button"
-        className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900"
+        className="chip-clear"
         onClick={onClearSelections}
       >
         Clear
@@ -58,7 +54,7 @@ export function SelectionChips({
       {block.selections.length > 0 && (
         <button
           type="button"
-          className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="chip-rewrite"
           onClick={onRewrite}
           disabled={block.isRewritten && !canUndo}
           title={

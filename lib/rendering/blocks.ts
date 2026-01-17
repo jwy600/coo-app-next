@@ -96,9 +96,17 @@ export function parseListItems(text: string): ListItem[] {
     const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/);
     if (match) {
       const [, indent, marker, content] = match;
+      let normalizedContent = content.trim();
+
+      if (isOrderedListItem(marker)) {
+        const escapedMarker = marker.replace('.', '\\.');
+        const repeatedPrefix = new RegExp(`^${escapedMarker}\\s+`);
+        normalizedContent = normalizedContent.replace(repeatedPrefix, '');
+      }
+
       items.push({
         marker,
-        content: content.trim(),
+        content: normalizedContent,
         indent: indent.length,
       });
     }

@@ -130,7 +130,7 @@ export function ChatContainer({
   const error = threadError || composerError;
 
   return (
-    <div className="max-w-chat mx-auto pb-32">
+    <div className="app chat">
       <MessageList
         messages={messages}
         blocks={blocks}

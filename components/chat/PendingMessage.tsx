@@ -5,14 +5,14 @@
  */
 export function PendingMessage() {
   return (
-    <div className="flex gap-3">
-      <span className="text-sm font-medium text-gray-700">Coo</span>
-      <div className="flex-1">
-        <span className="text-sm text-gray-500 mb-2 block">Thinking…</span>
-        <div className="space-y-2">
-          <span className="h-4 bg-gray-200 rounded animate-pulse-slow block"></span>
-          <span className="h-4 bg-gray-200 rounded animate-pulse-slow block"></span>
-          <span className="h-4 bg-gray-200 rounded animate-pulse-slow block w-2/3"></span>
+    <div className="assistant-message">
+      <span className="assistant-label">Coo</span>
+      <div className="assistant-placeholder">
+        <span className="assistant-thinking">Thinking…</span>
+        <div className="assistant-skeleton">
+          <span className="assistant-skeleton-line"></span>
+          <span className="assistant-skeleton-line"></span>
+          <span className="assistant-skeleton-line is-short"></span>
         </div>
       </div>
     </div>

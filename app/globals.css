@@ -1,10 +1,41 @@
+@import 'katex/dist/katex.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+    --white: #ffffff;
+    --black: #000000;
+    --gray-50: #f9f9f9;
+    --gray-100: #f0f0f0;
+    --gray-200: #e5e5e5;
+    --gray-300: #d4d4d4;
+    --gray-400: #a3a3a3;
+    --gray-500: #737373;
+    --gray-600: #525252;
+    --gray-700: #404040;
+    --gray-800: #262626;
+    --gray-900: #171717;
+    --border: #e5e5e5;
+    --shadow: rgba(0, 0, 0, 0.05);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   body {
-    @apply min-h-screen overflow-x-hidden;
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--gray-900);
+    background: var(--white);
+    overflow-x: hidden;
   }
 }
 
@@ -27,6 +58,408 @@
 
   .katex-display {
     @apply my-4;
+  }
+
+  .app {
+    max-width: 768px;
+    margin: 0 auto;
+    padding: 0 0 120px;
+    display: grid;
+    gap: 0;
+  }
+
+  .chat {
+    display: grid;
+    gap: 0;
+  }
+
+  .thread {
+    display: grid;
+    gap: 0;
+    padding-bottom: 0px;
+  }
+
+  .user-message {
+    background: var(--white);
+    border-radius: 0;
+    padding: 24px;
+    border: none;
+    box-shadow: none;
+    justify-self: stretch;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .user-label {
+    font-size: 0.75rem;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--gray-600);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .user-message p {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--gray-900);
+  }
+
+  .assistant-message {
+    justify-self: stretch;
+    text-align: left;
+    padding: 24px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .assistant-label {
+    font-size: 0.75rem;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--gray-600);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .assistant-placeholder,
+  .assistant-error {
+    padding: 16px 0;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    display: grid;
+    gap: 8px;
+  }
+
+  .assistant-thinking {
+    font-size: 0.813rem;
+    color: var(--gray-500);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .assistant-skeleton {
+    display: grid;
+    gap: 8px;
+  }
+
+  .assistant-skeleton-line {
+    display: block;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      var(--gray-200),
+      var(--gray-300),
+      var(--gray-200)
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+
+  .assistant-skeleton-line.is-short {
+    width: 65%;
+  }
+
+  .assistant-error p {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--gray-700);
+  }
+
+  .assistant-retry {
+    justify-self: start;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 16px;
+    background: var(--white);
+    color: var(--gray-900);
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+  }
+
+  .assistant-retry:hover {
+    background: var(--gray-50);
+  }
+
+  .block-stack {
+    display: grid;
+    gap: 16px;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .doc-block {
+    position: relative;
+    padding-left: 32px;
+    animation: rise 0.3s ease forwards;
+  }
+
+  .gutter-handle {
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0;
+    transform: translateX(-2px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .gutter-handle::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background-image: radial-gradient(circle, var(--gray-400) 1.2px, transparent 1.5px);
+    background-size: 6px 6px;
+    background-position: 0 0;
+  }
+
+  .doc-block:hover .gutter-handle,
+  .doc-block:focus-within .gutter-handle {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .gutter-handle:focus-visible {
+    outline: 2px solid var(--black);
+    border-radius: 4px;
+  }
+
+  .doc-content {
+    display: grid;
+    gap: 8px;
+  }
+
+  .doc-paragraph {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--gray-900);
+  }
+
+  .doc-paragraph * {
+    color: inherit;
+  }
+
+  .doc-heading {
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: 0;
+    margin: 0;
+    color: var(--gray-900);
+  }
+
+  .doc-heading.doc-paragraph {
+    font-size: 1.125rem;
+    margin-bottom: 4px;
+    color: var(--black);
+  }
+
+  .doc-heading.doc-paragraph * {
+    color: inherit;
+    font-weight: inherit;
+  }
+
+  .doc-math-block {
+    margin: 12px 0;
+    text-align: center;
+    color: var(--gray-900);
+  }
+
+  .doc-math-inline {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .doc-paragraph .katex,
+  .doc-heading .katex {
+    color: inherit !important;
+    font-size: inherit !important;
+  }
+
+  .doc-paragraph .katex *,
+  .doc-heading .katex * {
+    color: inherit !important;
+  }
+
+  .doc-heading.doc-paragraph .katex {
+    font-weight: 600;
+  }
+
+  .doc-paragraph .katex .base,
+  .doc-heading .katex .base {
+    color: inherit !important;
+  }
+
+  .doc-paragraph strong {
+    font-weight: 600;
+  }
+
+  .doc-list {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 4px;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--gray-900);
+  }
+
+  .doc-list li {
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+  }
+
+  .doc-list li * {
+    color: inherit;
+  }
+
+  .doc-list .katex {
+    color: inherit !important;
+    font-size: inherit !important;
+  }
+
+  .doc-list .katex * {
+    color: inherit !important;
+  }
+
+  .doc-list strong {
+    font-weight: 600;
+  }
+
+  .doc-code {
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: var(--gray-900);
+    border: 1px solid var(--gray-800);
+    font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    color: var(--gray-100);
+  }
+
+  .doc-block.is-edited .doc-content > .doc-paragraph::after,
+  .doc-block.is-edited .doc-content > .doc-heading::after {
+    content: ' (edited)';
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    font-style: italic;
+  }
+
+  .doc-block.is-selected .doc-content > .doc-paragraph,
+  .doc-block.is-selected .doc-content > .doc-heading {
+    background: var(--gray-200);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin-left: -8px;
+  }
+
+  .doc-block.is-muted {
+    opacity: 0.4;
+  }
+
+  .block-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--gray-100);
+    border: 1px solid var(--border);
+    font-size: 0.813rem;
+    color: var(--gray-700);
+  }
+
+  .chip-text {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chip-remove {
+    border: none;
+    background: transparent;
+    color: var(--gray-600);
+    cursor: pointer;
+    font-weight: 700;
+    padding: 0 0 0 4px;
+  }
+
+  .chip-clear {
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--gray-700);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.813rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+
+  .chip-clear:hover {
+    background: var(--gray-50);
+  }
+
+  .chip-rewrite {
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--gray-700);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.813rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+
+  .chip-rewrite:hover {
+    background: var(--gray-50);
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 0% 0%;
+    }
+    100% {
+      background-position: 200% 0%;
+    }
   }
 
   /* Landing page layout */

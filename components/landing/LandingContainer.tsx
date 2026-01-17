@@ -33,7 +33,13 @@ export function LandingContainer({ threads }: LandingContainerProps) {
   // Redirect to thread page AFTER first response is received and persisted
   useEffect(() => {
     if (mode === 'chat' && activeThreadId && hasInitialResponse) {
-      router.push(`/t/${activeThreadId}`);
+      // Add a small delay to ensure Supabase persistence completes
+      // This prevents race condition when server tries to load the thread
+      const timer = setTimeout(() => {
+        router.push(`/t/${activeThreadId}`);
+      }, 1000); // 1 second delay for persistence
+
+      return () => clearTimeout(timer);
     }
   }, [mode, activeThreadId, hasInitialResponse, router]);
 

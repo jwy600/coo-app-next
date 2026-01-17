@@ -1,8 +1,11 @@
 /**
- * Server-compatible PendingMessage component
+ * PendingMessage component
  * Loading skeleton for assistant responses
  * Reference: legacy/app.js lines 597-629
  */
+
+'use client';
+
 export function PendingMessage() {
   return (
     <div className="assistant-message">

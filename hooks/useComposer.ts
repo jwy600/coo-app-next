@@ -30,7 +30,6 @@ export interface UseComposerReturn {
 
 export function useComposer(): UseComposerReturn {
   const [prompt, setPrompt] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Store state
@@ -45,6 +44,8 @@ export function useComposer(): UseComposerReturn {
   const activeThreadId = useStore((state) => state.activeThreadId);
   const setHasInitialResponse = useStore((state) => state.setHasInitialResponse);
   const updateThreadTitle = useStore((state) => state.updateThreadTitle);
+  const isSubmitting = useStore((state) => state.isAwaitingResponse);
+  const setAwaitingResponse = useStore((state) => state.setAwaitingResponse);
 
   /**
    * Clear prompt and error
@@ -73,7 +74,7 @@ export function useComposer(): UseComposerReturn {
         return;
       }
 
-      setIsSubmitting(true);
+      setAwaitingResponse(true);
       setError(null);
 
       try {
@@ -93,10 +94,10 @@ export function useComposer(): UseComposerReturn {
         setError(errorMessage);
         // Don't clear prompt on error (allow retry)
       } finally {
-        setIsSubmitting(false);
+        setAwaitingResponse(false);
       }
     },
-    [selectedBlock, prompt]
+    [selectedBlock, prompt, setAwaitingResponse]
   );
 
   /**
@@ -123,7 +124,7 @@ export function useComposer(): UseComposerReturn {
       }
 
       // CHAT MODE: Creates messages
-      setIsSubmitting(true);
+      setAwaitingResponse(true);
       setError(null);
 
       try {
@@ -175,7 +176,7 @@ export function useComposer(): UseComposerReturn {
         // Restore prompt on error (allow retry)
         // Note: prompt is already cleared optimistically, user can use up arrow or retype
       } finally {
-        setIsSubmitting(false);
+        setAwaitingResponse(false);
       }
     },
     [
@@ -193,6 +194,7 @@ export function useComposer(): UseComposerReturn {
       clearSelectedBlock,
       setHasInitialResponse,
       updateThreadTitle,
+      setAwaitingResponse,
     ]
   );
 

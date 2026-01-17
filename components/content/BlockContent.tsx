@@ -65,10 +65,18 @@ function renderParagraph(text: string, className?: string): React.ReactElement {
   // Regular paragraph
   const segments = parseInlineMarkdown(text);
 
+  // Check if paragraph contains display math (which renders as div)
+  // If so, use div instead of p to avoid invalid HTML
+  const hasDisplayMath = segments.some(
+    (seg) => seg.type === 'block-math'
+  );
+
+  const Element = hasDisplayMath ? 'div' : 'p';
+
   return (
-    <p className={`doc-paragraph ${className || ''}`}>
+    <Element className={`doc-paragraph ${className || ''}`}>
       {segments.map((segment, index) => renderSegment(segment, index))}
-    </p>
+    </Element>
   );
 }
 

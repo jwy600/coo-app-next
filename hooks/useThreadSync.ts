@@ -1,11 +1,7 @@
 /**
- * useThreadSync Hook
+ * useThreadSync Hook (Simplified)
  *
- * Loads thread data from Supabase on mount and syncs to store.
- * Can accept server-loaded initial data to avoid redundant fetches.
- *
- * Reference: legacy/app.js lines 133-167 (loadThreadFromSupabase)
- * Phase 8: Updated to accept initial data from server
+ * Simplified version to prevent infinite loops
  */
 
 'use client';
@@ -26,86 +22,62 @@ export interface UseThreadSyncReturn {
 }
 
 export interface UseThreadSyncOptions {
-  /** Server-loaded initial thread data (avoids fetch) */
   initialThread?: Thread;
-  /** Server-loaded initial messages (avoids fetch) */
   initialMessages?: Message[];
-  /** Server-loaded initial blocks (avoids fetch) */
   initialBlocks?: Block[];
 }
 
-/**
- * Load thread data from Supabase and sync to store
- *
- * @param threadId - Thread ID to load (null = no loading)
- * @param options - Optional initial data from server
- */
 export function useThreadSync(
   threadId: string | null,
   options: UseThreadSyncOptions = {}
 ): UseThreadSyncReturn {
-  const { initialThread, initialMessages, initialBlocks } = options;
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [thread, setThread] = useState<Thread | null>(initialThread || null);
-  const loadedThreadIdRef = useRef<string | null>(null);
-
-  // Store actions
-  const mergeThreadFromSupabase = useStore((state) => state.mergeThreadFromSupabase);
-  const threads = useStore((state) => state.threads);
+  const loadingRef = useRef(false);
+  const loadedThreadRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Skip if no threadId or already loaded this exact thread
-    if (!threadId || loadedThreadIdRef.current === threadId) {
+    // Skip if no threadId
+    if (!threadId) return;
+
+    // Skip if already loaded this thread
+    if (loadedThreadRef.current === threadId) return;
+
+    // Skip if already loading
+    if (loadingRef.current) return;
+
+    // Check if thread already in store (check inside effect to avoid dependency issues)
+    const threadFromStore = useStore.getState().threads.find((t) => t.id === threadId);
+    if (threadFromStore) {
+      loadedThreadRef.current = threadId;
       return;
     }
 
-    // If we have initial data from server, use it immediately
-    if (initialThread && initialMessages && initialBlocks) {
-      mergeThreadFromSupabase(initialThread, initialMessages, initialBlocks);
-      setThread(initialThread);
-      loadedThreadIdRef.current = threadId;
-      return;
-    }
+    // Load from Supabase
+    loadingRef.current = true;
+    setIsLoading(true);
+    setError(null);
 
-    // Check if thread already in store (from previous navigation)
-    const existingThread = threads.find((t) => t.id === threadId);
-    if (existingThread) {
-      setThread(existingThread);
-      loadedThreadIdRef.current = threadId;
-      return;
-    }
-
-    // Load from Supabase (fallback when no initial data)
     const loadThread = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      // Retry logic for race condition (thread created but not yet persisted)
       const maxRetries = 5;
-      const retryDelay = 800; // ms
+      const retryDelay = 800;
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          // Load thread metadata
           const threadData = await loadThreadFromSupabase(threadId);
 
           if (!threadData) {
-            // If not found and we have retries left, wait and retry
             if (attempt < maxRetries - 1) {
-              console.log(`Thread not found, retrying... (attempt ${attempt + 1}/${maxRetries})`);
+              console.log(`Thread not found, retrying... (${attempt + 1}/${maxRetries})`);
               await new Promise((resolve) => setTimeout(resolve, retryDelay));
               continue;
             }
             throw new Error('Thread not found');
           }
 
-          // Load messages and blocks (already in app format)
           const messages = await loadMessagesForThread(threadId);
           const blocks = await loadBlocksForThread(threadId);
 
-          // Build complete thread object with messages
           const completeThread: Thread = {
             id: threadData.id,
             title: threadData.title,
@@ -124,29 +96,29 @@ export function useThreadSync(
           };
 
           // Merge into store
-          mergeThreadFromSupabase(completeThread, messages, blocks);
-
-          setThread(completeThread);
-          setError(null);
-          loadedThreadIdRef.current = threadId;
-          break; // Success, exit retry loop
+          useStore.getState().mergeThreadFromSupabase(completeThread, messages, blocks);
+          setIsLoading(false);
+          loadingRef.current = false;
+          loadedThreadRef.current = threadId;
+          return;
         } catch (err) {
-          // If this is the last attempt, set error
           if (attempt === maxRetries - 1) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load thread';
             setError(errorMessage);
-            setThread(null);
+            setIsLoading(false);
+            loadingRef.current = false;
           }
-          // Otherwise, continue to next retry
-        } finally {
-          setIsLoading(false);
         }
       }
     };
 
     loadThread();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId]);
+
+  // Get thread from store for return value
+  const thread = useStore((state) =>
+    state.threads.find((t) => t.id === threadId) || null
+  );
 
   return {
     isLoading,

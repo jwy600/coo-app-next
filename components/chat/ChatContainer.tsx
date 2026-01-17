@@ -49,7 +49,13 @@ export function ChatContainer({
   // Store state
   const mode = useStore((state) => state.mode);
   const messages = useStore((state) => selectMessagesByThread(threadId)(state));
-  const blocks = useStore(selectActiveThreadBlocks);
+  // Get blocks for this specific thread only
+  const blocks = useStore((state) => {
+    const thread = state.threads.find((t) => t.id === threadId);
+    if (!thread) return [];
+    const messageIds = thread.messages.map((m) => m.id);
+    return state.blocks.filter((b) => messageIds.includes(b.messageId));
+  });
 
   // Composer hook (handles submission and block actions)
   const {

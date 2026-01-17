@@ -23,7 +23,7 @@ export function PromptInput({
   onChange,
   onSelectionCapture,
   onSubmit,
-  placeholder = 'Try: Draft a product vision for a mindful calendar app.',
+  placeholder = 'Explain Cobb-Douglas function and its implications of capital/labour substitution.',
   disabled = false,
 }: PromptInputProps) {
   const inputRef = useRef<HTMLDivElement>(null);

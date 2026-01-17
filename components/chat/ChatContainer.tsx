@@ -20,6 +20,7 @@ import {
   useKeyboardShortcuts,
   useThreadSync,
 } from '@/hooks';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore, selectBlocksByThread, selectMessagesByThread } from '@/lib/store/useStore';
 import type { Thread } from '@/types/thread';
 import type { Message } from '@/types/message';
@@ -48,9 +49,9 @@ export function ChatContainer({
 
   // Store state
   const mode = useStore((state) => state.mode);
-  const messages = useStore(selectMessagesByThread(threadId));
+  const messages = useStore(useShallow(selectMessagesByThread(threadId)));
   // Get blocks for this specific thread only
-  const blocks = useStore(selectBlocksByThread(threadId));
+  const blocks = useStore(useShallow(selectBlocksByThread(threadId)));
 
   // Composer hook (handles submission and block actions)
   const {

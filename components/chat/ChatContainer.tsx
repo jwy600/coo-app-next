@@ -50,9 +50,21 @@ export function ChatContainer({
 
   // Store state
   const mode = useStore((state) => state.mode);
+  const setMode = useStore((state) => state.setMode);
+  const setActiveThread = useStore((state) => state.setActiveThread);
   const messages = useStore(useShallow(selectMessagesByThread(threadId)));
   // Get blocks for this specific thread only
   const blocks = useStore(useShallow(selectBlocksByThread(threadId)));
+
+  // Set active thread and ensure chat mode when component mounts or threadId changes
+  useEffect(() => {
+    if (threadId) {
+      setActiveThread(threadId);
+      // Set chat mode on mount (don't check current mode to avoid fighting with Logo)
+      setMode('chat');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadId, setActiveThread, setMode]);
 
   // Composer hook (handles submission and block actions)
   const {

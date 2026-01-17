@@ -46,9 +46,13 @@ export function useThreadSync(
     // Skip if already loading
     if (loadingRef.current) return;
 
-    // Check if thread already in store (check inside effect to avoid dependency issues)
-    const threadFromStore = useStore.getState().threads.find((t) => t.id === threadId);
-    if (threadFromStore) {
+    // Check if thread data is already fully loaded
+    // Threads from landing page have empty messages array, so need to be loaded
+    const state = useStore.getState();
+    const threadFromStore = state.threads.find((t) => t.id === threadId);
+
+    // Only skip loading if thread has messages (meaning it's been fully loaded)
+    if (threadFromStore && threadFromStore.messages.length > 0) {
       loadedThreadRef.current = threadId;
       return;
     }

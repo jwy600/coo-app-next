@@ -167,8 +167,8 @@ export const threadSlice: StateCreator<
   },
 
   mergeThreadFromSupabase: (thread, messages, blocks) => {
-    // Merge thread with messages into state
-    const threadWithMessages = { ...thread, messages };
+    // Use the thread as-is (it already has properly constructed messages with content)
+    // The messages parameter is the raw messages from Supabase and is only kept for backwards compatibility
 
     const currentState = get();
     const existingThread = currentState.threads.find((t) => t.id === thread.id);
@@ -177,7 +177,7 @@ export const threadSlice: StateCreator<
       // Update existing thread
       set({
         threads: currentState.threads.map((t) =>
-          t.id === thread.id ? threadWithMessages : t
+          t.id === thread.id ? thread : t
         ),
         blocks: [
           ...currentState.blocks.filter((b) =>
@@ -189,7 +189,7 @@ export const threadSlice: StateCreator<
     } else {
       // Add new thread
       set({
-        threads: [...currentState.threads, threadWithMessages],
+        threads: [...currentState.threads, thread],
         blocks: [...currentState.blocks, ...blocks],
       });
     }

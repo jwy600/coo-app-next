@@ -11,6 +11,7 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { MessageList } from './MessageList';
 import { Composer } from '@/components/composer/Composer';
 import {
@@ -92,6 +93,31 @@ export function ChatContainer({
   useKeyboardShortcuts({
     Escape: clearSelection,
   });
+
+  // Global click handler to deselect when clicking outside blocks or composer
+  // Reference: legacy/app.js lines 1154-1163
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Only handle if a block is selected
+      if (!selectedBlockId) return;
+
+      const target = event.target as HTMLElement;
+
+      // Don't deselect if clicking inside composer or doc-block
+      if (target.closest('.composer') || target.closest('.doc-block')) {
+        return;
+      }
+
+      // Click was outside - clear selection
+      clearSelection();
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selectedBlockId, clearSelection]);
 
   // Handle rewrite action (special case - modifies block directly)
   const handleRewrite = async (blockId: string) => {

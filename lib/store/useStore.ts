@@ -83,6 +83,16 @@ export const selectActiveThreadBlocks = (state: StoreState): Block[] => {
 };
 
 /**
+ * Create a selector for blocks in a specific thread
+ */
+export const selectBlocksByThread = (threadId: string) => (state: StoreState): Block[] => {
+  const thread = state.threads.find((t) => t.id === threadId);
+  if (!thread) return [];
+  const messageIds = thread.messages.map((m) => m.id);
+  return state.blocks.filter((b) => messageIds.includes(b.messageId));
+};
+
+/**
  * Check if there are any threads
  */
 export const selectHasThreads = (state: StoreState): boolean =>

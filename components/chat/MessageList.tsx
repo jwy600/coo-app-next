@@ -58,7 +58,7 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
-      className="px-6 pt-6 space-y-8"
+      className="thread"
       aria-live="polite"
     >
       {messages.map((message) => {

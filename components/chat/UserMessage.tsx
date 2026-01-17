@@ -15,9 +15,9 @@ export function UserMessage({ message, block }: UserMessageProps) {
   const text = block?.text || '';
 
   return (
-    <div className="flex gap-3">
-      <span className="text-sm font-medium text-gray-500">You</span>
-      <p className="text-base text-gray-900">{text}</p>
+    <div className="user-message">
+      <span className="user-label">You</span>
+      <p>{text}</p>
     </div>
   );
 }

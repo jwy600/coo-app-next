@@ -29,18 +29,16 @@ export function AssistantMessage({
   onRewrite,
 }: AssistantMessageProps) {
   return (
-    <div className="flex gap-3">
-      <span className="text-sm font-medium text-gray-700">Coo</span>
-      <div className="flex-1 assistant-response">
-        <BlockStack
-          blocks={blocks}
-          selectedBlockId={selectedBlockId}
-          onBlockSelect={onBlockSelect}
-          onRemoveSelection={onRemoveSelection}
-          onClearSelections={onClearSelections}
-          onRewrite={onRewrite}
-        />
-      </div>
+    <div className="assistant-message">
+      <span className="assistant-label">Coo</span>
+      <BlockStack
+        blocks={blocks}
+        selectedBlockId={selectedBlockId}
+        onBlockSelect={onBlockSelect}
+        onRemoveSelection={onRemoveSelection}
+        onClearSelections={onClearSelections}
+        onRewrite={onRewrite}
+      />
     </div>
   );
 }

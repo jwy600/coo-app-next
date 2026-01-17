@@ -39,7 +39,7 @@ export function DocBlock({
 
   return (
     <div
-      className={`relative group flex gap-2 ${isSelected ? 'is-selected' : ''} ${
+      className={`doc-block ${isSelected ? 'is-selected' : ''} ${
         !isSelected && onSelect ? 'is-muted' : ''
       }`}
       data-block-id={block.id}
@@ -47,28 +47,16 @@ export function DocBlock({
       {/* Gutter handle - 6 dots */}
       <button
         type="button"
-        className="w-6 h-6 opacity-0 group-hover:opacity-100 transition flex-shrink-0 cursor-pointer border-none bg-transparent"
+        className="gutter-handle"
         onClick={handleSelect}
         onKeyDown={handleKeyDown}
         aria-label="Select paragraph"
         title="Select paragraph"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className="text-gray-400 hover:text-gray-600"
-        >
-          <circle cx="8" cy="6" r="1.5" />
-          <circle cx="16" cy="6" r="1.5" />
-          <circle cx="8" cy="12" r="1.5" />
-          <circle cx="16" cy="12" r="1.5" />
-          <circle cx="8" cy="18" r="1.5" />
-          <circle cx="16" cy="18" r="1.5" />
-        </svg>
       </button>
 
       {/* Block content */}
-      <div className="flex-1">
+      <div className="doc-content">
         <BlockContent text={block.text} type={block.type} />
 
         {/* Selection chips (only show when selected) */}

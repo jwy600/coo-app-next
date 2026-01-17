@@ -1,5 +1,3 @@
-import { Button } from '@/components/ui/Button';
-
 /**
  * Server-compatible ErrorMessage component
  * Displays error state with optional retry
@@ -12,14 +10,14 @@ interface ErrorMessageProps {
 
 export function ErrorMessage({ error, onRetry }: ErrorMessageProps) {
   return (
-    <div className="flex gap-3">
-      <span className="text-sm font-medium text-gray-700">Coo</span>
-      <div className="flex-1">
-        <p className="text-sm text-red-600 mb-2">{error}</p>
+    <div className="assistant-message">
+      <span className="assistant-label">Coo</span>
+      <div className="assistant-error">
+        <p>{error}</p>
         {onRetry && (
-          <Button variant="secondary" onClick={onRetry}>
+          <button type="button" className="assistant-retry" onClick={onRetry}>
             Retry
-          </Button>
+          </button>
         )}
       </div>
     </div>

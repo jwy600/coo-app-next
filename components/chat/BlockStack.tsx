@@ -26,25 +26,20 @@ export function BlockStack({
   onRewrite,
 }: BlockStackProps) {
   return (
-    <div className="space-y-4">
+    <div className="block-stack">
       {blocks.map((block) => {
         const isSelected = selectedBlockId === block.id;
-        const isMuted = selectedBlockId !== null && !isSelected;
 
         return (
-          <div
+          <DocBlock
             key={block.id}
-            className={isMuted ? 'opacity-40' : ''}
-          >
-            <DocBlock
-              block={block}
-              isSelected={isSelected}
-              onSelect={onBlockSelect}
-              onRemoveSelection={onRemoveSelection}
-              onClearSelections={onClearSelections}
-              onRewrite={onRewrite}
-            />
-          </div>
+            block={block}
+            isSelected={isSelected}
+            onSelect={onBlockSelect}
+            onRemoveSelection={onRemoveSelection}
+            onClearSelections={onClearSelections}
+            onRewrite={onRewrite}
+          />
         );
       })}
     </div>

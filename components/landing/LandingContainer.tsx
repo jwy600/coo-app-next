@@ -30,16 +30,12 @@ export function LandingContainer({ threads }: LandingContainerProps) {
   // Composer hook (handles submission and thread creation)
   const { prompt, setPrompt, handleSubmit, isSubmitting } = useComposer();
 
-  // Redirect to thread page AFTER first response is received and persisted
+  // Redirect to thread page AFTER first response is received
   useEffect(() => {
     if (mode === 'chat' && activeThreadId && hasInitialResponse) {
-      // Add a small delay to ensure Supabase persistence completes
-      // This prevents race condition when server tries to load the thread
-      const timer = setTimeout(() => {
-        router.push(`/t/${activeThreadId}`);
-      }, 1000); // 1 second delay for persistence
-
-      return () => clearTimeout(timer);
+      // Navigate immediately - the retry mechanism in useThreadSync will handle
+      // race conditions if the thread isn't in Supabase yet
+      router.push(`/t/${activeThreadId}`);
     }
   }, [mode, activeThreadId, hasInitialResponse, router]);
 

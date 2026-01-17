@@ -81,8 +81,8 @@ export function useThreadSync(
       setError(null);
 
       // Retry logic for race condition (thread created but not yet persisted)
-      const maxRetries = 3;
-      const retryDelay = 500; // ms
+      const maxRetries = 5;
+      const retryDelay = 800; // ms
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
@@ -92,7 +92,8 @@ export function useThreadSync(
           if (!threadData) {
             // If not found and we have retries left, wait and retry
             if (attempt < maxRetries - 1) {
-              await new Promise((resolve) => setTimeout(resolve, retryDelay * (attempt + 1)));
+              console.log(`Thread not found, retrying... (attempt ${attempt + 1}/${maxRetries})`);
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
               continue;
             }
             throw new Error('Thread not found');

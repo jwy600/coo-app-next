@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/lib/store/useStore';
 import { loadThreadFromSupabase } from '@/lib/supabase/threads';
 import { loadMessagesForThread } from '@/lib/supabase/messages';
@@ -49,15 +49,15 @@ export function useThreadSync(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [thread, setThread] = useState<Thread | null>(initialThread || null);
+  const loadedThreadIdRef = useRef<string | null>(null);
 
   // Store actions
   const mergeThreadFromSupabase = useStore((state) => state.mergeThreadFromSupabase);
   const threads = useStore((state) => state.threads);
 
   useEffect(() => {
-    // Skip if no threadId
-    if (!threadId) {
-      setThread(null);
+    // Skip if no threadId or already loaded this exact thread
+    if (!threadId || loadedThreadIdRef.current === threadId) {
       return;
     }
 
@@ -65,6 +65,7 @@ export function useThreadSync(
     if (initialThread && initialMessages && initialBlocks) {
       mergeThreadFromSupabase(initialThread, initialMessages, initialBlocks);
       setThread(initialThread);
+      loadedThreadIdRef.current = threadId;
       return;
     }
 
@@ -72,6 +73,7 @@ export function useThreadSync(
     const existingThread = threads.find((t) => t.id === threadId);
     if (existingThread) {
       setThread(existingThread);
+      loadedThreadIdRef.current = threadId;
       return;
     }
 
@@ -126,6 +128,7 @@ export function useThreadSync(
 
           setThread(completeThread);
           setError(null);
+          loadedThreadIdRef.current = threadId;
           break; // Success, exit retry loop
         } catch (err) {
           // If this is the last attempt, set error
@@ -142,7 +145,8 @@ export function useThreadSync(
     };
 
     loadThread();
-  }, [threadId, initialThread, initialMessages, initialBlocks, threads, mergeThreadFromSupabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadId]);
 
   return {
     isLoading,

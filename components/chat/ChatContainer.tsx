@@ -48,7 +48,7 @@ export function ChatContainer({
 
   // Store state
   const mode = useStore((state) => state.mode);
-  const messages = useStore(selectMessagesByThread(threadId));
+  const messages = useStore((state) => selectMessagesByThread(threadId)(state));
   const blocks = useStore(selectActiveThreadBlocks);
 
   // Composer hook (handles submission and block actions)

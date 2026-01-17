@@ -44,6 +44,7 @@ export function useComposer(): UseComposerReturn {
   const createThread = useStore((state) => state.createThread);
   const activeThreadId = useStore((state) => state.activeThreadId);
   const setHasInitialResponse = useStore((state) => state.setHasInitialResponse);
+  const updateThreadTitle = useStore((state) => state.updateThreadTitle);
 
   /**
    * Clear prompt and error
@@ -135,6 +136,12 @@ export function useComposer(): UseComposerReturn {
         // Add user message
         const { message: userMessage, blocks: userBlocks } = addUserMessage(trimmedPrompt);
 
+        // Update thread title to first user message (truncate to 50 chars)
+        const threadTitle = trimmedPrompt.length > 50
+          ? trimmedPrompt.substring(0, 50) + '...'
+          : trimmedPrompt;
+        updateThreadTitle(activeThreadId, threadTitle);
+
         // Clear prompt immediately (optimistic)
         setPrompt('');
 
@@ -183,6 +190,7 @@ export function useComposer(): UseComposerReturn {
       addAssistantMessage,
       clearSelectedBlock,
       setHasInitialResponse,
+      updateThreadTitle,
     ]
   );
 

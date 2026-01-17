@@ -1,43 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
+import { getOpenAiClient } from '@/lib/api/openAiClient';
+import { parseString, validatePrompt } from '@/lib/utils/validation';
 
 export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body: ChatRequest = await request.json();
-    const prompt = typeof body?.prompt === 'string' ? body.prompt.trim() : '';
+    const prompt = parseString(body?.prompt);
 
-    // Validation: Prompt required
-    if (!prompt) {
+    // Validate prompt
+    const validation = validatePrompt(prompt);
+    if (!validation.valid) {
       return NextResponse.json<ApiError>(
-        { error: 'Please provide a prompt.' },
+        { error: validation.error || 'Invalid prompt.' },
         { status: 400 }
       );
     }
 
-    // Validation: Prompt length
-    if (prompt.length > 4000) {
-      return NextResponse.json<ApiError>(
-        { error: 'That prompt is a bit too long. Please shorten it.' },
-        { status: 400 }
-      );
-    }
-
-    // Validation: OpenAI API key
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json<ApiError>(
-        { error: 'Missing OpenAI API key configuration.' },
-        { status: 500 }
-      );
-    }
-
-    // Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      timeout: 60000, // 60 seconds (default is 10 minutes)
-      maxRetries: 2,
-    });
+    // Initialize OpenAI client (throws if not configured)
+    const openai = getOpenAiClient();
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
@@ -60,6 +42,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json<ChatResponse>({ text });
   } catch (error: any) {
     console.error('Chat API error:', error);
+
+    // Handle OpenAI configuration errors
+    if (error?.message?.includes('Missing OpenAI API key')) {
+      return NextResponse.json<ApiError>(
+        { error: 'Missing OpenAI API key configuration.' },
+        { status: 500 }
+      );
+    }
 
     // Handle OpenAI specific errors
     if (error?.status) {

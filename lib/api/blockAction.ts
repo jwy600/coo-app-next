@@ -1,5 +1,6 @@
 import { apiFetch } from './client';
 import type { BlockAction, BlockActionRequest, BlockActionResponse } from '@/types/api';
+import { parseString } from '@/lib/utils/validation';
 
 /**
  * Fetch block action transformation from OpenAI
@@ -15,14 +16,15 @@ export async function fetchBlockAction(
   blockText: string,
   prompt?: string
 ): Promise<BlockActionResponse> {
-  // Local validation
-  const trimmedBlockText = blockText.trim();
+  // Parse and validate inputs
+  const trimmedBlockText = parseString(blockText);
+  const trimmedPrompt = parseString(prompt);
 
   if (!trimmedBlockText) {
     throw new Error('Block text cannot be empty');
   }
 
-  if ((action === 'ask' || action === 'rewrite') && !prompt?.trim()) {
+  if ((action === 'ask' || action === 'rewrite') && !trimmedPrompt) {
     throw new Error(`Action '${action}' requires a prompt`);
   }
 
@@ -30,7 +32,7 @@ export async function fetchBlockAction(
   const requestBody: BlockActionRequest = {
     action,
     blockText: trimmedBlockText,
-    prompt: prompt?.trim(),
+    prompt: trimmedPrompt || undefined,
     mode: 'block',
   };
 

@@ -11,6 +11,7 @@ import { useStore } from '@/lib/store/useStore';
 import { loadThreadFromSupabase } from '@/lib/supabase/threads';
 import { loadMessagesForThread } from '@/lib/supabase/messages';
 import { loadBlocksForThread } from '@/lib/supabase/blocks';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 import type { Thread } from '@/types/thread';
 import type { Message } from '@/types/message';
 import type { Block } from '@/types/block';
@@ -107,7 +108,7 @@ export function useThreadSync(
           return;
         } catch (err) {
           if (attempt === maxRetries - 1) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load thread';
+            const errorMessage = getErrorMessage(err, 'Failed to load thread');
             setError(errorMessage);
             setIsLoading(false);
             loadingRef.current = false;

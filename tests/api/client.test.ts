@@ -46,13 +46,13 @@ describe('API Client Functions', () => {
     });
 
     it('should throw error for empty prompt', async () => {
-      await expect(fetchChatCompletion('   ')).rejects.toThrow('Prompt cannot be empty');
+      await expect(fetchChatCompletion('   ')).rejects.toThrow('Please provide a prompt');
     });
 
     it('should throw error for prompt too long', async () => {
       const longPrompt = 'a'.repeat(4001);
       await expect(fetchChatCompletion(longPrompt)).rejects.toThrow(
-        'Prompt is too long. Maximum 4000 characters.'
+        'That prompt is a bit too long'
       );
     });
 

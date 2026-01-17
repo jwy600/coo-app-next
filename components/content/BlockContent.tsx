@@ -15,7 +15,7 @@ import {
   getCodeLanguage,
   isOrderedListItem,
 } from '@/lib/rendering/blocks';
-import { Math } from './Math';
+import { Math as MathComponent } from './Math';
 
 export interface BlockContentProps {
   text: string;
@@ -35,10 +35,10 @@ function renderSegment(segment: MarkdownSegment, index: number): React.ReactNode
       return <strong key={index}>{segment.content}</strong>;
 
     case 'inline-math':
-      return <Math key={index} tex={segment.content} display={false} />;
+      return <MathComponent key={index} tex={segment.content} display={false} />;
 
     case 'block-math':
-      return <Math key={index} tex={segment.content} display={true} />;
+      return <MathComponent key={index} tex={segment.content} display={true} />;
 
     case 'break':
       return <br key={index} />;
@@ -106,7 +106,7 @@ function renderList(text: string, className?: string): React.ReactElement {
     items: ListItemNode[];
   };
 
-  const getLevel = (indent: number) => Math.floor(indent / 2);
+  const getLevel = (indent: number) => globalThis.Math.floor(indent / 2);
   const listRoots: ListNode[] = [];
   const listStack: ListNode[] = [];
   const itemStack: ListItemNode[] = [];

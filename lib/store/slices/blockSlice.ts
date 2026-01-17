@@ -24,61 +24,69 @@ export const blockSlice: StateCreator<
   [],
   [],
   BlockSlice
-> = (set, get) => ({
-  blocks: [],
+> = (set, get) => {
+  // Helper to check test mode
+  const isTestMode = () =>
+    typeof window !== 'undefined' &&
+    ((window as any).__TEST_MODE__ === true ||
+     process.env.NEXT_PUBLIC_TEST_MODE === 'true');
 
-  addSelection: (blockId, text) => {
-    const result = stateFns.addSelection(get(), blockId, text);
-    set({ blocks: result.state.blocks });
+  return {
+    blocks: [],
 
-    if (result.block) {
-      persistBlockUpdate(result.block).catch((error) =>
-        console.error('Failed to persist selection:', error)
-      );
-    }
-  },
+    addSelection: (blockId, text) => {
+      const result = stateFns.addSelection(get(), blockId, text);
+      set({ blocks: result.state.blocks });
 
-  removeSelection: (blockId, index) => {
-    const result = stateFns.removeSelection(get(), blockId, index);
-    set({ blocks: result.state.blocks });
+      if (result.block && !isTestMode()) {
+        persistBlockUpdate(result.block).catch((error) =>
+          console.error('Failed to persist selection:', error)
+        );
+      }
+    },
 
-    if (result.block) {
-      persistBlockUpdate(result.block).catch((error) =>
-        console.error('Failed to persist selection removal:', error)
-      );
-    }
-  },
+    removeSelection: (blockId, index) => {
+      const result = stateFns.removeSelection(get(), blockId, index);
+      set({ blocks: result.state.blocks });
 
-  clearSelections: (blockId) => {
-    const result = stateFns.clearSelections(get(), blockId);
-    set({ blocks: result.state.blocks });
+      if (result.block && !isTestMode()) {
+        persistBlockUpdate(result.block).catch((error) =>
+          console.error('Failed to persist selection removal:', error)
+        );
+      }
+    },
 
-    if (result.block) {
-      persistBlockUpdate(result.block).catch((error) =>
-        console.error('Failed to clear selections:', error)
-      );
-    }
-  },
+    clearSelections: (blockId) => {
+      const result = stateFns.clearSelections(get(), blockId);
+      set({ blocks: result.state.blocks });
 
-  toggleRewrite: (blockId, rewriteText) => {
-    const result = stateFns.toggleRewrite(get(), blockId, rewriteText);
-    set({ blocks: result.state.blocks });
+      if (result.block && !isTestMode()) {
+        persistBlockUpdate(result.block).catch((error) =>
+          console.error('Failed to clear selections:', error)
+        );
+      }
+    },
 
-    if (result.block) {
-      persistBlockUpdate(result.block).catch((error) =>
-        console.error('Failed to persist rewrite toggle:', error)
-      );
-    }
-  },
+    toggleRewrite: (blockId, rewriteText) => {
+      const result = stateFns.toggleRewrite(get(), blockId, rewriteText);
+      set({ blocks: result.state.blocks });
 
-  updateBlockText: (blockId, text, edited = false) => {
-    const result = stateFns.updateBlockText(get(), blockId, text, edited);
-    set({ blocks: result.state.blocks });
+      if (result.block && !isTestMode()) {
+        persistBlockUpdate(result.block).catch((error) =>
+          console.error('Failed to persist rewrite toggle:', error)
+        );
+      }
+    },
 
-    if (result.block) {
-      persistBlockUpdate(result.block).catch((error) =>
-        console.error('Failed to update block text:', error)
-      );
-    }
-  },
-});
+    updateBlockText: (blockId, text, edited = false) => {
+      const result = stateFns.updateBlockText(get(), blockId, text, edited);
+      set({ blocks: result.state.blocks });
+
+      if (result.block && !isTestMode()) {
+        persistBlockUpdate(result.block).catch((error) =>
+          console.error('Failed to update block text:', error)
+        );
+      }
+    },
+  };
+};

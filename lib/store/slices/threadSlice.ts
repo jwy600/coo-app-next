@@ -60,6 +60,13 @@ export const threadSlice: StateCreator<
     );
     set({ threads: result.threads });
 
+    // Skip database persistence in test mode
+    const isTestMode = typeof window !== 'undefined' &&
+      ((window as any).__TEST_MODE__ === true ||
+       process.env.NEXT_PUBLIC_TEST_MODE === 'true');
+
+    if (isTestMode) return;
+
     // Async persistence (non-blocking)
     const thread = stateFns.getThreadById(result, threadId);
     if (thread) {
@@ -84,35 +91,42 @@ export const threadSlice: StateCreator<
       blocks: result.state.blocks,
     });
 
-    // Async persistence (non-blocking)
-    const activeThread = stateFns.getThreadById(
-      result.state,
-      result.state.activeThreadId
-    );
+    // Skip database persistence in test mode
+    const isTestMode = typeof window !== 'undefined' &&
+      ((window as any).__TEST_MODE__ === true ||
+       process.env.NEXT_PUBLIC_TEST_MODE === 'true');
 
-    if (activeThread) {
-      persistThreadSnapshot({
-        threadId: activeThread.id,
-        title: activeThread.title,
-        createdAt: new Date(activeThread.createdAt).toISOString(),
-        updatedAt: new Date(activeThread.updatedAt).toISOString(),
-        message: {
-          id: result.message.id,
-          role: result.message.role,
-          createdAt: result.message.createdAt,
-          meta: result.message.meta,
-        },
-        blocks: result.blocks.map((block) => ({
-          id: block.id,
-          messageId: block.messageId,
-          type: block.type,
-          text: block.text,
-          edited: block.edited,
-          selections: block.selections,
-          prevText: block.prevText,
-          isRewritten: block.isRewritten,
-        })),
-      }).catch((error) => console.error('Failed to persist user message:', error));
+    if (!isTestMode) {
+      // Async persistence (non-blocking)
+      const activeThread = stateFns.getThreadById(
+        result.state,
+        result.state.activeThreadId
+      );
+
+      if (activeThread) {
+        persistThreadSnapshot({
+          threadId: activeThread.id,
+          title: activeThread.title,
+          createdAt: new Date(activeThread.createdAt).toISOString(),
+          updatedAt: new Date(activeThread.updatedAt).toISOString(),
+          message: {
+            id: result.message.id,
+            role: result.message.role,
+            createdAt: result.message.createdAt,
+            meta: result.message.meta,
+          },
+          blocks: result.blocks.map((block) => ({
+            id: block.id,
+            messageId: block.messageId,
+            type: block.type,
+            text: block.text,
+            edited: block.edited,
+            selections: block.selections,
+            prevText: block.prevText,
+            isRewritten: block.isRewritten,
+          })),
+        }).catch((error) => console.error('Failed to persist user message:', error));
+      }
     }
 
     return { message: result.message, blocks: result.blocks };
@@ -132,35 +146,42 @@ export const threadSlice: StateCreator<
       blocks: result.state.blocks,
     });
 
-    // Async persistence (non-blocking)
-    const activeThread = stateFns.getThreadById(
-      result.state,
-      result.state.activeThreadId
-    );
+    // Skip database persistence in test mode
+    const isTestMode = typeof window !== 'undefined' &&
+      ((window as any).__TEST_MODE__ === true ||
+       process.env.NEXT_PUBLIC_TEST_MODE === 'true');
 
-    if (activeThread) {
-      persistThreadSnapshot({
-        threadId: activeThread.id,
-        title: activeThread.title,
-        createdAt: new Date(activeThread.createdAt).toISOString(),
-        updatedAt: new Date(activeThread.updatedAt).toISOString(),
-        message: {
-          id: result.message.id,
-          role: result.message.role,
-          createdAt: result.message.createdAt,
-          meta: result.message.meta,
-        },
-        blocks: result.blocks.map((block) => ({
-          id: block.id,
-          messageId: block.messageId,
-          type: block.type,
-          text: block.text,
-          edited: block.edited,
-          selections: block.selections,
-          prevText: block.prevText,
-          isRewritten: block.isRewritten,
-        })),
-      }).catch((error) => console.error('Failed to persist assistant message:', error));
+    if (!isTestMode) {
+      // Async persistence (non-blocking)
+      const activeThread = stateFns.getThreadById(
+        result.state,
+        result.state.activeThreadId
+      );
+
+      if (activeThread) {
+        persistThreadSnapshot({
+          threadId: activeThread.id,
+          title: activeThread.title,
+          createdAt: new Date(activeThread.createdAt).toISOString(),
+          updatedAt: new Date(activeThread.updatedAt).toISOString(),
+          message: {
+            id: result.message.id,
+            role: result.message.role,
+            createdAt: result.message.createdAt,
+            meta: result.message.meta,
+          },
+          blocks: result.blocks.map((block) => ({
+            id: block.id,
+            messageId: block.messageId,
+            type: block.type,
+            text: block.text,
+            edited: block.edited,
+            selections: block.selections,
+            prevText: block.prevText,
+            isRewritten: block.isRewritten,
+          })),
+        }).catch((error) => console.error('Failed to persist assistant message:', error));
+      }
     }
 
     return { message: result.message, blocks: result.blocks };

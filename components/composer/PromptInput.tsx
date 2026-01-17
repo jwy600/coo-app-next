@@ -13,6 +13,7 @@ interface PromptInputProps {
   value: string;
   onChange: (value: string) => void;
   onSelectionCapture?: (element: HTMLElement | null) => void;
+  onSubmit?: () => void;
   placeholder?: string;
   disabled?: boolean;
 }
@@ -21,6 +22,7 @@ export function PromptInput({
   value,
   onChange,
   onSelectionCapture,
+  onSubmit,
   placeholder = 'Try: Draft a product vision for a mindful calendar app.',
   disabled = false,
 }: PromptInputProps) {
@@ -40,6 +42,16 @@ export function PromptInput({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Submit on Enter (but allow Shift+Enter for newlines)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (onSubmit) {
+        onSubmit();
+      }
+    }
+  };
+
   const handleSelectionCapture = () => {
     if (!onSelectionCapture) return;
 
@@ -54,6 +66,7 @@ export function PromptInput({
       id="prompt"
       contentEditable={!disabled}
       onInput={handleInput}
+      onKeyDown={handleKeyDown}
       onMouseUp={handleSelectionCapture}
       onKeyUp={handleSelectionCapture}
       className={`min-h-[48px] px-4 py-3 border border-border rounded-lg bg-white overflow-auto focus:outline-none focus:ring-2 focus:ring-blue-500 text-[0.9375rem] leading-[1.5] ${

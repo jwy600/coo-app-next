@@ -25,16 +25,17 @@ export function LandingContainer({ threads }: LandingContainerProps) {
   const router = useRouter();
   const mode = useStore((state) => state.mode);
   const activeThreadId = useStore((state) => state.activeThreadId);
+  const hasInitialResponse = useStore((state) => state.hasInitialResponse);
 
   // Composer hook (handles submission and thread creation)
   const { prompt, setPrompt, handleSubmit, isSubmitting } = useComposer();
 
-  // Redirect to thread page when a thread is created
+  // Redirect to thread page AFTER first response is received and persisted
   useEffect(() => {
-    if (mode === 'chat' && activeThreadId) {
+    if (mode === 'chat' && activeThreadId && hasInitialResponse) {
       router.push(`/t/${activeThreadId}`);
     }
-  }, [mode, activeThreadId, router]);
+  }, [mode, activeThreadId, hasInitialResponse, router]);
 
   return (
     <div className="landing-layout">

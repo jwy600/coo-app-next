@@ -47,6 +47,7 @@ export function Composer({
           value={prompt}
           onChange={onPromptChange}
           onSelectionCapture={onSelectionCapture}
+          onSubmit={() => onSubmit(new Event('submit') as any)}
           disabled={disabled}
         />
         <Button type="submit" variant="primary" disabled={disabled} className="md:mb-[2px]">

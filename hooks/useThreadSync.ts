@@ -80,47 +80,63 @@ export function useThreadSync(
       setIsLoading(true);
       setError(null);
 
-      try {
-        // Load thread metadata
-        const threadData = await loadThreadFromSupabase(threadId);
+      // Retry logic for race condition (thread created but not yet persisted)
+      const maxRetries = 3;
+      const retryDelay = 500; // ms
 
-        if (!threadData) {
-          throw new Error('Thread not found');
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          // Load thread metadata
+          const threadData = await loadThreadFromSupabase(threadId);
+
+          if (!threadData) {
+            // If not found and we have retries left, wait and retry
+            if (attempt < maxRetries - 1) {
+              await new Promise((resolve) => setTimeout(resolve, retryDelay * (attempt + 1)));
+              continue;
+            }
+            throw new Error('Thread not found');
+          }
+
+          // Load messages and blocks (already in app format)
+          const messages = await loadMessagesForThread(threadId);
+          const blocks = await loadBlocksForThread(threadId);
+
+          // Build complete thread object with messages
+          const completeThread: Thread = {
+            id: threadData.id,
+            title: threadData.title,
+            createdAt: threadData.createdAt,
+            updatedAt: threadData.updatedAt,
+            messages: messages.map((msg) => ({
+              id: msg.id,
+              threadId: msg.threadId,
+              role: msg.role,
+              createdAt: msg.createdAt,
+              content: blocks
+                .filter((b) => b.messageId === msg.id)
+                .map((b) => ({ blockId: b.id })),
+              meta: msg.meta || {},
+            })),
+          };
+
+          // Merge into store
+          mergeThreadFromSupabase(completeThread, messages, blocks);
+
+          setThread(completeThread);
+          setError(null);
+          break; // Success, exit retry loop
+        } catch (err) {
+          // If this is the last attempt, set error
+          if (attempt === maxRetries - 1) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load thread';
+            setError(errorMessage);
+            setThread(null);
+          }
+          // Otherwise, continue to next retry
+        } finally {
+          setIsLoading(false);
         }
-
-        // Load messages and blocks (already in app format)
-        const messages = await loadMessagesForThread(threadId);
-        const blocks = await loadBlocksForThread(threadId);
-
-        // Build complete thread object with messages
-        const completeThread: Thread = {
-          id: threadData.id,
-          title: threadData.title,
-          createdAt: threadData.createdAt,
-          updatedAt: threadData.updatedAt,
-          messages: messages.map((msg) => ({
-            id: msg.id,
-            threadId: msg.threadId,
-            role: msg.role,
-            createdAt: msg.createdAt,
-            content: blocks
-              .filter((b) => b.messageId === msg.id)
-              .map((b) => ({ blockId: b.id })),
-            meta: msg.meta || {},
-          })),
-        };
-
-        // Merge into store
-        mergeThreadFromSupabase(completeThread, messages, blocks);
-
-        setThread(completeThread);
-        setError(null);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load thread';
-        setError(errorMessage);
-        setThread(null);
-      } finally {
-        setIsLoading(false);
       }
     };
 

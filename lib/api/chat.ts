@@ -1,5 +1,6 @@
 import { apiFetch } from './client';
 import type { ChatRequest, ChatResponse } from '@/types/api';
+import { validatePrompt } from '@/lib/utils/validation';
 
 /**
  * Fetch chat completion from OpenAI
@@ -13,15 +14,12 @@ export async function fetchChatCompletion(
   prompt: string,
   threadId?: string
 ): Promise<ChatResponse> {
-  // Local validation
+  // Validate prompt
   const trimmedPrompt = prompt.trim();
+  const validation = validatePrompt(trimmedPrompt);
 
-  if (!trimmedPrompt) {
-    throw new Error('Prompt cannot be empty');
-  }
-
-  if (trimmedPrompt.length > 4000) {
-    throw new Error('Prompt is too long. Maximum 4000 characters.');
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid prompt');
   }
 
   // Build request

@@ -16,6 +16,7 @@ import { useState, useCallback } from 'react';
 import { useStore, selectSelectedBlock } from '@/lib/store/useStore';
 import { fetchChatCompletion, fetchBlockAction } from '@/lib/api';
 import { splitIntoBlocks } from '@/lib/state/parser';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 import type { BlockAction } from '@/types/api';
 
 export interface UseComposerReturn {
@@ -91,7 +92,7 @@ export function useComposer(): UseComposerReturn {
         // Clear error on success
         setError(null);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to transform block';
+        const errorMessage = getErrorMessage(err, 'Failed to transform block');
         setError(errorMessage);
         // Don't clear prompt on error (allow retry)
       } finally {
@@ -171,8 +172,7 @@ export function useComposer(): UseComposerReturn {
         // Clear error on success
         setError(null);
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'We hit a snag getting that response. Try again.';
+        const errorMessage = getErrorMessage(err, 'We hit a snag getting that response. Try again.');
         setError(errorMessage);
         // Restore prompt on error (allow retry)
         // Note: prompt is already cleared optimistically, user can use up arrow or retype

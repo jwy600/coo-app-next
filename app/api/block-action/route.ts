@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import type { BlockActionRequest, BlockActionResponse, ApiError, BlockAction } from '@/types/api';
+import { getOpenAiClient } from '@/lib/api/openAiClient';
+import { parseString, validatePrompt } from '@/lib/utils/validation';
 
 // Build action-specific prompt based on action type
 function buildActionPrompt(
@@ -42,9 +43,9 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body: BlockActionRequest = await request.json();
-    const action = typeof body?.action === 'string' ? body.action.trim() : '';
-    const blockText = typeof body?.blockText === 'string' ? body.blockText.trim() : '';
-    const prompt = typeof body?.prompt === 'string' ? body.prompt.trim() : '';
+    const action = parseString(body?.action);
+    const blockText = parseString(body?.blockText);
+    const prompt = parseString(body?.prompt);
 
     // Validation: Required fields
     if (!action || !blockText) {
@@ -62,14 +63,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validation: OpenAI API key
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json<ApiError>(
-        { error: 'Missing OpenAI API key configuration.' },
-        { status: 500 }
-      );
-    }
-
     // Build action-specific prompt
     const actionPrompt = buildActionPrompt(action as BlockAction, blockText, prompt);
 
@@ -80,20 +73,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validation: Combined prompt length
-    if (actionPrompt.length > 4000) {
+    // Validate combined prompt length
+    const validation = validatePrompt(actionPrompt);
+    if (!validation.valid) {
       return NextResponse.json<ApiError>(
         { error: 'That request is a bit too long. Please shorten it.' },
         { status: 400 }
       );
     }
 
-    // Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      timeout: 60000, // 60 seconds (default is 10 minutes)
-      maxRetries: 2,
-    });
+    // Initialize OpenAI client (throws if not configured)
+    const openai = getOpenAiClient();
 
     // Call OpenAI API with lower temperature for consistency
     const completion = await openai.chat.completions.create({
@@ -116,6 +106,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json<BlockActionResponse>({ text });
   } catch (error: any) {
     console.error('Block action API error:', error);
+
+    // Handle OpenAI configuration errors
+    if (error?.message?.includes('Missing OpenAI API key')) {
+      return NextResponse.json<ApiError>(
+        { error: 'Missing OpenAI API key configuration.' },
+        { status: 500 }
+      );
+    }
 
     // Handle OpenAI specific errors
     if (error?.status) {

@@ -1,0 +1,113 @@
+import type { Page, Locator } from '@playwright/test';
+
+/**
+ * Page Object Model for Landing Page
+ *
+ * Encapsulates interactions with the landing page including:
+ * - Composer input and submission
+ * - Thread list navigation
+ * - Initial prompt submission
+ */
+export class LandingPage {
+  readonly page: Page;
+  readonly composer: Locator;
+  readonly promptInput: Locator;
+  readonly sendButton: Locator;
+  readonly threadList: Locator;
+  readonly threadItems: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.composer = page.locator('form.composer');
+    this.promptInput = this.composer.locator('div#prompt, [role="textbox"]');
+    this.sendButton = this.composer.locator('button[type="submit"]');
+    this.threadList = page.locator('.thread-list, [data-testid="thread-list"]');
+    this.threadItems = page.locator('.thread-item, [role="link"]').filter({ hasText: /.+/ });
+  }
+
+  /**
+   * Navigate to landing page
+   */
+  async goto(): Promise<void> {
+    await this.page.goto('/');
+  }
+
+  /**
+   * Submit a prompt from the landing page
+   * This creates a new thread and navigates to the thread page
+   */
+  async submitFirstPrompt(text: string): Promise<void> {
+    // For contenteditable divs, we need to set textContent directly
+    await this.promptInput.evaluate((el, value) => {
+      el.textContent = value;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }, text);
+    await this.sendButton.click();
+  }
+
+  /**
+   * Type into the prompt input without submitting
+   */
+  async typePrompt(text: string): Promise<void> {
+    await this.promptInput.evaluate((el, value) => {
+      el.textContent = value;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }, text);
+  }
+
+  /**
+   * Click send button
+   */
+  async clickSend(): Promise<void> {
+    await this.sendButton.click();
+  }
+
+  /**
+   * Get all thread items from the thread list
+   */
+  async getThreads(): Promise<Locator> {
+    return this.threadItems;
+  }
+
+  /**
+   * Click on a thread by index (0-based)
+   */
+  async clickThread(index: number): Promise<void> {
+    await this.threadItems.nth(index).click();
+  }
+
+  /**
+   * Click on a thread by title
+   */
+  async clickThreadByTitle(title: string): Promise<void> {
+    await this.page.locator('.thread-item, [role="link"]', { hasText: title }).first().click();
+  }
+
+  /**
+   * Get thread count
+   */
+  async getThreadCount(): Promise<number> {
+    return await this.threadItems.count();
+  }
+
+  /**
+   * Check if composer is visible
+   */
+  async isComposerVisible(): Promise<boolean> {
+    return await this.composer.isVisible();
+  }
+
+  /**
+   * Check if send button is disabled
+   */
+  async isSendDisabled(): Promise<boolean> {
+    return await this.sendButton.isDisabled();
+  }
+
+  /**
+   * Wait for navigation to thread page
+   */
+  async waitForThreadNavigation(): Promise<void> {
+    await this.page.waitForURL(/\/t\/.+/);
+  }
+}

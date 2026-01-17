@@ -11,6 +11,7 @@ export interface UISlice {
   selectedBlockId: string | null;
   hasInitialResponse: boolean;
   isAwaitingResponse: boolean;
+  error: string | null;
 
   // Actions
   setMode: (mode: AppMode) => void;
@@ -18,6 +19,7 @@ export interface UISlice {
   clearSelectedBlock: () => void;
   setHasInitialResponse: (value: boolean) => void;
   setAwaitingResponse: (value: boolean) => void;
+  setError: (error: string | null) => void;
 }
 
 export const uiSlice: StateCreator<
@@ -30,6 +32,7 @@ export const uiSlice: StateCreator<
   selectedBlockId: null,
   hasInitialResponse: false,
   isAwaitingResponse: false,
+  error: null,
 
   setMode: (mode) => {
     const result = stateFns.setMode(get(), mode);
@@ -59,5 +62,9 @@ export const uiSlice: StateCreator<
 
   setAwaitingResponse: (value) => {
     set({ isAwaitingResponse: value });
+  },
+
+  setError: (error) => {
+    set({ error });
   },
 });

@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { threadSlice, ThreadSlice } from './slices/threadSlice';
 import { blockSlice, BlockSlice } from './slices/blockSlice';
 import { uiSlice, UISlice } from './slices/uiSlice';
@@ -15,17 +15,41 @@ import { Message } from '@/types/message';
 
 export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice;
 
+// Check if running in test mode (for E2E tests)
+const isTestMode = typeof window !== 'undefined' &&
+  ((window as any).__TEST_MODE__ === true ||
+   process.env.NEXT_PUBLIC_TEST_MODE === 'true');
+
 /**
  * Main store hook
  * Usage: const { threads, addUserMessage } = useStore();
+ *
+ * In test mode, data persists to sessionStorage to support navigation tests
  */
 export const useStore = create<StoreState>()(
   devtools(
-    (...args) => ({
-      ...threadSlice(...args),
-      ...blockSlice(...args),
-      ...uiSlice(...args),
-    }),
+    isTestMode
+      ? persist(
+          (...args) => ({
+            ...threadSlice(...args),
+            ...blockSlice(...args),
+            ...uiSlice(...args),
+          }),
+          {
+            name: 'coo-test-storage',
+            // Only persist critical data needed for navigation tests
+            partialize: (state) => ({
+              threads: state.threads,
+              blocks: state.blocks,
+              activeThreadId: state.activeThreadId,
+            }),
+          }
+        )
+      : (...args) => ({
+          ...threadSlice(...args),
+          ...blockSlice(...args),
+          ...uiSlice(...args),
+        }),
     {
       name: 'coo-store',
       enabled: process.env.NODE_ENV === 'development',

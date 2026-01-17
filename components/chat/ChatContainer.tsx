@@ -72,9 +72,11 @@ export function ChatContainer({
     setPrompt,
     handleSubmit,
     isSubmitting,
-    error: composerError,
     handleBlockAction,
   } = useComposer();
+
+  // Error state from store (persists across navigation)
+  const composerError = useStore((state) => state.error);
 
   // Block selection hook
   const { selectedBlockId, selectBlock, clearSelection } = useBlockSelection();

@@ -1,0 +1,113 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  e2e-tests:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium]
+        # Optionally test on multiple browsers: [chromium, firefox, webkit]
+        # For faster CI, we only test on chromium by default
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_TEST_MODE: true
+          OPENAI_API_KEY: test_mock_key
+
+      - name: Run E2E tests
+        run: npm run test:e2e -- --project=${{ matrix.browser }} --workers=1
+        env:
+          NEXT_PUBLIC_TEST_MODE: true
+          OPENAI_API_KEY: test_mock_key
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 7
+
+  # Optional: Run tests on multiple browsers in parallel
+  # Uncomment to enable cross-browser testing
+  # e2e-tests-cross-browser:
+  #   timeout-minutes: 20
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request'
+  #
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       browser: [firefox, webkit]
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Install Playwright browsers
+  #       run: npx playwright install --with-deps ${{ matrix.browser }}
+  #
+  #     - name: Build application
+  #       run: npm run build
+  #       env:
+  #         NEXT_PUBLIC_TEST_MODE: true
+  #         OPENAI_API_KEY: test_mock_key
+  #
+  #     - name: Run E2E tests
+  #       run: npm run test:e2e -- --project=${{ matrix.browser }} --workers=1
+  #       env:
+  #         NEXT_PUBLIC_TEST_MODE: true
+  #         OPENAI_API_KEY: test_mock_key
+  #         CI: true
+  #
+  #     - name: Upload Playwright report
+  #       uses: actions/upload-artifact@v4
+  #       if: failure()
+  #       with:
+  #         name: playwright-report-${{ matrix.browser }}
+  #         path: playwright-report/
+  #         retention-days: 7

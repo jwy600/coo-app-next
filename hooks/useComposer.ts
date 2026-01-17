@@ -30,7 +30,6 @@ export interface UseComposerReturn {
 
 export function useComposer(): UseComposerReturn {
   const [prompt, setPrompt] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
   // Store state
   const selectedBlockId = useStore((state) => state.selectedBlockId);
@@ -46,6 +45,8 @@ export function useComposer(): UseComposerReturn {
   const updateThreadTitle = useStore((state) => state.updateThreadTitle);
   const isSubmitting = useStore((state) => state.isAwaitingResponse);
   const setAwaitingResponse = useStore((state) => state.setAwaitingResponse);
+  const error = useStore((state) => state.error);
+  const setError = useStore((state) => state.setError);
 
   /**
    * Clear prompt and error

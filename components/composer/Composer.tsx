@@ -49,6 +49,7 @@ export function Composer({
           onSelectionCapture={onSelectionCapture}
           onSubmit={() => onSubmit(new Event('submit') as any)}
           disabled={disabled}
+          mode={mode}
         />
         <Button type="submit" variant="primary" disabled={disabled} className="md:mb-[2px]">
           <span>Send</span>

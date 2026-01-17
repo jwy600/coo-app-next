@@ -16,6 +16,7 @@ interface PromptInputProps {
   onSubmit?: () => void;
   placeholder?: string;
   disabled?: boolean;
+  mode?: 'landing' | 'chat';
 }
 
 export function PromptInput({
@@ -23,9 +24,16 @@ export function PromptInput({
   onChange,
   onSelectionCapture,
   onSubmit,
-  placeholder = 'Explain Cobb-Douglas function and its implications of capital/labour substitution.',
+  placeholder,
   disabled = false,
+  mode = 'landing',
 }: PromptInputProps) {
+  // Set default placeholder based on mode
+  const defaultPlaceholder = mode === 'landing'
+    ? 'Explain Cobb-Douglas function and its implications of capital/labour substitution.'
+    : 'Can you find a counter argument about this statement?';
+
+  const finalPlaceholder = placeholder || defaultPlaceholder;
   const inputRef = useRef<HTMLDivElement>(null);
 
   // Sync value to DOM (preserve cursor position)
@@ -72,7 +80,7 @@ export function PromptInput({
       className={`min-h-[48px] px-4 py-3 border border-border rounded-lg bg-white overflow-auto focus:outline-none focus:ring-2 focus:ring-blue-500 text-[0.9375rem] leading-[1.5] ${
         disabled ? 'bg-gray-100 cursor-not-allowed' : ''
       }`}
-      data-placeholder={placeholder}
+      data-placeholder={finalPlaceholder}
       role="textbox"
       aria-multiline="true"
       aria-label="Prompt"

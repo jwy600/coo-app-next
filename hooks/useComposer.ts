@@ -137,16 +137,18 @@ export function useComposer(): UseComposerReturn {
         const { message: userMessage, blocks: userBlocks } = addUserMessage(trimmedPrompt);
 
         // Update thread title to first user message (truncate to 50 chars)
+        // IMPORTANT: Get fresh activeThreadId from store after createThread()
+        const currentThreadId = useStore.getState().activeThreadId;
         const threadTitle = trimmedPrompt.length > 50
           ? trimmedPrompt.substring(0, 50) + '...'
           : trimmedPrompt;
-        updateThreadTitle(activeThreadId, threadTitle);
+        updateThreadTitle(currentThreadId, threadTitle);
 
         // Clear prompt immediately (optimistic)
         setPrompt('');
 
-        // Fetch AI response
-        const response = await fetchChatCompletion(trimmedPrompt, activeThreadId);
+        // Fetch AI response (use fresh thread ID)
+        const response = await fetchChatCompletion(trimmedPrompt, currentThreadId);
 
         // Parse response into blocks
         const parsedBlocks = splitIntoBlocks(response.text);

@@ -119,6 +119,14 @@ export function ChatContainer({
     };
   }, [selectedBlockId, clearSelection]);
 
+  // Clear prompt when exiting block mode (returning to chat mode)
+  useEffect(() => {
+    // When selectedBlockId becomes null, we're exiting block mode
+    if (selectedBlockId === null) {
+      setPrompt('');
+    }
+  }, [selectedBlockId, setPrompt]);
+
   // Handle rewrite action (special case - modifies block directly)
   const handleRewrite = async (blockId: string) => {
     const block = blocks.find((b) => b.id === blockId);

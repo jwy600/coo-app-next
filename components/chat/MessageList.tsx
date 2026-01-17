@@ -41,7 +41,11 @@ export function MessageList({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages
+  // Skip auto-scroll in block mode (when a block is selected) so user can see the selected block
   useEffect(() => {
+    // Don't scroll if in block mode
+    if (selectedBlockId) return;
+
     if (containerRef.current) {
       const lastChild = containerRef.current.lastElementChild;
       if (lastChild) {
@@ -50,6 +54,7 @@ export function MessageList({
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, isPending, error]);
 
   // Create block lookup map

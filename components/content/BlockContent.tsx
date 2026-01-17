@@ -8,7 +8,14 @@
 import React from 'react';
 import { BlockType } from '@/types/block';
 import { parseInlineMarkdown, MarkdownSegment } from '@/lib/rendering/markdown';
-import { parseListItems, parseHeading, extractCodeContent, getCodeLanguage } from '@/lib/rendering/blocks';
+import {
+  parseListItems,
+  parseHeading,
+  extractCodeContent,
+  getCodeLanguage,
+  isOrderedListItem,
+  isUnorderedListItem,
+} from '@/lib/rendering/blocks';
 import { Math } from './Math';
 
 export interface BlockContentProps {
@@ -90,16 +97,23 @@ function renderList(text: string, className?: string): React.ReactElement {
     return <div className={className}>{text}</div>;
   }
 
-  // Determine if ordered or unordered based on first item
-  const isOrdered = /^\d+\.$/.test(items[0].marker);
-  const ListTag = isOrdered ? 'ol' : 'ul';
+  const hasOrdered = items.some((item) => isOrderedListItem(item.marker));
+  const hasUnordered = items.some((item) => isUnorderedListItem(item.marker));
+  const ListTag = hasOrdered && !hasUnordered ? 'ol' : 'ul';
 
   return (
     <ListTag className={`doc-list ${className || ''}`}>
       {items.map((item, index) => {
         const segments = parseInlineMarkdown(item.content);
+        const listStyleType = isOrderedListItem(item.marker) ? 'decimal' : 'disc';
         return (
-          <li key={index} style={{ marginLeft: `${item.indent * 0.5}rem` }}>
+          <li
+            key={index}
+            style={{
+              marginLeft: `${item.indent * 0.5}rem`,
+              listStyleType,
+            }}
+          >
             {segments.map((segment, segIndex) => renderSegment(segment, segIndex))}
           </li>
         );

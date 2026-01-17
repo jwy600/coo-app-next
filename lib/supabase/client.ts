@@ -41,3 +41,41 @@ export const getSupabaseClient = (): SupabaseClient | null => {
 export const isSupabaseConfigured = (): boolean => {
   return getSupabaseClient() !== null;
 };
+
+/**
+ * Execute a Supabase operation with automatic client check and error handling
+ *
+ * @param operation - Async function that receives the Supabase client
+ * @param fallbackValue - Value to return if client is not available or operation fails
+ * @param errorContext - Context string for error logging
+ * @returns The result of the operation or the fallback value
+ *
+ * @example
+ * const threads = await withSupabaseClient(
+ *   async (client) => {
+ *     const { data, error } = await client.from('threads').select('*');
+ *     if (error) throw error;
+ *     return data;
+ *   },
+ *   [],
+ *   'loading threads'
+ * );
+ */
+export const withSupabaseClient = async <T>(
+  operation: (client: SupabaseClient) => Promise<T>,
+  fallbackValue: T,
+  errorContext: string
+): Promise<T> => {
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    return fallbackValue;
+  }
+
+  try {
+    return await operation(supabase);
+  } catch (error) {
+    console.error(`Error ${errorContext}:`, error);
+    return fallbackValue;
+  }
+};

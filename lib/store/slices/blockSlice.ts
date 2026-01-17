@@ -4,6 +4,7 @@
 
 import { StateCreator } from 'zustand';
 import * as stateFns from '@/lib/state';
+import { isTestMode } from '@/lib/utils/testMode';
 import { persistBlockUpdate } from '@/lib/supabase/blocks';
 import { Block } from '@/types/block';
 import { AppState } from '@/types/state';
@@ -25,12 +26,6 @@ export const blockSlice: StateCreator<
   [],
   BlockSlice
 > = (set, get) => {
-  // Helper to check test mode
-  const isTestMode = () =>
-    typeof window !== 'undefined' &&
-    ((window as any).__TEST_MODE__ === true ||
-     process.env.NEXT_PUBLIC_TEST_MODE === 'true');
-
   return {
     blocks: [],
 

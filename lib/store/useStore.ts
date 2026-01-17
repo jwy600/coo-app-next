@@ -12,13 +12,9 @@ import { AppState } from '@/types/state';
 import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
+import { isTestMode } from '@/lib/utils/testMode';
 
 export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice;
-
-// Check if running in test mode (for E2E tests)
-const isTestMode = typeof window !== 'undefined' &&
-  ((window as any).__TEST_MODE__ === true ||
-   process.env.NEXT_PUBLIC_TEST_MODE === 'true');
 
 /**
  * Main store hook
@@ -28,7 +24,7 @@ const isTestMode = typeof window !== 'undefined' &&
  */
 export const useStore = create<StoreState>()(
   devtools(
-    isTestMode
+    isTestMode()
       ? persist(
           (...args) => ({
             ...threadSlice(...args),

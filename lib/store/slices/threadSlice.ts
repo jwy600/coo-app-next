@@ -6,6 +6,7 @@ import { StateCreator } from 'zustand';
 import * as stateFns from '@/lib/state';
 import { idFactory } from '@/lib/utils/idFactory';
 import { nowFactory } from '@/lib/utils/nowFactory';
+import { isTestMode } from '@/lib/utils/testMode';
 import { persistThreadSnapshot, updateThreadMetadata } from '@/lib/supabase/threads';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
@@ -61,11 +62,7 @@ export const threadSlice: StateCreator<
     set({ threads: result.threads });
 
     // Skip database persistence in test mode
-    const isTestMode = typeof window !== 'undefined' &&
-      ((window as any).__TEST_MODE__ === true ||
-       process.env.NEXT_PUBLIC_TEST_MODE === 'true');
-
-    if (isTestMode) return;
+    if (isTestMode()) return;
 
     // Async persistence (non-blocking)
     const thread = stateFns.getThreadById(result, threadId);
@@ -92,11 +89,7 @@ export const threadSlice: StateCreator<
     });
 
     // Skip database persistence in test mode
-    const isTestMode = typeof window !== 'undefined' &&
-      ((window as any).__TEST_MODE__ === true ||
-       process.env.NEXT_PUBLIC_TEST_MODE === 'true');
-
-    if (!isTestMode) {
+    if (!isTestMode()) {
       // Async persistence (non-blocking)
       const activeThread = stateFns.getThreadById(
         result.state,
@@ -147,11 +140,7 @@ export const threadSlice: StateCreator<
     });
 
     // Skip database persistence in test mode
-    const isTestMode = typeof window !== 'undefined' &&
-      ((window as any).__TEST_MODE__ === true ||
-       process.env.NEXT_PUBLIC_TEST_MODE === 'true');
-
-    if (!isTestMode) {
+    if (!isTestMode()) {
       // Async persistence (non-blocking)
       const activeThread = stateFns.getThreadById(
         result.state,

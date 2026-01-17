@@ -31,7 +31,7 @@ export function AssistantMessage({
   return (
     <div className="flex gap-3">
       <span className="text-sm font-medium text-gray-700">Coo</span>
-      <div className="flex-1">
+      <div className="flex-1 assistant-response">
         <BlockStack
           blocks={blocks}
           selectedBlockId={selectedBlockId}

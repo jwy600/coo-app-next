@@ -45,6 +45,8 @@
   .doc-paragraph {
     margin-bottom: 1rem;
     line-height: 1.6;
+    font-size: 0.95rem;
+    max-width: 100%;
   }
 
   .doc-heading {
@@ -53,18 +55,40 @@
     margin-bottom: 0.75rem;
   }
 
+  h1.doc-heading {
+    font-size: 1.5rem;
+  }
+
+  h2.doc-heading {
+    font-size: 1.35rem;
+  }
+
+  h3.doc-heading {
+    font-size: 1.2rem;
+  }
+
+  h4.doc-heading {
+    font-size: 1.1rem;
+  }
+
+  h5.doc-heading,
+  h6.doc-heading {
+    font-size: 1rem;
+  }
+
   .doc-list {
     margin-bottom: 1rem;
     padding-left: 1.5rem;
     list-style-position: outside;
+    font-size: 0.95rem;
   }
 
   ul.doc-list {
-    list-style-type: disc;
+    list-style: disc;
   }
 
   ol.doc-list {
-    list-style-type: decimal;
+    list-style: decimal;
   }
 
   .doc-list li {
@@ -77,11 +101,16 @@
     border-radius: 0.5rem;
     overflow-x: auto;
     margin-bottom: 1rem;
+    font-size: 0.875rem;
   }
 
   .doc-code code {
     font-family: 'Courier New', monospace;
-    font-size: 0.875rem;
+    font-size: inherit;
+  }
+
+  .assistant-response {
+    @apply rounded-2xl bg-gray-50 px-6 py-5;
   }
 
   /* Landing page layout */

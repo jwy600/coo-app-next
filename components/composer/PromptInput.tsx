@@ -61,7 +61,20 @@ export function PromptInput({
   };
 
   const handleSelectionCapture = () => {
-    if (!onSelectionCapture) return;
+    if (!onSelectionCapture || !inputRef.current) return;
+
+    // Check if entire text is selected (Ctrl+A / Cmd+A behavior)
+    // If so, skip creating a highlight chip - user probably wants to delete/replace text
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim()) {
+      const fullText = (inputRef.current.textContent || '').trim();
+      const selectedText = selection.toString().trim();
+
+      // If selected text equals full text, it's likely Ctrl+A - don't create chip
+      if (selectedText === fullText) {
+        return;
+      }
+    }
 
     // Pass the input element to the handler from useTextSelection
     // The hook will handle all the DOM manipulation

@@ -160,8 +160,8 @@ export function ChatContainer({
       const toggleRewrite = useStore.getState().toggleRewrite;
       toggleRewrite(blockId, result.text);
 
-      // Clear selections after rewrite
-      clearSelectionsFromHook();
+      // DON'T clear selections - they should persist until user exits block mode
+      // clearSelectionsFromHook(); ← REMOVED
     } catch (error) {
       console.error('Rewrite failed:', error);
     }

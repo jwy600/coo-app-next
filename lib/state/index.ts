@@ -52,12 +52,40 @@ export const setMode = (state: AppState, mode: AppMode): AppState => {
 };
 
 /**
- * Clear selected block
+ * Clear selected block and reset its session state
+ *
+ * When exiting block mode, we need to:
+ * 1. Clear selectedBlockId (exit block mode)
+ * 2. Clear the block's session state (selections, isRewritten, prevText)
+ *
+ * This ensures each block mode session is independent - undo only works
+ * within the current session, and once you exit, the rewrite becomes permanent.
  */
-export const clearSelectedBlock = (state: AppState): AppState => ({
-  ...state,
-  selectedBlockId: null,
-});
+export const clearSelectedBlock = (state: AppState): AppState => {
+  const blockId = state.selectedBlockId;
+
+  if (!blockId) {
+    return { ...state, selectedBlockId: null };
+  }
+
+  // Clear the block's session state
+  const blocks = state.blocks.map((block) => {
+    if (block.id !== blockId) return block;
+
+    return {
+      ...block,
+      selections: [],           // Clear selections
+      isRewritten: false,       // Clear session rewrite flag
+      prevText: null,           // Clear session backup (no more undo)
+    };
+  });
+
+  return {
+    ...state,
+    selectedBlockId: null,
+    blocks,
+  };
+};
 
 /**
  * Set hasInitialResponse flag

@@ -46,7 +46,10 @@ export const uiSlice: StateCreator<
 
   clearSelectedBlock: () => {
     const result = stateFns.clearSelectedBlock(get());
-    set({ selectedBlockId: result.selectedBlockId });
+    set({
+      selectedBlockId: result.selectedBlockId,
+      blocks: result.blocks,  // Update blocks to clear session state
+    });
   },
 
   setHasInitialResponse: (value) => {

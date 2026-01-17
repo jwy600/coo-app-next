@@ -28,6 +28,20 @@
   .katex-display {
     @apply my-4;
   }
+
+  /* Landing page layout */
+  .landing-layout {
+    @apply flex flex-col;
+  }
+
+  .landing-content {
+    @apply flex-shrink-0;
+  }
+
+  /* Composer floating shadow - matches legacy */
+  .composer-shadow {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  }
 }
 
 @layer utilities {

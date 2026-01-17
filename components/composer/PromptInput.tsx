@@ -56,7 +56,7 @@ export function PromptInput({
       onInput={handleInput}
       onMouseUp={handleSelectionCapture}
       onKeyUp={handleSelectionCapture}
-      className={`min-h-[2.5rem] px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      className={`min-h-[48px] px-4 py-3 border border-border rounded-lg bg-white overflow-auto focus:outline-none focus:ring-2 focus:ring-blue-500 text-[0.9375rem] leading-[1.5] ${
         disabled ? 'bg-gray-100 cursor-not-allowed' : ''
       }`}
       data-placeholder={placeholder}

@@ -38,34 +38,32 @@ export function Composer({
   return (
     <form
       onSubmit={onSubmit}
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-border p-4"
+      className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh]"
     >
-      <div className="max-w-chat mx-auto">
-        <ComposerLabel mode={mode} hasBlockSelected={hasBlockSelected} />
+      <ComposerLabel mode={mode} hasBlockSelected={hasBlockSelected} />
 
-        <div className="flex gap-2">
-          <PromptInput
-            value={prompt}
-            onChange={onPromptChange}
-            onSelectionCapture={onSelectionCapture}
-            disabled={disabled}
-          />
-          <Button type="submit" variant="primary" disabled={disabled}>
-            <span>Send</span>
-            <span aria-hidden="true" className="ml-1">
-              →
-            </span>
-          </Button>
-        </div>
-
-        {hasBlockSelected && (
-          <div className="mt-2">
-            <BlockControls onAction={onBlockAction} disabled={disabled} />
-          </div>
-        )}
-
-        <ComposerHint />
+      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <PromptInput
+          value={prompt}
+          onChange={onPromptChange}
+          onSelectionCapture={onSelectionCapture}
+          disabled={disabled}
+        />
+        <Button type="submit" variant="primary" disabled={disabled} className="md:mb-[2px]">
+          <span>Send</span>
+          <span aria-hidden="true" className="ml-1">
+            →
+          </span>
+        </Button>
       </div>
+
+      {hasBlockSelected && (
+        <div className="mt-2">
+          <BlockControls onAction={onBlockAction} disabled={disabled} />
+        </div>
+      )}
+
+      <ComposerHint />
     </form>
   );
 }

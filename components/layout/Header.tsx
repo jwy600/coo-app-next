@@ -15,9 +15,14 @@ interface HeaderProps {
 
 export function Header({ mode }: HeaderProps) {
   const showDetails = mode === 'landing';
+  const isSticky = mode === 'chat';
 
   return (
-    <header className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4">
+    <header
+      className={`bg-white border-b border-border px-6 py-4 ${
+        isSticky ? 'sticky top-0 z-10' : ''
+      }`}
+    >
       <Logo />
 
       {showDetails && (

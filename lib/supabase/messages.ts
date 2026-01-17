@@ -2,7 +2,7 @@
  * Message CRUD operations for Supabase
  */
 
-import { getSupabaseClient } from './client';
+import { withSupabaseClient } from './client';
 import { DbMessage } from './types';
 import { Message } from '@/types/message';
 
@@ -10,29 +10,22 @@ import { Message } from '@/types/message';
  * Load all messages for a thread from Supabase
  */
 export const loadMessagesForThread = async (threadId: string): Promise<Message[]> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return [];
-  }
+  return withSupabaseClient(
+    async (supabase) => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('thread_id', threadId)
+        .order('created_at', { ascending: true });
 
-  try {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('thread_id', threadId)
-      .order('created_at', { ascending: true });
+      if (error) throw error;
 
-    if (error) {
-      console.error('Error loading messages:', error);
-      return [];
-    }
-
-    // Convert DB format to app format
-    return (data as DbMessage[]).map(dbMessageToMessage);
-  } catch (error) {
-    console.error('Exception loading messages:', error);
-    return [];
-  }
+      // Convert DB format to app format
+      return (data as DbMessage[]).map(dbMessageToMessage);
+    },
+    [],
+    `loading messages for thread ${threadId}`
+  );
 };
 
 /**
@@ -43,28 +36,23 @@ export const persistMessage = async (
   message: Message,
   threadId: string
 ): Promise<void> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return;
-  }
+  return withSupabaseClient(
+    async (supabase) => {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          id: message.id,
+          thread_id: threadId,
+          role: message.role,
+          created_at: new Date(message.createdAt).toISOString(),
+          meta: message.meta || {},
+        });
 
-  try {
-    const { error } = await supabase
-      .from('messages')
-      .insert({
-        id: message.id,
-        thread_id: threadId,
-        role: message.role,
-        created_at: new Date(message.createdAt).toISOString(),
-        meta: message.meta || {},
-      });
-
-    if (error) {
-      console.error('Error persisting message:', error);
-    }
-  } catch (error) {
-    console.error('Exception persisting message:', error);
-  }
+      if (error) throw error;
+    },
+    undefined,
+    `persisting message ${message.id}`
+  );
 };
 
 /**

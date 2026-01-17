@@ -187,14 +187,6 @@ describe('Store Integration Tests', () => {
       const store = useStore.getState();
 
       // Simulate loading thread from database
-      const loadedThread = {
-        id: 'thread-from-db',
-        title: 'Existing Thread',
-        createdAt: Date.now() - 1000000,
-        updatedAt: Date.now() - 500000,
-        messages: [],
-      };
-
       const loadedMessages = [
         {
           id: 'msg-1',
@@ -213,6 +205,14 @@ describe('Store Integration Tests', () => {
           meta: {},
         },
       ];
+
+      const loadedThread = {
+        id: 'thread-from-db',
+        title: 'Existing Thread',
+        createdAt: Date.now() - 1000000,
+        updatedAt: Date.now() - 500000,
+        messages: loadedMessages,
+      };
 
       const loadedBlocks = [
         {

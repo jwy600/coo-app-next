@@ -106,14 +106,6 @@ describe('useStore', () => {
     it('should merge thread from Supabase', () => {
       const { mergeThreadFromSupabase } = useStore.getState();
 
-      const thread = {
-        id: 'thread-from-db',
-        title: 'Loaded Thread',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        messages: [],
-      };
-
       const messages = [
         {
           id: 'msg-1',
@@ -124,6 +116,14 @@ describe('useStore', () => {
           meta: {},
         },
       ];
+
+      const thread = {
+        id: 'thread-from-db',
+        title: 'Loaded Thread',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: messages,
+      };
 
       const blocks = [
         {

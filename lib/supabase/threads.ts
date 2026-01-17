@@ -2,7 +2,7 @@
  * Thread CRUD operations for Supabase
  */
 
-import { getSupabaseClient } from './client';
+import { withSupabaseClient } from './client';
 import { DbThread, ThreadPersistData } from './types';
 import { Thread } from '@/types/thread';
 
@@ -11,56 +11,42 @@ import { Thread } from '@/types/thread';
  * Returns empty array if Supabase is not configured
  */
 export const loadAllThreads = async (): Promise<Thread[]> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return [];
-  }
+  return withSupabaseClient(
+    async (supabase) => {
+      const { data, error } = await supabase
+        .from('threads')
+        .select('*')
+        .order('updated_at', { ascending: false });
 
-  try {
-    const { data, error } = await supabase
-      .from('threads')
-      .select('*')
-      .order('updated_at', { ascending: false });
+      if (error) throw error;
 
-    if (error) {
-      console.error('Error loading threads:', error);
-      return [];
-    }
-
-    // Convert DB format to app format
-    return (data as DbThread[]).map(dbThreadToThread);
-  } catch (error) {
-    console.error('Exception loading threads:', error);
-    return [];
-  }
+      // Convert DB format to app format
+      return (data as DbThread[]).map(dbThreadToThread);
+    },
+    [],
+    'loading threads'
+  );
 };
 
 /**
  * Load a single thread from Supabase
  */
 export const loadThreadFromSupabase = async (threadId: string): Promise<Thread | null> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return null;
-  }
+  return withSupabaseClient(
+    async (supabase) => {
+      const { data, error } = await supabase
+        .from('threads')
+        .select('*')
+        .eq('id', threadId)
+        .single();
 
-  try {
-    const { data, error } = await supabase
-      .from('threads')
-      .select('*')
-      .eq('id', threadId)
-      .single();
+      if (error) throw error;
 
-    if (error) {
-      console.error('Error loading thread:', error);
-      return null;
-    }
-
-    return dbThreadToThread(data as DbThread);
-  } catch (error) {
-    console.error('Exception loading thread:', error);
-    return null;
-  }
+      return dbThreadToThread(data as DbThread);
+    },
+    null,
+    `loading thread ${threadId}`
+  );
 };
 
 /**
@@ -68,69 +54,58 @@ export const loadThreadFromSupabase = async (threadId: string): Promise<Thread |
  * Used after user message or assistant message
  */
 export const persistThreadSnapshot = async (data: ThreadPersistData): Promise<void> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return;
-  }
+  return withSupabaseClient(
+    async (supabase) => {
+      // 1. Upsert thread
+      const { error: threadError } = await supabase
+        .from('threads')
+        .upsert({
+          id: data.threadId,
+          title: data.title,
+          created_at: data.createdAt,
+          updated_at: data.updatedAt,
+        });
 
-  try {
-    // 1. Upsert thread
-    const { error: threadError } = await supabase
-      .from('threads')
-      .upsert({
-        id: data.threadId,
-        title: data.title,
-        created_at: data.createdAt,
-        updated_at: data.updatedAt,
-      });
+      if (threadError) throw threadError;
 
-    if (threadError) {
-      console.error('Error persisting thread:', threadError);
-      return;
-    }
+      // 2. Insert message
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          id: data.message.id,
+          thread_id: data.threadId,
+          role: data.message.role,
+          created_at: new Date(data.message.createdAt).toISOString(),
+          meta: data.message.meta || {},
+        });
 
-    // 2. Insert message
-    const { error: messageError } = await supabase
-      .from('messages')
-      .insert({
-        id: data.message.id,
-        thread_id: data.threadId,
-        role: data.message.role,
-        created_at: new Date(data.message.createdAt).toISOString(),
-        meta: data.message.meta || {},
-      });
+      if (messageError) throw messageError;
 
-    if (messageError) {
-      console.error('Error persisting message:', messageError);
-      return;
-    }
+      // 3. Insert blocks
+      if (data.blocks.length > 0) {
+        const blocksToInsert = data.blocks.map((block, index) => ({
+          id: block.id,
+          thread_id: data.threadId,
+          message_id: block.messageId,
+          position: index,
+          type: block.type,
+          text: block.text,
+          edited: block.edited,
+          selections: block.selections,
+          prev_text: block.prevText,
+          is_rewritten: block.isRewritten,
+        }));
 
-    // 3. Insert blocks
-    if (data.blocks.length > 0) {
-      const blocksToInsert = data.blocks.map((block, index) => ({
-        id: block.id,
-        thread_id: data.threadId,
-        message_id: block.messageId,
-        position: index,
-        type: block.type,
-        text: block.text,
-        edited: block.edited,
-        selections: block.selections,
-        prev_text: block.prevText,
-        is_rewritten: block.isRewritten,
-      }));
+        const { error: blocksError } = await supabase
+          .from('blocks')
+          .insert(blocksToInsert);
 
-      const { error: blocksError } = await supabase
-        .from('blocks')
-        .insert(blocksToInsert);
-
-      if (blocksError) {
-        console.error('Error persisting blocks:', blocksError);
+        if (blocksError) throw blocksError;
       }
-    }
-  } catch (error) {
-    console.error('Exception persisting thread snapshot:', error);
-  }
+    },
+    undefined,
+    'persisting thread snapshot'
+  );
 };
 
 /**
@@ -141,26 +116,21 @@ export const updateThreadMetadata = async (
   title: string,
   updatedAt: string
 ): Promise<void> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return;
-  }
+  return withSupabaseClient(
+    async (supabase) => {
+      const { error } = await supabase
+        .from('threads')
+        .update({
+          title,
+          updated_at: updatedAt,
+        })
+        .eq('id', threadId);
 
-  try {
-    const { error } = await supabase
-      .from('threads')
-      .update({
-        title,
-        updated_at: updatedAt,
-      })
-      .eq('id', threadId);
-
-    if (error) {
-      console.error('Error updating thread metadata:', error);
-    }
-  } catch (error) {
-    console.error('Exception updating thread metadata:', error);
-  }
+      if (error) throw error;
+    },
+    undefined,
+    `updating thread metadata for ${threadId}`
+  );
 };
 
 /**

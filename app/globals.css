@@ -364,7 +364,9 @@
   }
 
   .doc-block.is-selected .doc-content > .doc-paragraph,
-  .doc-block.is-selected .doc-content > .doc-heading {
+  .doc-block.is-selected .doc-content > .doc-heading,
+  .doc-block.is-selected .doc-content > .doc-list,
+  .doc-block.is-selected .doc-content > .doc-code {
     background: var(--gray-200);
     border-radius: 4px;
     padding: 4px 8px;

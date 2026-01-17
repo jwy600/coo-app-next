@@ -10,18 +10,8 @@
 
 'use client';
 
-import dynamicImport from 'next/dynamic';
 import { use } from 'react';
-
-// Disable SSR for ThreadPageClient to prevent hydration mismatches
-const ThreadPageClient = dynamicImport(() => import('./page-client').then(mod => ({ default: mod.ThreadPageClient })), {
-  ssr: false,
-  loading: () => (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-gray-500">Loading...</div>
-    </div>
-  ),
-});
+import { ThreadPageClient } from './page-client';
 
 export const dynamic = 'force-dynamic'; // Always fetch fresh data
 

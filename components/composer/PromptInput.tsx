@@ -35,16 +35,49 @@ export function PromptInput({
 
   const finalPlaceholder = placeholder || defaultPlaceholder;
   const inputRef = useRef<HTMLDivElement>(null);
+  const isUserInputRef = useRef<boolean>(false);
 
   // Sync value to DOM (preserve cursor position)
   useEffect(() => {
-    if (inputRef.current && inputRef.current.textContent !== value) {
+    if (!inputRef.current) return;
+
+    // Don't sync if this is a user input change - it would reset cursor position
+    if (isUserInputRef.current) {
+      isUserInputRef.current = false;
+      return;
+    }
+
+    // Only sync if value is actually different (external change)
+    const currentText = inputRef.current.textContent || '';
+    if (currentText.trim() !== value.trim()) {
+      // Save cursor position
+      const selection = window.getSelection();
+      const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+      const offset = range?.startOffset || 0;
+
+      // Update content
       inputRef.current.textContent = value;
+
+      // Restore cursor position
+      if (selection && inputRef.current.firstChild) {
+        try {
+          const newRange = document.createRange();
+          const textNode = inputRef.current.firstChild;
+          const maxOffset = (textNode.textContent || '').length;
+          newRange.setStart(textNode, Math.min(offset, maxOffset));
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        } catch (e) {
+          // Ignore cursor restoration errors
+        }
+      }
     }
   }, [value]);
 
   const handleInput = () => {
     if (inputRef.current) {
+      isUserInputRef.current = true;
       const text = inputRef.current.textContent || '';
       onChange(text.replace(/\u00a0/g, ' ').trim());
     }

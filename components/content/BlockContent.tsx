@@ -99,6 +99,7 @@ function renderList(text: string, className?: string): React.ReactElement {
   type ListItemNode = {
     content: MarkdownSegment[];
     children: ListNode[];
+    markerNumber?: number;
   };
 
   type ListNode = {
@@ -146,6 +147,7 @@ function renderList(text: string, className?: string): React.ReactElement {
     const node: ListItemNode = {
       content: parseInlineMarkdown(item.content),
       children: [],
+      markerNumber: ordered ? Number.parseInt(item.marker, 10) : undefined,
     };
 
     targetList.items.push(node);
@@ -163,7 +165,7 @@ function renderList(text: string, className?: string): React.ReactElement {
           style={{ listStyleType: node.ordered ? 'decimal' : 'disc' }}
         >
           {node.items.map((item, index) => (
-            <li key={index}>
+            <li key={index} value={node.ordered ? item.markerNumber : undefined}>
               {item.content.map((segment, segIndex) => renderSegment(segment, segIndex))}
               {item.children.length > 0 && renderListNodes(item.children)}
             </li>

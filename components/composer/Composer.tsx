@@ -38,7 +38,7 @@ export function Composer({
   return (
     <form
       onSubmit={onSubmit}
-      className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh]"
+      className="composer fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh]"
     >
       <ComposerLabel mode={mode} hasBlockSelected={hasBlockSelected} />
 

@@ -15,7 +15,7 @@ describe('PendingMessage Component', () => {
 
   it('should render skeleton lines', () => {
     const { container } = render(<PendingMessage />);
-    const skeletonLines = container.querySelectorAll('.animate-pulse-slow');
+    const skeletonLines = container.querySelectorAll('.assistant-skeleton-line');
     expect(skeletonLines.length).toBe(3);
   });
 });

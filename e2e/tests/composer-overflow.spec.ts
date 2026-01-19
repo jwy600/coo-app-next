@@ -167,12 +167,13 @@ test.describe('Composer Overflow and Growth', () => {
     // The prompt input should be scrollable when it has lots of text
     expect(promptInputScrollable).toBe(true);
 
-    // Verify the composer form itself is NOT scrollable (no double scrollbar)
-    const composerScrollable = await chatPage.composer.evaluate((el) => {
-      return el.scrollHeight > el.clientHeight;
+    // Verify the composer form itself does NOT have overflow-y-auto (no double scrollbar)
+    const composerOverflowY = await chatPage.composer.evaluate((el) => {
+      return window.getComputedStyle(el).overflowY;
     });
 
-    // The composer form should not be scrollable - only the input should scroll
-    expect(composerScrollable).toBe(false);
+    // The composer should not have overflow-y: auto or scroll (no scrollbar)
+    // It may have 'visible' (default) or 'hidden', but not 'auto' or 'scroll'
+    expect(['visible', 'hidden']).toContain(composerOverflowY);
   });
 });

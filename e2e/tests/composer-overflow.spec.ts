@@ -159,14 +159,20 @@ test.describe('Composer Overflow and Growth', () => {
     // Verify composer height doesn't exceed 50vh even with block controls
     expect(composerHeight).toBeLessThanOrEqual(maxComposerHeight);
 
-    // Verify composer is scrollable if needed
-    const isScrollable = await chatPage.composer.evaluate((el) => {
+    // Verify the prompt input (not the composer form) is scrollable
+    const promptInputScrollable = await chatPage.promptInput.evaluate((el) => {
       return el.scrollHeight > el.clientHeight;
     });
 
-    // Either the composer fits within bounds or it's scrollable
-    if (composerHeight === maxComposerHeight) {
-      expect(isScrollable).toBe(true);
-    }
+    // The prompt input should be scrollable when it has lots of text
+    expect(promptInputScrollable).toBe(true);
+
+    // Verify the composer form itself is NOT scrollable (no double scrollbar)
+    const composerScrollable = await chatPage.composer.evaluate((el) => {
+      return el.scrollHeight > el.clientHeight;
+    });
+
+    // The composer form should not be scrollable - only the input should scroll
+    expect(composerScrollable).toBe(false);
   });
 });

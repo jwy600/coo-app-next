@@ -22,6 +22,7 @@ playwright/.cache/
 .vercel
 .next/
 dist/
+*.tsbuildinfo
 
 # Logs
 *.log

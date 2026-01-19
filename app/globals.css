@@ -76,7 +76,7 @@
   .thread {
     display: grid;
     gap: 0;
-    padding-bottom: 0px;
+    padding-bottom: calc(50vh + 48px);
   }
 
   .user-message {

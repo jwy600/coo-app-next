@@ -140,10 +140,11 @@ export function useComposer(): UseComposerReturn {
         // Add user message
         const { message: userMessage, blocks: userBlocks } = addUserMessage(trimmedPrompt);
 
+        // IMPORTANT: Get fresh activeThreadId from store (after potential createThread())
+        const currentThreadId = useStore.getState().activeThreadId;
+
         // Update thread title ONLY for the first message (when creating new thread)
         if (isNewThread) {
-          // IMPORTANT: Get fresh activeThreadId from store after createThread()
-          const currentThreadId = useStore.getState().activeThreadId;
           const threadTitle = trimmedPrompt.length > 50
             ? trimmedPrompt.substring(0, 50) + '...'
             : trimmedPrompt;

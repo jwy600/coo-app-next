@@ -131,7 +131,8 @@ export function useComposer(): UseComposerReturn {
 
       try {
         // Create thread if in landing mode
-        if (mode === 'landing') {
+        const isNewThread = mode === 'landing';
+        if (isNewThread) {
           createThread();
           setMode('chat');
         }
@@ -139,13 +140,16 @@ export function useComposer(): UseComposerReturn {
         // Add user message
         const { message: userMessage, blocks: userBlocks } = addUserMessage(trimmedPrompt);
 
-        // Update thread title to first user message (truncate to 50 chars)
-        // IMPORTANT: Get fresh activeThreadId from store after createThread()
+        // IMPORTANT: Get fresh activeThreadId from store (after potential createThread())
         const currentThreadId = useStore.getState().activeThreadId;
-        const threadTitle = trimmedPrompt.length > 50
-          ? trimmedPrompt.substring(0, 50) + '...'
-          : trimmedPrompt;
-        updateThreadTitle(currentThreadId, threadTitle);
+
+        // Update thread title ONLY for the first message (when creating new thread)
+        if (isNewThread) {
+          const threadTitle = trimmedPrompt.length > 50
+            ? trimmedPrompt.substring(0, 50) + '...'
+            : trimmedPrompt;
+          updateThreadTitle(currentThreadId, threadTitle);
+        }
 
         // Clear prompt immediately (optimistic)
         setPrompt('');

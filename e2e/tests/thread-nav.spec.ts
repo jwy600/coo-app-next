@@ -119,6 +119,9 @@ test.describe('Thread Navigation & Persistence', () => {
     // Navigate back to first thread
     await page.goto(thread1Url);
 
+    // Wait for messages to load from sessionStorage
+    await chatPage.waitForBlockCount(2); // Wait for at least 2 blocks (from assistant messages)
+
     // Verify first thread still has 4 messages
     expect(await chatPage.getMessageCount()).toBe(4);
   });

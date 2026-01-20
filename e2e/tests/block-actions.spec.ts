@@ -65,11 +65,8 @@ test.describe('Block Actions', () => {
     // Select block
     await chatPage.selectBlock(0);
 
-    // Click ELI5
+    // Click ELI5 (waits for API response internally)
     await chatPage.clickBlockAction('ELI5');
-
-    // Wait for response
-    await chatPage.waitForResponse();
 
     // CRITICAL: Block actions put result in composer, NOT as new message
     // Verify ELI5 response appears in composer prompt
@@ -84,11 +81,8 @@ test.describe('Block Actions', () => {
     // Select block
     await chatPage.selectBlock(0);
 
-    // Click Translate
+    // Click Translate (waits for API response internally)
     await chatPage.clickBlockAction('Translate');
-
-    // Wait for response
-    await chatPage.waitForResponse();
 
     // Verify translated text appears in composer
     const promptValue = await chatPage.promptInput.textContent();
@@ -102,11 +96,8 @@ test.describe('Block Actions', () => {
     // Select block
     await chatPage.selectBlock(0);
 
-    // Click Expand
+    // Click Expand (waits for API response internally)
     await chatPage.clickBlockAction('Expand');
-
-    // Wait for response
-    await chatPage.waitForResponse();
 
     // Verify expanded content appears in composer
     const promptValue = await chatPage.promptInput.textContent();
@@ -120,11 +111,8 @@ test.describe('Block Actions', () => {
     // Select block
     await chatPage.selectBlock(0);
 
-    // Click Example
+    // Click Example (waits for API response internally)
     await chatPage.clickBlockAction('Example');
-
-    // Wait for response
-    await chatPage.waitForResponse();
 
     // Verify example content appears in composer
     const promptValue = await chatPage.promptInput.textContent();
@@ -155,7 +143,6 @@ test.describe('Block Actions', () => {
     // First action: ELI5
     await chatPage.selectBlock(0);
     await chatPage.clickBlockAction('ELI5');
-    await chatPage.waitForResponse();
 
     // Verify ELI5 result is in composer
     let promptValue = await chatPage.promptInput.textContent();
@@ -164,7 +151,6 @@ test.describe('Block Actions', () => {
     // Second action: Translate (on same block)
     // Note: composer prompt is now populated with ELI5 result
     await chatPage.clickBlockAction('Translate');
-    await chatPage.waitForResponse();
 
     // Verify Translate result replaced the previous content
     promptValue = await chatPage.promptInput.textContent();

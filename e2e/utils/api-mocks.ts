@@ -62,14 +62,52 @@ export class ApiMocker {
 
   /**
    * Mock successful /api/chat response
+   * Supports both streaming (SSE) and non-streaming (JSON) modes
    */
   async mockChatSuccess(response: MockChatResponse): Promise<void> {
-    await this.page.route('**/api/chat', (route: Route) => {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(response),
-      });
+    await this.page.route('**/api/chat', async (route: Route) => {
+      const request = route.request();
+      const requestBody = request.postDataJSON();
+
+      // Check if client requested streaming
+      if (requestBody?.stream === true) {
+        // Return Server-Sent Events format for streaming requests
+        const responseId = 'mock-response-id-' + Date.now();
+
+        // Build SSE response: send tokens, then response_id, then done
+        const tokens = response.text.split('');
+        let sseBody = '';
+
+        // Send tokens (batch them for efficiency)
+        const chunkSize = 10;
+        for (let i = 0; i < tokens.length; i += chunkSize) {
+          const chunk = tokens.slice(i, i + chunkSize).join('');
+          sseBody += `data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`;
+        }
+
+        // Send response_id
+        sseBody += `data: ${JSON.stringify({ type: 'response_id', responseId })}\n\n`;
+
+        // Send done signal
+        sseBody += `data: ${JSON.stringify({ type: 'done' })}\n\n`;
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'text/event-stream',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+          body: sseBody,
+        });
+      } else {
+        // Return JSON for non-streaming requests
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(response),
+        });
+      }
     });
   }
 

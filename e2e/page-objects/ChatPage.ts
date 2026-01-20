@@ -103,11 +103,22 @@ export class ChatPage {
   }
 
   /**
-   * Click a block action button
+   * Click a block action button and wait for API response
    */
   async clickBlockAction(action: 'ELI5' | 'Translate' | 'Expand' | 'Example' | 'Ask'): Promise<void> {
     const button = this.getBlockControl(action);
+
+    // Wait for API response to complete before continuing (any status code)
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().includes('/api/block-action'),
+      { timeout: 10000 }
+    );
+
     await button.click();
+    await responsePromise;
+
+    // Give React a moment to update the DOM
+    await this.page.waitForTimeout(200);
   }
 
   /**

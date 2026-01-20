@@ -28,6 +28,7 @@ test-results-integration/
 .next/
 dist/
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 
 # Logs
 *.log

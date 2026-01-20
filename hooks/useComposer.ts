@@ -187,12 +187,20 @@ export function useComposer(): UseComposerReturn {
               const streamingMessage = finalState.streamingMessage;
 
               if (streamingMessage && streamingMessage.blocks.length > 0) {
-                // Add assistant message with accumulated blocks
-                addAssistantMessage(streamingMessage.blocks, streamResponseIdRef.current);
-              }
+                // Store blocks locally before clearing streaming state
+                // This prevents both streaming and final message from rendering simultaneously
+                const finalBlocks = [...streamingMessage.blocks];
+                const finalResponseId = streamResponseIdRef.current;
 
-              // Clear streaming state
-              clearStream();
+                // Clear streaming state FIRST to prevent double-rendering
+                clearStream();
+
+                // Then add assistant message with accumulated blocks
+                addAssistantMessage(finalBlocks, finalResponseId);
+              } else {
+                // No blocks to add, just clear
+                clearStream();
+              }
 
               // Mark that we have initial response
               setHasInitialResponse(true);

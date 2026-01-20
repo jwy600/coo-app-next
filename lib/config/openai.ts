@@ -8,6 +8,9 @@ export const getOpenAIModelConfig = (): OpenAIModelConfig => {
   };
 };
 
+// Developer prompt for chat completions (higher authority than user messages)
+export const DEVELOPER_PROMPT = `You are a helpful assistant. Respond clearly and concisely. Use Markdown **only where semantically correct** (e.g., \`inline code\`, \`\`\`code fences\`\`\`, lists, tables). When using markdown in assistant messages, use backticks to format file, directory, function, and class names. Use \\( and \\) for inline math, \\[ and \\] for block math.`;
+
 // Model pricing per 1M tokens (January 2026)
 export const MODEL_PRICING: Record<string, { input: number; cachedInput: number; output: number }> = {
   'gpt-5.2': { input: 1.75, cachedInput: 0.175, output: 14.00 },

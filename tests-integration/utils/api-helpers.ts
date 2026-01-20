@@ -1,4 +1,4 @@
-import { getOpenAIModelConfig, calculateCost } from '@/lib/config/openai';
+import { getOpenAIModelConfig, calculateCost, DEVELOPER_PROMPT } from '@/lib/config/openai';
 import { testReporter, analyzeResponseQuality, type ApiCallMetrics } from './test-reporter';
 import type { ChatRequest, ChatResponse, BlockActionRequest, BlockActionResponse } from '@/types/api';
 
@@ -46,7 +46,10 @@ export async function callChatApiWithMetrics(
 
   const completion = await openai.chat.completions.create({
     model: modelConfig.model,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [
+      { role: 'developer', content: DEVELOPER_PROMPT },
+      { role: 'user', content: prompt },
+    ],
   });
 
   const latencyMs = Date.now() - startTime;

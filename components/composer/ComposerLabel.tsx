@@ -14,7 +14,7 @@ export function ComposerLabel({ mode, hasBlockSelected }: ComposerLabelProps) {
     : 'Ask coo anything';
 
   return (
-    <label className="text-sm font-medium text-gray-700 block mb-2" htmlFor="prompt">
+    <label className="text-sm font-medium text-gray-700 block mb-2 flex-shrink-0" htmlFor="prompt">
       {label}
     </label>
   );

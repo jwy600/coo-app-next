@@ -38,11 +38,11 @@ export function Composer({
   return (
     <form
       onSubmit={onSubmit}
-      className="composer fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh] flex flex-col"
+      className="composer fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh] flex flex-col overflow-hidden"
     >
       <ComposerLabel mode={mode} hasBlockSelected={hasBlockSelected} />
 
-      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end flex-1 min-h-0">
         <PromptInput
           value={prompt}
           onChange={onPromptChange}
@@ -60,7 +60,7 @@ export function Composer({
       </div>
 
       {hasBlockSelected && (
-        <div className="mt-2">
+        <div className="mt-2 flex-shrink-0">
           <BlockControls onAction={onBlockAction} disabled={disabled} />
         </div>
       )}

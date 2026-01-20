@@ -87,6 +87,7 @@ export function useComposer(): UseComposerReturn {
       }
 
       setError(null);
+      setAwaitingResponse(true);
 
       try {
         const result = await fetchBlockAction(
@@ -104,9 +105,11 @@ export function useComposer(): UseComposerReturn {
         const errorMessage = getErrorMessage(err, 'Failed to transform block');
         setError(errorMessage);
         // Don't clear prompt on error (allow retry)
+      } finally {
+        setAwaitingResponse(false);
       }
     },
-    [selectedBlock, prompt]
+    [selectedBlock, prompt, setAwaitingResponse]
   );
 
   /**

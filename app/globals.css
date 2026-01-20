@@ -51,11 +51,7 @@
     @apply bg-yellow-200 rounded-sm;
   }
 
-  /* KaTeX overrides */
-  .katex {
-    @apply text-base;
-  }
-
+  /* KaTeX overrides - rely on font-size inheritance from parent containers */
   .katex-display {
     @apply my-4;
   }

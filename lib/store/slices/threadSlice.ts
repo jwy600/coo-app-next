@@ -22,7 +22,7 @@ export interface ThreadSlice {
   setActiveThread: (threadId: string) => void;
   updateThreadTitle: (threadId: string, title: string) => void;
   addUserMessage: (text: string) => { message: Message; blocks: Block[] };
-  addAssistantMessage: (blocksData: BlockData[]) => { message: Message; blocks: Block[] };
+  addAssistantMessage: (blocksData: BlockData[], responseId?: string) => { message: Message; blocks: Block[] };
   mergeThreadFromSupabase: (thread: Thread, messages: Message[], blocks: Block[]) => void;
 }
 
@@ -125,13 +125,14 @@ export const threadSlice: StateCreator<
     return { message: result.message, blocks: result.blocks };
   },
 
-  addAssistantMessage: (blocksData) => {
+  addAssistantMessage: (blocksData, responseId) => {
     const result = stateFns.addAssistantMessageToThread(
       get(),
       get().activeThreadId,
       blocksData,
       idFactory,
-      nowFactory
+      nowFactory,
+      responseId
     );
 
     set({

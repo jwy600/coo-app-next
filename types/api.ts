@@ -3,10 +3,12 @@ export interface ChatRequest {
   prompt: string;
   threadId?: string;
   mode?: 'chat';
+  previousResponseId?: string;
 }
 
 export interface ChatResponse {
   text: string;
+  responseId?: string;
 }
 
 // Block Action API Types

@@ -23,7 +23,7 @@ export function mockOpenAI() {
 }
 
 /**
- * Create a mock OpenAI completion response
+ * Create a mock OpenAI completion response (Chat Completions API)
  */
 export function createMockCompletion(text: string) {
   return {
@@ -41,6 +41,30 @@ export function createMockCompletion(text: string) {
     id: 'chatcmpl-test',
     model: 'gpt-4o-mini',
     object: 'chat.completion',
+  };
+}
+
+/**
+ * Create a mock OpenAI response (Responses API)
+ */
+export function createMockResponse(text: string, responseId: string = 'resp_test123') {
+  return {
+    id: responseId,
+    output_text: text,
+    output: [
+      {
+        type: 'message',
+        role: 'assistant',
+        content: [
+          {
+            type: 'output_text',
+            text: text,
+          },
+        ],
+      },
+    ],
+    model: 'gpt-5-mini',
+    object: 'response',
   };
 }
 

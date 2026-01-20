@@ -15,7 +15,7 @@
 import { useState, useCallback } from 'react';
 import { useStore, selectSelectedBlock } from '@/lib/store/useStore';
 import { fetchChatCompletion, fetchBlockAction } from '@/lib/api';
-import { splitIntoBlocks } from '@/lib/state/parser';
+import { splitIntoBlocks, getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import type { BlockAction } from '@/types/api';
 
@@ -148,11 +148,15 @@ export function useComposer(): UseComposerReturn {
           updateThreadTitle(currentThreadId, threadTitle);
         }
 
+        // Get previous response ID for contextual chat (chains conversation)
+        const currentState = useStore.getState();
+        const previousResponseId = getLastAssistantResponseId(currentState, currentThreadId);
+
         // Clear prompt immediately (optimistic)
         setPrompt('');
 
-        // Fetch AI response (use fresh thread ID)
-        const response = await fetchChatCompletion(trimmedPrompt, currentThreadId);
+        // Fetch AI response (use fresh thread ID and previous response ID for context)
+        const response = await fetchChatCompletion(trimmedPrompt, currentThreadId, previousResponseId);
 
         // Parse response into blocks
         const parsedBlocks = splitIntoBlocks(response.text);
@@ -161,8 +165,8 @@ export function useComposer(): UseComposerReturn {
           throw new Error('No response returned. Please try again.');
         }
 
-        // Add assistant message
-        addAssistantMessage(parsedBlocks);
+        // Add assistant message with response ID for future chaining
+        addAssistantMessage(parsedBlocks, response.responseId);
 
         // Mark that we have initial response
         setHasInitialResponse(true);

@@ -19,6 +19,7 @@ import {
   toggleRewrite,
   updateBlockText,
   splitIntoBlocks,
+  getLastAssistantResponseId,
 } from '@/lib/state';
 import { AppState } from '@/types/state';
 import { Block } from '@/types/block';
@@ -180,6 +181,20 @@ describe('State Management - Core Functions', () => {
       expect(thread?.messages).toHaveLength(1);
       expect(thread?.messages[0].content).toHaveLength(2);
     });
+
+    it('should store responseId in message meta when provided', () => {
+      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
+      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_abc123');
+
+      expect(result.message.meta).toEqual({ openaiResponseId: 'resp_abc123' });
+    });
+
+    it('should have empty meta when responseId not provided', () => {
+      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
+      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory);
+
+      expect(result.message.meta).toEqual({});
+    });
   });
 
   describe('addAssistantMessageToThread', () => {
@@ -213,6 +228,84 @@ describe('State Management - Core Functions', () => {
       const thread = getThreadById(result.state, 'non-existent-thread');
       expect(thread).toBeDefined();
       expect(thread?.messages).toHaveLength(1);
+    });
+
+    it('should store responseId in message meta when provided', () => {
+      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
+      const result = addAssistantMessageToThread(
+        state,
+        state.activeThreadId,
+        blocksData,
+        idFactory,
+        nowFactory,
+        'resp_xyz789'
+      );
+
+      expect(result.message.meta).toEqual({ openaiResponseId: 'resp_xyz789' });
+    });
+  });
+
+  describe('getLastAssistantResponseId', () => {
+    it('should return undefined when thread has no messages', () => {
+      const responseId = getLastAssistantResponseId(state, state.activeThreadId);
+      expect(responseId).toBeUndefined();
+    });
+
+    it('should return undefined when thread does not exist', () => {
+      const responseId = getLastAssistantResponseId(state, 'non-existent-thread');
+      expect(responseId).toBeUndefined();
+    });
+
+    it('should return undefined when only user messages exist', () => {
+      const result = addUserMessage(state, 'Hello', idFactory, nowFactory);
+      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId);
+      expect(responseId).toBeUndefined();
+    });
+
+    it('should return undefined when assistant message has no responseId', () => {
+      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
+      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory);
+      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId);
+      expect(responseId).toBeUndefined();
+    });
+
+    it('should return responseId from last assistant message', () => {
+      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
+      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_first');
+      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId);
+      expect(responseId).toBe('resp_first');
+    });
+
+    it('should return most recent responseId when multiple assistant messages exist', () => {
+      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
+
+      // Add first assistant message
+      let currentState = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_first').state;
+
+      // Add user message
+      currentState = addUserMessage(currentState, 'Follow up', idFactory, nowFactory).state;
+
+      // Add second assistant message
+      currentState = addAssistantMessage(currentState, blocksData, idFactory, nowFactory, 'resp_second').state;
+
+      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId);
+      expect(responseId).toBe('resp_second');
+    });
+
+    it('should skip assistant messages without responseId', () => {
+      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
+
+      // Add first assistant message with responseId
+      let currentState = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_first').state;
+
+      // Add second assistant message without responseId
+      currentState = addAssistantMessage(currentState, blocksData, idFactory, nowFactory).state;
+
+      // Should still return the first responseId since the latest doesn't have one
+      // Actually, wait - it searches backwards and the latest message doesn't have openaiResponseId
+      // so it will skip it and return resp_first
+      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId);
+      expect(responseId).toBe('resp_first');
     });
   });
 });

@@ -83,3 +83,29 @@ const ensureThreadExists = (
   };
   return { ...state, threads: [...state.threads, thread] };
 };
+
+/**
+ * Get the OpenAI response ID from the last assistant message in a thread.
+ * This is used to chain responses for contextual conversations.
+ *
+ * @param state - Current application state
+ * @param threadId - ID of the thread to search
+ * @returns The response ID if found, undefined otherwise
+ */
+export const getLastAssistantResponseId = (
+  state: AppState,
+  threadId: string
+): string | undefined => {
+  const thread = getThreadById(state, threadId);
+  if (!thread) return undefined;
+
+  // Search backwards to find the last assistant message with a response ID
+  for (let i = thread.messages.length - 1; i >= 0; i--) {
+    const message = thread.messages[i];
+    if (message.role === 'assistant' && message.meta?.openaiResponseId) {
+      return message.meta.openaiResponseId as string;
+    }
+  }
+
+  return undefined;
+};

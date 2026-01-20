@@ -5,6 +5,7 @@
  */
 
 export { apiFetch, ApiClientError } from './client';
-export { fetchChatCompletion } from './chat';
+export { fetchChatCompletion, fetchChatCompletionStream } from './chat';
+export type { StreamChatCallbacks } from './chat';
 export { fetchBlockAction } from './blockAction';
 export { fetchConfig, clearConfigCache } from './config';

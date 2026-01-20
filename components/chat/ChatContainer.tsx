@@ -55,6 +55,8 @@ export function ChatContainer({
   const messages = useStore(useShallow(selectMessagesByThread(threadId)));
   // Get blocks for this specific thread only
   const blocks = useStore(useShallow(selectBlocksByThread(threadId)));
+  // Get streaming message state
+  const streamingMessage = useStore((state) => state.streamingMessage);
 
   // Set active thread and ensure chat mode when component mounts or threadId changes
   useEffect(() => {
@@ -185,6 +187,7 @@ export function ChatContainer({
         selectedBlockId={selectedBlockId}
         isPending={isSubmitting}
         error={error}
+        streamingMessage={streamingMessage}
         onBlockSelect={selectBlock}
         onRemoveSelection={handleRemoveSelection}
         onClearSelections={handleClearSelections}

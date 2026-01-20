@@ -12,12 +12,13 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useStore, selectSelectedBlock } from '@/lib/store/useStore';
-import { fetchChatCompletion, fetchBlockAction } from '@/lib/api';
-import { splitIntoBlocks, getLastAssistantResponseId } from '@/lib/state';
+import { fetchChatCompletionStream, fetchBlockAction } from '@/lib/api';
+import { getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import type { BlockAction } from '@/types/api';
+import { idFactory } from '@/lib/utils/idFactory';
 
 export interface UseComposerReturn {
   prompt: string;
@@ -48,6 +49,15 @@ export function useComposer(): UseComposerReturn {
   const setAwaitingResponse = useStore((state) => state.setAwaitingResponse);
   const error = useStore((state) => state.error);
   const setError = useStore((state) => state.setError);
+
+  // Streaming state
+  const startStreaming = useStore((state) => state.startStreaming);
+  const appendStreamToken = useStore((state) => state.appendStreamToken);
+  const setStreamResponseId = useStore((state) => state.setStreamResponseId);
+  const clearStream = useStore((state) => state.clearStream);
+
+  // Track response ID during streaming
+  const streamResponseIdRef = useRef<string | undefined>(undefined);
 
   /**
    * Clear prompt and error
@@ -155,33 +165,61 @@ export function useComposer(): UseComposerReturn {
         // Clear prompt immediately (optimistic)
         setPrompt('');
 
-        // Fetch AI response (use fresh thread ID and previous response ID for context)
-        const response = await fetchChatCompletion(trimmedPrompt, currentThreadId, previousResponseId);
+        // Start streaming state
+        const streamingMessageId = idFactory();
+        startStreaming(streamingMessageId, currentThreadId);
+        streamResponseIdRef.current = undefined;
 
-        // Parse response into blocks
-        const parsedBlocks = splitIntoBlocks(response.text);
+        // Fetch AI response with streaming
+        await fetchChatCompletionStream(
+          trimmedPrompt,
+          {
+            onToken: (token: string) => {
+              appendStreamToken(token);
+            },
+            onResponseId: (responseId: string) => {
+              streamResponseIdRef.current = responseId;
+              setStreamResponseId(responseId);
+            },
+            onComplete: () => {
+              // Get final streaming state and convert to message
+              const finalState = useStore.getState();
+              const streamingMessage = finalState.streamingMessage;
 
-        if (parsedBlocks.length === 0) {
-          throw new Error('No response returned. Please try again.');
-        }
+              if (streamingMessage && streamingMessage.blocks.length > 0) {
+                // Add assistant message with accumulated blocks
+                addAssistantMessage(streamingMessage.blocks, streamResponseIdRef.current);
+              }
 
-        // Add assistant message with response ID for future chaining
-        addAssistantMessage(parsedBlocks, response.responseId);
+              // Clear streaming state
+              clearStream();
 
-        // Mark that we have initial response
-        setHasInitialResponse(true);
+              // Mark that we have initial response
+              setHasInitialResponse(true);
 
-        // Clear any selected block
-        clearSelectedBlock();
+              // Clear any selected block
+              clearSelectedBlock();
 
-        // Clear error on success
-        setError(null);
+              // Clear error on success
+              setError(null);
+
+              // Done submitting
+              setAwaitingResponse(false);
+            },
+            onError: (error: Error) => {
+              clearStream();
+              const errorMessage = getErrorMessage(error, 'We hit a snag getting that response. Try again.');
+              setError(errorMessage);
+              setAwaitingResponse(false);
+            },
+          },
+          currentThreadId,
+          previousResponseId
+        );
       } catch (err) {
+        clearStream();
         const errorMessage = getErrorMessage(err, 'We hit a snag getting that response. Try again.');
         setError(errorMessage);
-        // Restore prompt on error (allow retry)
-        // Note: prompt is already cleared optimistically, user can use up arrow or retype
-      } finally {
         setAwaitingResponse(false);
       }
     },
@@ -201,6 +239,10 @@ export function useComposer(): UseComposerReturn {
       setHasInitialResponse,
       updateThreadTitle,
       setAwaitingResponse,
+      startStreaming,
+      appendStreamToken,
+      setStreamResponseId,
+      clearStream,
     ]
   );
 

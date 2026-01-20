@@ -2,11 +2,20 @@
 
 import { useRef, useEffect } from 'react';
 import { Message } from '@/types/message';
-import { Block } from '@/types/block';
+import { Block, BlockData } from '@/types/block';
 import { UserMessage } from './UserMessage';
 import { AssistantMessage } from './AssistantMessage';
 import { PendingMessage } from './PendingMessage';
 import { ErrorMessage } from './ErrorMessage';
+
+/**
+ * Streaming message data for in-progress responses
+ */
+interface StreamingMessageData {
+  messageId: string;
+  threadId: string;
+  blocks: BlockData[];
+}
 
 /**
  * Client Component - Container for all messages in a thread
@@ -19,6 +28,7 @@ interface MessageListProps {
   selectedBlockId?: string | null;
   isPending?: boolean;
   error?: string | null;
+  streamingMessage?: StreamingMessageData | null;
   onBlockSelect?: (blockId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
@@ -32,6 +42,7 @@ export function MessageList({
   selectedBlockId = null,
   isPending = false,
   error = null,
+  streamingMessage = null,
   onBlockSelect,
   onRemoveSelection,
   onClearSelections,
@@ -40,7 +51,7 @@ export function MessageList({
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages or streaming updates
   // Skip auto-scroll in block mode (when a block is selected) so user can see the selected block
   useEffect(() => {
     // Don't scroll if in block mode
@@ -55,7 +66,7 @@ export function MessageList({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, isPending, error]);
+  }, [messages.length, isPending, error, streamingMessage?.blocks.length]);
 
   // Create block lookup map
   const blockLookup = new Map(blocks.map((block) => [block.id, block]));
@@ -92,7 +103,33 @@ export function MessageList({
         );
       })}
 
-      {isPending && <PendingMessage />}
+      {/* Streaming message (in-progress response) */}
+      {streamingMessage && streamingMessage.blocks.length > 0 && (
+        <AssistantMessage
+          key="streaming"
+          message={{
+            id: streamingMessage.messageId,
+            threadId: streamingMessage.threadId,
+            role: 'assistant',
+            createdAt: Date.now(),
+            content: streamingMessage.blocks.map((_, i) => ({ blockId: `stream-${i}` })),
+            meta: {},
+          }}
+          blocks={streamingMessage.blocks.map((blockData, i) => ({
+            id: `stream-${i}`,
+            messageId: streamingMessage.messageId,
+            type: blockData.type,
+            text: blockData.text,
+            edited: false,
+            selections: [],
+            prevText: null,
+            isRewritten: false,
+          }))}
+          selectedBlockId={null}
+        />
+      )}
+
+      {isPending && !streamingMessage && <PendingMessage />}
       {error && <ErrorMessage error={error} onRetry={onRetry} />}
     </div>
   );

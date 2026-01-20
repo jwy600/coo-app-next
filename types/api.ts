@@ -4,6 +4,7 @@ export interface ChatRequest {
   threadId?: string;
   mode?: 'chat';
   previousResponseId?: string;
+  stream?: boolean;
 }
 
 export interface ChatResponse {

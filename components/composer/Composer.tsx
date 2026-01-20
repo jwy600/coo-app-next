@@ -38,20 +38,22 @@ export function Composer({
   return (
     <form
       onSubmit={onSubmit}
-      className="composer fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh] flex flex-col"
+      className="composer fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh] flex flex-col overflow-hidden"
     >
       <ComposerLabel mode={mode} hasBlockSelected={hasBlockSelected} />
 
-      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-        <PromptInput
-          value={prompt}
-          onChange={onPromptChange}
-          onSelectionCapture={onSelectionCapture}
-          onSubmit={() => onSubmit(new Event('submit') as any)}
-          disabled={disabled}
-          mode={mode}
-        />
-        <Button type="submit" variant="primary" disabled={disabled} className="md:mb-[2px]">
+      <div className="flex gap-2 items-stretch flex-1 min-h-0">
+        <div className="flex-1 min-h-0 min-w-0">
+          <PromptInput
+            value={prompt}
+            onChange={onPromptChange}
+            onSelectionCapture={onSelectionCapture}
+            onSubmit={() => onSubmit(new Event('submit') as any)}
+            disabled={disabled}
+            mode={mode}
+          />
+        </div>
+        <Button type="submit" variant="primary" disabled={disabled} className="flex-shrink-0 self-end">
           <span>Send</span>
           <span aria-hidden="true" className="ml-1">
             →
@@ -60,7 +62,7 @@ export function Composer({
       </div>
 
       {hasBlockSelected && (
-        <div className="mt-2">
+        <div className="mt-2 flex-shrink-0">
           <BlockControls onAction={onBlockAction} disabled={disabled} />
         </div>
       )}

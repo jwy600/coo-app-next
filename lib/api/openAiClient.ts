@@ -70,3 +70,57 @@ export const createResponse = async (params: CreateResponseParams): Promise<Resp
     responseId: response.id,
   };
 };
+
+/**
+ * Event handler interface for streaming responses
+ */
+export interface StreamEventHandler {
+  onToken: (token: string) => void;
+  onResponseId: (responseId: string) => void;
+  onComplete: () => void;
+  onError: (error: Error) => void;
+}
+
+/**
+ * Create a streaming response using OpenAI's Responses API
+ * This enables real-time token-by-token output
+ *
+ * @param params - Response parameters
+ * @param handler - Event handlers for stream events
+ */
+export const createResponseStream = async (
+  params: CreateResponseParams,
+  handler: StreamEventHandler
+): Promise<void> => {
+  const client = getOpenAiClient();
+
+  try {
+    const stream = await client.responses.create({
+      model: params.model,
+      input: params.input,
+      instructions: params.instructions,
+      store: true,
+      stream: true,
+      ...(params.previousResponseId && { previous_response_id: params.previousResponseId }),
+    });
+
+    for await (const event of stream) {
+      // Handle response creation event (contains response ID)
+      if (event.type === 'response.created') {
+        handler.onResponseId(event.response.id);
+      }
+      // Handle text delta events (streaming tokens)
+      else if (event.type === 'response.output_text.delta') {
+        if (event.delta) {
+          handler.onToken(event.delta);
+        }
+      }
+      // Handle completion
+      else if (event.type === 'response.completed') {
+        handler.onComplete();
+      }
+    }
+  } catch (error) {
+    handler.onError(error as Error);
+  }
+};

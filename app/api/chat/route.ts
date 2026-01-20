@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
-import { createResponse } from '@/lib/api/openAiClient';
+import { createResponse, createResponseStream } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
 import { getOpenAIModelConfig, DEVELOPER_PROMPT } from '@/lib/config/openai';
 
@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
     const body: ChatRequest = await request.json();
     const prompt = parseString(body?.prompt);
     const previousResponseId = body?.previousResponseId;
+    const stream = body?.stream ?? false;
 
     // Validate prompt
     const validation = validatePrompt(prompt);
@@ -23,7 +24,59 @@ export async function POST(request: NextRequest) {
     // Get model configuration
     const modelConfig = getOpenAIModelConfig();
 
-    // Call OpenAI Responses API (enables contextual chat via previous_response_id)
+    // STREAMING PATH: Return Server-Sent Events stream
+    if (stream) {
+      const encoder = new TextEncoder();
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          try {
+            await createResponseStream(
+              {
+                model: modelConfig.model,
+                input: prompt,
+                instructions: DEVELOPER_PROMPT,
+                previousResponseId,
+              },
+              {
+                onToken: (token) => {
+                  const data = JSON.stringify({ type: 'token', content: token });
+                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+                },
+                onResponseId: (responseId) => {
+                  const data = JSON.stringify({ type: 'response_id', responseId });
+                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+                },
+                onComplete: () => {
+                  const data = JSON.stringify({ type: 'done' });
+                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+                  controller.close();
+                },
+                onError: (error) => {
+                  const data = JSON.stringify({ type: 'error', error: error.message });
+                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+                  controller.close();
+                },
+              }
+            );
+          } catch (error: any) {
+            const data = JSON.stringify({ type: 'error', error: error.message });
+            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
+    // NON-STREAMING PATH: Return JSON response
     const result = await createResponse({
       model: modelConfig.model,
       input: prompt,

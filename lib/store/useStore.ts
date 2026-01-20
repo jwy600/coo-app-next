@@ -8,13 +8,14 @@ import { devtools, persist } from 'zustand/middleware';
 import { threadSlice, ThreadSlice } from './slices/threadSlice';
 import { blockSlice, BlockSlice } from './slices/blockSlice';
 import { uiSlice, UISlice } from './slices/uiSlice';
+import { streamingSlice, StreamingSlice } from './slices/streamingSlice';
 import { AppState } from '@/types/state';
 import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { isTestMode } from '@/lib/utils/testMode';
 
-export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice;
+export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice;
 
 /**
  * Main store hook
@@ -30,6 +31,7 @@ export const useStore = create<StoreState>()(
             ...threadSlice(...args),
             ...blockSlice(...args),
             ...uiSlice(...args),
+            ...streamingSlice(...args),
           }),
           {
             name: 'coo-test-storage',
@@ -45,6 +47,7 @@ export const useStore = create<StoreState>()(
           ...threadSlice(...args),
           ...blockSlice(...args),
           ...uiSlice(...args),
+          ...streamingSlice(...args),
         }),
     {
       name: 'coo-store',

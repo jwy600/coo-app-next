@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
-import { getOpenAiClient } from '@/lib/api/openAiClient';
+import { createResponse } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
 import { getOpenAIModelConfig, DEVELOPER_PROMPT } from '@/lib/config/openai';
 
@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body: ChatRequest = await request.json();
     const prompt = parseString(body?.prompt);
+    const previousResponseId = body?.previousResponseId;
 
     // Validate prompt
     const validation = validatePrompt(prompt);
@@ -19,33 +20,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize OpenAI client (throws if not configured)
-    const openai = getOpenAiClient();
-
     // Get model configuration
     const modelConfig = getOpenAIModelConfig();
 
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
+    // Call OpenAI Responses API (enables contextual chat via previous_response_id)
+    const result = await createResponse({
       model: modelConfig.model,
-      messages: [
-        { role: 'developer', content: DEVELOPER_PROMPT },
-        { role: 'user', content: prompt },
-      ],
+      input: prompt,
+      instructions: DEVELOPER_PROMPT,
+      previousResponseId,
     });
 
-    // Extract response text
-    const text = completion.choices[0]?.message?.content?.trim();
-
-    if (!text) {
+    if (!result.text) {
       return NextResponse.json<ApiError>(
         { error: "The assistant didn't return any text." },
         { status: 500 }
       );
     }
 
-    // Return successful response
-    return NextResponse.json<ChatResponse>({ text });
+    // Return successful response with response ID for chaining
+    return NextResponse.json<ChatResponse>({
+      text: result.text,
+      responseId: result.responseId,
+    });
   } catch (error: any) {
     console.error('Chat API error:', error);
 

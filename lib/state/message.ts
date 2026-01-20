@@ -67,7 +67,8 @@ export const addAssistantMessage = (
   state: AppState,
   blocksData: BlockData[],
   idFactory: () => string,
-  nowFactory: () => number
+  nowFactory: () => number,
+  responseId?: string
 ): AddMessageResult => {
   const threadId = state.activeThreadId;
   const messageId = idFactory();
@@ -80,7 +81,7 @@ export const addAssistantMessage = (
     role: 'assistant',
     createdAt: nowFactory(),
     content: newBlocks.map((block) => ({ blockId: block.id })),
-    meta: {},
+    meta: responseId ? { openaiResponseId: responseId } : {},
   };
   const nextState = updateThreadMessages(
     state,
@@ -118,7 +119,8 @@ export const addAssistantMessageToThread = (
   threadId: string,
   blocksData: BlockData[],
   idFactory: () => string,
-  nowFactory: () => number
+  nowFactory: () => number,
+  responseId?: string
 ): AddMessageResult => {
   const baseState = ensureThreadExists(state, threadId, nowFactory);
   const messageId = idFactory();
@@ -131,7 +133,7 @@ export const addAssistantMessageToThread = (
     role: 'assistant',
     createdAt: nowFactory(),
     content: newBlocks.map((block) => ({ blockId: block.id })),
-    meta: {},
+    meta: responseId ? { openaiResponseId: responseId } : {},
   };
   const nextState = updateThreadMessages(
     baseState,

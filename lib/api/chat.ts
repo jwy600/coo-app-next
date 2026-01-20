@@ -7,12 +7,14 @@ import { validatePrompt } from '@/lib/utils/validation';
  *
  * @param prompt - User prompt text
  * @param threadId - Optional thread ID for context
- * @returns Promise with AI response text
+ * @param previousResponseId - Optional response ID for contextual chaining
+ * @returns Promise with AI response text and response ID
  * @throws ApiClientError on validation or API errors
  */
 export async function fetchChatCompletion(
   prompt: string,
-  threadId?: string
+  threadId?: string,
+  previousResponseId?: string
 ): Promise<ChatResponse> {
   // Validate prompt
   const trimmedPrompt = prompt.trim();
@@ -27,6 +29,7 @@ export async function fetchChatCompletion(
     prompt: trimmedPrompt,
     threadId,
     mode: 'chat',
+    previousResponseId,
   };
 
   // Call API

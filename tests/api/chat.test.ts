@@ -1,19 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { POST } from '@/app/api/chat/route';
 import { NextRequest } from 'next/server';
-import { setupTestEnv, clearTestEnv, createMockCompletion } from './setup';
+import { setupTestEnv, clearTestEnv, createMockResponse } from './setup';
 
-// Create mock function that can be imported
-const mockCreate = vi.fn();
+// Create mock function for Responses API
+const mockResponsesCreate = vi.fn();
 
-// Mock OpenAI
+// Mock OpenAI with Responses API
 vi.mock('openai', () => {
   return {
     default: class MockOpenAI {
-      chat = {
-        completions: {
-          create: mockCreate,
-        },
+      responses = {
+        create: mockResponsesCreate,
       };
     },
   };
@@ -29,9 +27,9 @@ describe('Chat API Route', () => {
     clearTestEnv();
   });
 
-  it('should return chat completion for valid request', async () => {
+  it('should return chat response for valid request', async () => {
     // Setup mock
-    mockCreate.mockResolvedValue(createMockCompletion('Hello! How can I help?'));
+    mockResponsesCreate.mockResolvedValue(createMockResponse('Hello! How can I help?', 'resp_abc123'));
 
     // Create request
     const request = new NextRequest('http://localhost:3000/api/chat', {
@@ -45,13 +43,12 @@ describe('Chat API Route', () => {
 
     // Assertions
     expect(response.status).toBe(200);
-    expect(data).toEqual({ text: 'Hello! How can I help?' });
-    expect(mockCreate).toHaveBeenCalledWith({
+    expect(data).toEqual({ text: 'Hello! How can I help?', responseId: 'resp_abc123' });
+    expect(mockResponsesCreate).toHaveBeenCalledWith({
       model: 'gpt-5-mini',
-      messages: [
-        { role: 'developer', content: expect.stringContaining('You are a helpful assistant') },
-        { role: 'user', content: 'Hello' },
-      ],
+      input: 'Hello',
+      instructions: expect.stringContaining('You are a helpful assistant'),
+      store: true,
     });
   });
 
@@ -111,8 +108,9 @@ describe('Chat API Route', () => {
   });
 
   it('should return 500 when OpenAI returns no text', async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: '', role: 'assistant' } }],
+    mockResponsesCreate.mockResolvedValue({
+      id: 'resp_test',
+      output_text: '',
     });
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
@@ -130,7 +128,7 @@ describe('Chat API Route', () => {
   it('should handle OpenAI API errors', async () => {
     const error = new Error('API Error');
     (error as any).status = 500;
-    mockCreate.mockRejectedValue(error);
+    mockResponsesCreate.mockRejectedValue(error);
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
@@ -145,7 +143,7 @@ describe('Chat API Route', () => {
   });
 
   it('should trim whitespace from prompt', async () => {
-    mockCreate.mockResolvedValue(createMockCompletion('Response'));
+    mockResponsesCreate.mockResolvedValue(createMockResponse('Response'));
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
@@ -154,11 +152,32 @@ describe('Chat API Route', () => {
 
     await POST(request);
 
-    expect(mockCreate).toHaveBeenCalledWith(
+    expect(mockResponsesCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        messages: expect.arrayContaining([
-          { role: 'user', content: 'Hello World' },
-        ]),
+        input: 'Hello World',
+      })
+    );
+  });
+
+  it('should pass previousResponseId when provided', async () => {
+    mockResponsesCreate.mockResolvedValue(createMockResponse('Follow-up response', 'resp_def456'));
+
+    const request = new NextRequest('http://localhost:3000/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        prompt: 'What did you mean by that?',
+        previousResponseId: 'resp_abc123',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.responseId).toBe('resp_def456');
+    expect(mockResponsesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        previous_response_id: 'resp_abc123',
       })
     );
   });

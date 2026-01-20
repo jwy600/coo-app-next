@@ -76,7 +76,6 @@ export function useComposer(): UseComposerReturn {
         return;
       }
 
-      setAwaitingResponse(true);
       setError(null);
 
       try {
@@ -95,11 +94,9 @@ export function useComposer(): UseComposerReturn {
         const errorMessage = getErrorMessage(err, 'Failed to transform block');
         setError(errorMessage);
         // Don't clear prompt on error (allow retry)
-      } finally {
-        setAwaitingResponse(false);
       }
     },
-    [selectedBlock, prompt, setAwaitingResponse]
+    [selectedBlock, prompt]
   );
 
   /**

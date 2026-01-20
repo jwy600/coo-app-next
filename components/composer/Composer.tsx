@@ -42,16 +42,18 @@ export function Composer({
     >
       <ComposerLabel mode={mode} hasBlockSelected={hasBlockSelected} />
 
-      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end flex-1 min-h-0">
-        <PromptInput
-          value={prompt}
-          onChange={onPromptChange}
-          onSelectionCapture={onSelectionCapture}
-          onSubmit={() => onSubmit(new Event('submit') as any)}
-          disabled={disabled}
-          mode={mode}
-        />
-        <Button type="submit" variant="primary" disabled={disabled} className="md:mb-[2px]">
+      <div className="flex gap-2 items-stretch flex-1 min-h-0">
+        <div className="flex-1 min-h-0 min-w-0">
+          <PromptInput
+            value={prompt}
+            onChange={onPromptChange}
+            onSelectionCapture={onSelectionCapture}
+            onSubmit={() => onSubmit(new Event('submit') as any)}
+            disabled={disabled}
+            mode={mode}
+          />
+        </div>
+        <Button type="submit" variant="primary" disabled={disabled} className="flex-shrink-0 self-end">
           <span>Send</span>
           <span aria-hidden="true" className="ml-1">
             →

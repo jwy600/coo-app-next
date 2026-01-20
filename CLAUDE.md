@@ -14,6 +14,8 @@ npx tsc --noEmit         # TypeScript type checking (no compilation)
 ```
 
 ### Testing
+
+**Unit & E2E Tests (Mocked - Fast & Free)**
 ```bash
 npm test                 # Run all unit tests once (Vitest)
 npm run test:watch       # Run tests in watch mode (auto-rerun on changes)
@@ -25,6 +27,24 @@ npm run test:e2e:ui      # Run E2E with UI
 npm run test:e2e:debug   # Debug E2E tests
 npm run test:e2e:report  # View E2E test report
 ```
+
+**Integration Tests (Real OpenAI API - Local Only)**
+```bash
+# Vitest integration tests (requires OPENAI_API_KEY)
+npm run test:integration              # Run integration tests with real API
+npm run test:integration:watch        # Watch mode
+npm run test:integration:ui           # UI mode
+
+# Playwright E2E integration tests (requires OPENAI_API_KEY)
+npm run test:e2e:integration          # Run E2E integration tests
+npm run test:e2e:integration:ui       # UI mode
+npm run test:e2e:integration:debug    # Debug mode
+
+# Optional: specify model (default: gpt-4o-mini)
+OPENAI_MODEL=gpt-4o npm run test:integration
+```
+
+See `tests-integration/README.md` for detailed integration test documentation.
 
 Tests automatically run on every push and pull request via GitHub Actions.
 

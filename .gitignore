@@ -18,6 +18,11 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Integration test artifacts
+tests-integration/reports/
+playwright-report-integration/
+test-results-integration/
+
 # Build
 .vercel
 .next/

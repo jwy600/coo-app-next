@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { BlockActionRequest, BlockActionResponse, ApiError, BlockAction } from '@/types/api';
 import { getOpenAiClient } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
+import { getOpenAIModelConfig } from '@/lib/config/openai';
 
 // Build action-specific prompt based on action type
 function buildActionPrompt(
@@ -85,10 +86,13 @@ export async function POST(request: NextRequest) {
     // Initialize OpenAI client (throws if not configured)
     const openai = getOpenAiClient();
 
+    // Get model configuration
+    const modelConfig = getOpenAIModelConfig();
+
     // Call OpenAI API with lower temperature for consistency
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.5,
+      model: modelConfig.model,
+      temperature: modelConfig.blockActionTemperature,
       messages: [{ role: 'user', content: actionPrompt }],
     });
 

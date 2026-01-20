@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
 import { getOpenAiClient } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
+import { getOpenAIModelConfig } from '@/lib/config/openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,10 +22,13 @@ export async function POST(request: NextRequest) {
     // Initialize OpenAI client (throws if not configured)
     const openai = getOpenAiClient();
 
+    // Get model configuration
+    const modelConfig = getOpenAIModelConfig();
+
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.7,
+      model: modelConfig.model,
+      temperature: modelConfig.chatTemperature,
       messages: [{ role: 'user', content: prompt }],
     });
 

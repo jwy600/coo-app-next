@@ -46,7 +46,6 @@ export async function callChatApiWithMetrics(
 
   const completion = await openai.chat.completions.create({
     model: modelConfig.model,
-    temperature: modelConfig.chatTemperature,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -132,7 +131,6 @@ export async function callBlockActionApiWithMetrics(
 
   const completion = await openai.chat.completions.create({
     model: modelConfig.model,
-    temperature: modelConfig.blockActionTemperature,
     messages: [{ role: 'user', content: actionPrompt }],
   });
 

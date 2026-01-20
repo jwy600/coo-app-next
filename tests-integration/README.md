@@ -34,11 +34,11 @@ export OPENAI_API_KEY=sk-...
 By default, tests use `gpt-4o-mini`. To test with a different model:
 
 ```bash
-export OPENAI_MODEL=gpt-4o
+export OPENAI_MODEL=gpt-5.2
 # or
-export OPENAI_MODEL=gpt-4-turbo
+export OPENAI_MODEL=gpt-5-mini
 # or
-export OPENAI_MODEL=gpt-3.5-turbo
+export OPENAI_MODEL=gpt-5-nano
 ```
 
 ---

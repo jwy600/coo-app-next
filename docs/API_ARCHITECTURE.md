@@ -45,11 +45,9 @@ Visual reference for the complete API architecture after Phase 3 migration.
                             ▼
         ┌───────────────────────────────────────┐
         │         OpenAI API                    │
-        │      (gpt-4o-mini model)              │
+        │      (gpt-5-mini model)               │
         │                                       │
         │  - Chat Completions                   │
-        │  - Temperature: 0.7 (chat)            │
-        │  - Temperature: 0.5 (block actions)   │
         └───────────────────────────────────────┘
 ```
 
@@ -87,8 +85,7 @@ Route Handler (/app/api/chat/route.ts)
      ▼
 OpenAI SDK
      │
-     │ model: gpt-4o-mini
-     │ temperature: 0.7
+     │ model: gpt-5-mini
      │ messages: [{ role: 'user', content: prompt }]
      ▼
 Response
@@ -139,8 +136,7 @@ Route Handler (/app/api/block-action/route.ts)
      ▼
 OpenAI SDK
      │
-     │ model: gpt-4o-mini
-     │ temperature: 0.5
+     │ model: gpt-5-mini
      │ messages: [{ role: 'user', content: actionPrompt }]
      ▼
 Response
@@ -241,7 +237,7 @@ User Input
     │
     │ OpenAI API request
     ▼
-[OpenAI] gpt-4o-mini
+[OpenAI] gpt-5-mini
     │
     │ AI response
     ▼
@@ -283,7 +279,7 @@ Selected Text Block
     │
     │ "Explain the following text like I'm five:\n\n{blockText}"
     ▼
-[OpenAI] gpt-4o-mini (temp: 0.5)
+[OpenAI] gpt-5-mini
     │
     │ Simplified explanation
     ▼
@@ -321,7 +317,7 @@ Selected Paragraph + User Question
     │
     │ "You are given: '{blockText}'\n\nQuestion: '{prompt}'"
     ▼
-[OpenAI] gpt-4o-mini (temp: 0.5)
+[OpenAI] gpt-5-mini
     │
     │ Answer based on paragraph
     ▼

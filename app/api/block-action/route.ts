@@ -89,10 +89,9 @@ export async function POST(request: NextRequest) {
     // Get model configuration
     const modelConfig = getOpenAIModelConfig();
 
-    // Call OpenAI API with lower temperature for consistency
+    // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: modelConfig.model,
-      temperature: modelConfig.blockActionTemperature,
       messages: [{ role: 'user', content: actionPrompt }],
     });
 

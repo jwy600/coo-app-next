@@ -47,8 +47,7 @@ describe('Chat API Route', () => {
     expect(response.status).toBe(200);
     expect(data).toEqual({ text: 'Hello! How can I help?' });
     expect(mockCreate).toHaveBeenCalledWith({
-      model: 'gpt-4o-mini',
-      temperature: 0.7,
+      model: 'gpt-5-mini',
       messages: [{ role: 'user', content: 'Hello' }],
     });
   });

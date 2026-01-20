@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: modelConfig.model,
-      temperature: modelConfig.chatTemperature,
       messages: [{ role: 'user', content: prompt }],
     });
 

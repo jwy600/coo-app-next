@@ -102,7 +102,7 @@ test.describe('Keyboard Shortcuts', () => {
     expect(text).toContain('Second line');
     // Contenteditable may use <br> or \n for line breaks
     const hasLineBreak = text.includes('\n') || text.includes('\r') ||
-                         text.match(/First line.*Second line/s);
+                         text.match(/First line[\s\S]*Second line/);
     expect(hasLineBreak).toBeTruthy();
   });
 

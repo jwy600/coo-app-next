@@ -48,8 +48,7 @@ describe('Block Action API Route', () => {
       expect(data.text).toBe('你好世界');
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'gpt-4o-mini',
-          temperature: 0.5,
+          model: 'gpt-5-mini',
           messages: [
             {
               role: 'user',

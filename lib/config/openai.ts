@@ -1,23 +1,20 @@
 export interface OpenAIModelConfig {
   model: string;
-  chatTemperature: number;
-  blockActionTemperature: number;
 }
 
 export const getOpenAIModelConfig = (): OpenAIModelConfig => {
   return {
-    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    chatTemperature: 0.7,
-    blockActionTemperature: 0.5,
+    model: process.env.OPENAI_MODEL || 'gpt-5-mini',
   };
 };
 
-// Model pricing per 1M tokens (January 2025)
-export const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  'gpt-4o-mini': { input: 0.15, output: 0.60 },
-  'gpt-4o': { input: 2.50, output: 10.00 },
-  'gpt-4-turbo': { input: 10.00, output: 30.00 },
-  'gpt-3.5-turbo': { input: 0.50, output: 1.50 },
+// Model pricing per 1M tokens (January 2026)
+export const MODEL_PRICING: Record<string, { input: number; cachedInput: number; output: number }> = {
+  'gpt-5.2': { input: 1.75, cachedInput: 0.175, output: 14.00 },
+  'gpt-5.1': { input: 1.25, cachedInput: 0.125, output: 10.00 },
+  'gpt-5': { input: 1.25, cachedInput: 0.125, output: 10.00 },
+  'gpt-5-mini': { input: 0.25, cachedInput: 0.025, output: 2.00 },
+  'gpt-5-nano': { input: 0.05, cachedInput: 0.005, output: 0.40 },
 };
 
 export const calculateCost = (

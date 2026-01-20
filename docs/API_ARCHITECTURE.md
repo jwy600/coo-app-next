@@ -86,7 +86,10 @@ Route Handler (/app/api/chat/route.ts)
 OpenAI SDK
      │
      │ model: gpt-5-mini
-     │ messages: [{ role: 'user', content: prompt }]
+     │ messages: [
+     │   { role: 'developer', content: DEVELOPER_PROMPT },
+     │   { role: 'user', content: prompt }
+     │ ]
      ▼
 Response
      │

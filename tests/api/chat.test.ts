@@ -48,7 +48,10 @@ describe('Chat API Route', () => {
     expect(data).toEqual({ text: 'Hello! How can I help?' });
     expect(mockCreate).toHaveBeenCalledWith({
       model: 'gpt-5-mini',
-      messages: [{ role: 'user', content: 'Hello' }],
+      messages: [
+        { role: 'developer', content: expect.stringContaining('You are a helpful assistant') },
+        { role: 'user', content: 'Hello' },
+      ],
     });
   });
 
@@ -153,7 +156,9 @@ describe('Chat API Route', () => {
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        messages: [{ role: 'user', content: 'Hello World' }],
+        messages: expect.arrayContaining([
+          { role: 'user', content: 'Hello World' },
+        ]),
       })
     );
   });

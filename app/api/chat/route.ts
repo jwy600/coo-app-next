@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
 import { getOpenAiClient } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
-import { getOpenAIModelConfig } from '@/lib/config/openai';
+import { getOpenAIModelConfig, DEVELOPER_PROMPT } from '@/lib/config/openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: modelConfig.model,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'developer', content: DEVELOPER_PROMPT },
+        { role: 'user', content: prompt },
+      ],
     });
 
     // Extract response text

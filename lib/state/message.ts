@@ -1,7 +1,7 @@
 import { AppState } from '@/types/state';
 import { Message } from '@/types/message';
 import { Block, BlockData, BlockType } from '@/types/block';
-import { updateThreadMessages } from './thread';
+import { updateThreadMessages, ensureThreadExists } from './thread';
 
 /**
  * Message-related state transformations
@@ -94,24 +94,6 @@ export const addAssistantMessage = (
     message,
     blocks: newBlocks,
   };
-};
-
-const ensureThreadExists = (
-  state: AppState,
-  threadId: string,
-  nowFactory: () => number
-): AppState => {
-  const existing = state.threads.find((thread) => thread.id === threadId);
-  if (existing) return state;
-  const now = nowFactory();
-  const thread = {
-    id: threadId,
-    title: 'Main',
-    createdAt: now,
-    updatedAt: now,
-    messages: [],
-  };
-  return { ...state, threads: [...state.threads, thread] };
 };
 
 export const addAssistantMessageToThread = (

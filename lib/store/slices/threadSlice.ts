@@ -26,14 +26,17 @@ export interface ThreadSlice {
   mergeThreadFromSupabase: (thread: Thread, messages: Message[], blocks: Block[]) => void;
 }
 
+// Initialize with a default thread to ensure app always has at least one thread
+const initialState = stateFns.createInitialState(idFactory, nowFactory);
+
 export const threadSlice: StateCreator<
   AppState & ThreadSlice,
   [],
   [],
   ThreadSlice
 > = (set, get) => ({
-  threads: [],
-  activeThreadId: '',
+  threads: initialState.threads,
+  activeThreadId: initialState.activeThreadId,
 
   createThread: (threadId = idFactory()) => {
     const result = stateFns.createThread(

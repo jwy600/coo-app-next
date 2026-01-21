@@ -66,7 +66,11 @@ export const updateThreadMessages = (
   return { ...state, threads };
 };
 
-const ensureThreadExists = (
+/**
+ * Ensure a thread exists in state, creating it if necessary
+ * Used when adding messages to potentially non-existent threads
+ */
+export const ensureThreadExists = (
   state: AppState,
   threadId: string,
   nowFactory: () => number

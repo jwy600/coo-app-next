@@ -1,11 +1,11 @@
 /**
  * useComposer Hook
  *
- * Manages composer state, form submission, and API calls based on mode (chat vs block).
+ * Manages composer state, form submission, and API calls based on composer mode (chat vs block).
  *
  * Reference: legacy/app.js lines 901-1002 (respondToPrompt function)
  *
- * CRITICAL DISTINCTION:
+ * CRITICAL DISTINCTION (Composer Modes):
  * - Chat Mode (no block selected): Creates user/assistant messages
  * - Block Mode (block selected): Result goes to composer (editable draft)
  */
@@ -135,7 +135,7 @@ export function useComposer(): UseComposerReturn {
         return;
       }
 
-      // CHAT MODE: Creates messages
+      // CHAT MODE (composer): Creates messages
       setAwaitingResponse(true);
       setError(null);
 
@@ -144,7 +144,7 @@ export function useComposer(): UseComposerReturn {
         const isNewThread = mode === 'landing';
         if (isNewThread) {
           createThread();
-          setMode('chat');
+          setMode('thread');
         }
 
         // Add user message

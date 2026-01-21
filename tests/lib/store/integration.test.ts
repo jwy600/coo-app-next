@@ -49,8 +49,8 @@ describe('Store Integration Tests', () => {
       expect(useStore.getState().activeThreadId).toBe('thread-1');
 
       // 3. User switches to chat mode
-      store.setMode('chat');
-      expect(useStore.getState().mode).toBe('chat');
+      store.setMode('thread');
+      expect(useStore.getState().mode).toBe('thread');
 
       // 4. User types and sends a message
       const userResult = store.addUserMessage('What is TypeScript?');
@@ -89,7 +89,7 @@ describe('Store Integration Tests', () => {
 
       // Setup: Create thread with message
       store.createThread('thread-1');
-      store.setMode('chat');
+      store.setMode('thread');
       store.addUserMessage('Hello');
       store.addAssistantMessage([
         { text: 'This is a paragraph with important text.', type: 'paragraph' },
@@ -131,7 +131,7 @@ describe('Store Integration Tests', () => {
 
       // Setup
       store.createThread('thread-1');
-      store.setMode('chat');
+      store.setMode('thread');
       store.addAssistantMessage([
         { text: 'Original text here.', type: 'paragraph' },
       ]);
@@ -164,7 +164,7 @@ describe('Store Integration Tests', () => {
 
       // Setup
       store.createThread('thread-1');
-      store.setMode('chat');
+      store.setMode('thread');
       store.addAssistantMessage([
         { text: 'Original paragraph.', type: 'paragraph' },
       ]);
@@ -290,7 +290,7 @@ describe('Store Integration Tests', () => {
 
       // Setup
       store.createThread('thread-1');
-      store.setMode('chat');
+      store.setMode('thread');
       store.addAssistantMessage([
         { text: 'Test paragraph.', type: 'paragraph' },
       ]);
@@ -314,7 +314,7 @@ describe('Store Integration Tests', () => {
 
       // Setup
       store.createThread('thread-1');
-      store.setMode('chat');
+      store.setMode('thread');
       store.addAssistantMessage([
         { text: 'Test paragraph.', type: 'paragraph' },
       ]);

@@ -238,8 +238,8 @@ describe('useStore', () => {
     it('should set mode', () => {
       const { setMode } = useStore.getState();
 
-      setMode('chat');
-      expect(useStore.getState().mode).toBe('chat');
+      setMode('thread');
+      expect(useStore.getState().mode).toBe('thread');
 
       setMode('landing');
       expect(useStore.getState().mode).toBe('landing');
@@ -251,7 +251,7 @@ describe('useStore', () => {
 
       createThread('thread-1');
       addUserMessage('Test message');
-      setMode('chat');
+      setMode('thread');
 
       const blockId = useStore.getState().blocks[0].id;
 
@@ -269,7 +269,7 @@ describe('useStore', () => {
 
       createThread('thread-1');
       addUserMessage('Test message');
-      setMode('chat');
+      setMode('thread');
 
       const blockId = useStore.getState().blocks[0].id;
       toggleSelectedBlock(blockId);
@@ -304,7 +304,7 @@ describe('useStore', () => {
       const { createThread, addUserMessage, setMode } = useStore.getState();
       createThread('thread-1');
       addUserMessage('Test message');
-      setMode('chat');
+      setMode('thread');
     });
 
     it('should select active thread', () => {

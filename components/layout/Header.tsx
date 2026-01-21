@@ -10,12 +10,12 @@ import { Badge } from '@/components/ui/Badge';
  * Phase 8: Removed onLogoClick since Logo handles navigation directly
  */
 interface HeaderProps {
-  mode: 'landing' | 'chat';
+  mode: 'landing' | 'thread';
 }
 
 export function Header({ mode }: HeaderProps) {
   const showDetails = mode === 'landing';
-  const isSticky = mode === 'chat';
+  const isSticky = mode === 'thread';
 
   return (
     <header

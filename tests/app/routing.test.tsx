@@ -153,7 +153,7 @@ describe('Thread Detail Page', () => {
     render(Component);
 
     expect(screen.getByTestId('orbs')).toBeInTheDocument();
-    expect(screen.getByTestId('header')).toHaveAttribute('data-mode', 'chat');
+    expect(screen.getByTestId('header')).toHaveAttribute('data-mode', 'thread');
     expect(screen.getByTestId('chat-container')).toHaveAttribute('data-thread-id', 'thread-1');
     expect(screen.getByTestId('chat-container')).toHaveAttribute('data-has-initial', 'true');
   });

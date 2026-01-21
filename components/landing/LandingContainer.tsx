@@ -30,10 +30,10 @@ export function LandingContainer({ threads }: LandingContainerProps) {
   // Composer hook (handles submission and thread creation)
   const { prompt, setPrompt, handleSubmit, isSubmitting } = useComposer();
 
-  // Redirect to thread page immediately when thread is created (mode changes to chat)
+  // Redirect to thread page immediately when thread is created (mode changes to thread)
   // Don't wait for response - this allows user to see their question appear first
   useEffect(() => {
-    if (mode === 'chat' && activeThreadId) {
+    if (mode === 'thread' && activeThreadId) {
       // Navigate immediately after user message is added
       // The thread page will show the user's question, then the response will stream in
       router.push(`/t/${activeThreadId}`);

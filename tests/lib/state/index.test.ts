@@ -52,9 +52,9 @@ describe('State Management - Core Functions', () => {
   });
 
   describe('setMode', () => {
-    it('should set mode to chat', () => {
-      const nextState = setMode(state, 'chat');
-      expect(nextState.mode).toBe('chat');
+    it('should set mode to thread', () => {
+      const nextState = setMode(state, 'thread');
+      expect(nextState.mode).toBe('thread');
     });
 
     it('should set mode to landing and clear selected block', () => {
@@ -65,7 +65,7 @@ describe('State Management - Core Functions', () => {
     });
 
     it('should maintain immutability', () => {
-      const nextState = setMode(state, 'chat');
+      const nextState = setMode(state, 'thread');
       expect(nextState).not.toBe(state);
     });
   });
@@ -124,7 +124,7 @@ describe('State Management - Core Functions', () => {
 
   describe('toggleSelectedBlock', () => {
     beforeEach(() => {
-      state = setMode(state, 'chat');
+      state = setMode(state, 'thread');
     });
 
     it('should select a block when none is selected', () => {
@@ -144,7 +144,7 @@ describe('State Management - Core Functions', () => {
       expect(nextState.selectedBlockId).toBe('block-2');
     });
 
-    it('should not select block when not in chat mode', () => {
+    it('should not select block when not in thread mode', () => {
       state = setMode(state, 'landing');
       const nextState = toggleSelectedBlock(state, 'block-1');
       expect(nextState.selectedBlockId).toBe(null);

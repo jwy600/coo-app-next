@@ -24,7 +24,7 @@ export function ThreadPageClient({ threadId }: ThreadPageClientProps) {
     <>
       <Orbs />
       <div className="min-h-screen" suppressHydrationWarning>
-        <Header mode="chat" />
+        <Header mode="thread" />
         <main suppressHydrationWarning>
           <ChatContainer
             threadId={threadId}

@@ -28,7 +28,7 @@ export async function fetchChatCompletion(
   const requestBody: ChatRequest = {
     prompt: trimmedPrompt,
     threadId,
-    mode: 'chat',
+    mode: 'thread',
     previousResponseId,
   };
 
@@ -76,7 +76,7 @@ export async function fetchChatCompletionStream(
   const requestBody: ChatRequest = {
     prompt: trimmedPrompt,
     threadId,
-    mode: 'chat',
+    mode: 'thread',
     previousResponseId,
     stream: true,
   };

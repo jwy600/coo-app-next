@@ -62,8 +62,8 @@ export function ChatContainer({
   useEffect(() => {
     if (threadId) {
       setActiveThread(threadId);
-      // Set chat mode on mount (don't check current mode to avoid fighting with Logo)
-      setMode('chat');
+      // Set thread mode on mount (don't check current mode to avoid fighting with Logo)
+      setMode('thread');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId, setActiveThread, setMode]);

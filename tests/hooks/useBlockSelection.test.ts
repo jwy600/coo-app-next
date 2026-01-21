@@ -10,10 +10,10 @@ import { useStore } from '@/lib/store/useStore';
 describe('useBlockSelection', () => {
   beforeEach(() => {
     // Reset store state before each test
-    // IMPORTANT: mode must be 'chat' for block selection to work
+    // IMPORTANT: mode must be 'thread' for block selection to work
     useStore.setState({
       selectedBlockId: null,
-      mode: 'chat',
+      mode: 'thread',
       threads: [],
       blocks: [],
       activeThreadId: '',
@@ -26,7 +26,7 @@ describe('useBlockSelection', () => {
     const { result } = renderHook(() => useBlockSelection());
 
     expect(result.current.selectedBlockId).toBe(null);
-    expect(result.current.isBlockMode).toBe(false);
+    expect(result.current.isComposerBlockMode).toBe(false);
   });
 
   it('should select a block', () => {
@@ -37,7 +37,7 @@ describe('useBlockSelection', () => {
     });
 
     expect(result.current.selectedBlockId).toBe('block-1');
-    expect(result.current.isBlockMode).toBe(true);
+    expect(result.current.isComposerBlockMode).toBe(true);
   });
 
   it('should toggle block selection', () => {
@@ -54,7 +54,7 @@ describe('useBlockSelection', () => {
       result.current.selectBlock('block-1');
     });
     expect(result.current.selectedBlockId).toBe(null);
-    expect(result.current.isBlockMode).toBe(false);
+    expect(result.current.isComposerBlockMode).toBe(false);
   });
 
   it('should switch to different block', () => {
@@ -87,6 +87,6 @@ describe('useBlockSelection', () => {
       result.current.clearSelection();
     });
     expect(result.current.selectedBlockId).toBe(null);
-    expect(result.current.isBlockMode).toBe(false);
+    expect(result.current.isComposerBlockMode).toBe(false);
   });
 });

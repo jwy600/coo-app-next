@@ -15,7 +15,7 @@ export interface UseBlockSelectionReturn {
   selectedBlockId: string | null;
   selectBlock: (blockId: string) => void;
   clearSelection: () => void;
-  isBlockMode: boolean;
+  isComposerBlockMode: boolean;
 }
 
 export function useBlockSelection(): UseBlockSelectionReturn {
@@ -44,12 +44,12 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   /**
    * Computed: Is composer in block mode?
    */
-  const isBlockMode = selectedBlockId !== null;
+  const isComposerBlockMode = selectedBlockId !== null;
 
   return {
     selectedBlockId,
     selectBlock,
     clearSelection,
-    isBlockMode,
+    isComposerBlockMode,
   };
 }

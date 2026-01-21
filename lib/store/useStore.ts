@@ -9,13 +9,14 @@ import { threadSlice, ThreadSlice } from './slices/threadSlice';
 import { blockSlice, BlockSlice } from './slices/blockSlice';
 import { uiSlice, UISlice } from './slices/uiSlice';
 import { streamingSlice, StreamingSlice } from './slices/streamingSlice';
+import { settingsSlice, SettingsSlice } from './slices/settingsSlice';
 import { AppState } from '@/types/state';
 import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { isTestMode } from '@/lib/utils/testMode';
 
-export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice;
+export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice & SettingsSlice;
 
 /**
  * Main store hook
@@ -25,30 +26,33 @@ export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & Streami
  */
 export const useStore = create<StoreState>()(
   devtools(
-    isTestMode()
-      ? persist(
-          (...args) => ({
-            ...threadSlice(...args),
-            ...blockSlice(...args),
-            ...uiSlice(...args),
-            ...streamingSlice(...args),
-          }),
-          {
+    persist(
+      (...args) => ({
+        ...threadSlice(...args),
+        ...blockSlice(...args),
+        ...uiSlice(...args),
+        ...streamingSlice(...args),
+        ...settingsSlice(...args),
+      }),
+      isTestMode()
+        ? {
             name: 'coo-test-storage',
-            // Only persist critical data needed for navigation tests
+            // In test mode, persist critical data for navigation tests
             partialize: (state) => ({
               threads: state.threads,
               blocks: state.blocks,
               activeThreadId: state.activeThreadId,
+              settings: state.settings,
             }),
           }
-        )
-      : (...args) => ({
-          ...threadSlice(...args),
-          ...blockSlice(...args),
-          ...uiSlice(...args),
-          ...streamingSlice(...args),
-        }),
+        : {
+            name: 'coo-settings-storage',
+            // In production, only persist settings to localStorage
+            partialize: (state) => ({
+              settings: state.settings,
+            }),
+          }
+    ),
     {
       name: 'coo-store',
       enabled: process.env.NODE_ENV === 'development',

@@ -173,6 +173,9 @@ export function useComposer(): UseComposerReturn {
         startStreaming(streamingMessageId, currentThreadId);
         streamResponseIdRef.current = undefined;
 
+        // Get settings from store
+        const settings = useStore.getState().settings;
+
         // Fetch AI response with streaming
         await fetchChatCompletionStream(
           trimmedPrompt,
@@ -225,7 +228,8 @@ export function useComposer(): UseComposerReturn {
             },
           },
           currentThreadId,
-          previousResponseId
+          previousResponseId,
+          settings
         );
       } catch (err) {
         clearStream();

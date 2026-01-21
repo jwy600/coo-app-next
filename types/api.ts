@@ -1,3 +1,5 @@
+import type { Settings } from './settings';
+
 // Chat API Types
 export interface ChatRequest {
   prompt: string;
@@ -5,6 +7,7 @@ export interface ChatRequest {
   mode?: 'thread';
   previousResponseId?: string;
   stream?: boolean;
+  settings?: Settings;
 }
 
 export interface ChatResponse {

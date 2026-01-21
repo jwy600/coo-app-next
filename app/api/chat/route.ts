@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     const prompt = parseString(body?.prompt);
     const previousResponseId = body?.previousResponseId;
     const stream = body?.stream ?? false;
+    const settings = body?.settings;
 
     // Validate prompt
     const validation = validatePrompt(prompt);
@@ -33,10 +34,12 @@ export async function POST(request: NextRequest) {
           try {
             await createResponseStream(
               {
-                model: modelConfig.model,
+                model: settings?.model || modelConfig.model,
                 input: prompt,
                 instructions: DEVELOPER_PROMPT,
                 previousResponseId,
+                reasoningEffort: settings?.reasoningEffort,
+                webSearchEnabled: settings?.webSearchEnabled,
               },
               {
                 onToken: (token) => {
@@ -78,10 +81,12 @@ export async function POST(request: NextRequest) {
 
     // NON-STREAMING PATH: Return JSON response
     const result = await createResponse({
-      model: modelConfig.model,
+      model: settings?.model || modelConfig.model,
       input: prompt,
       instructions: DEVELOPER_PROMPT,
       previousResponseId,
+      reasoningEffort: settings?.reasoningEffort,
+      webSearchEnabled: settings?.webSearchEnabled,
     });
 
     if (!result.text) {

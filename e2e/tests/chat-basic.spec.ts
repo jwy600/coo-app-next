@@ -90,8 +90,8 @@ test.describe('Basic Chat Flow', () => {
     // Check for heading
     await expect(page.locator('h1')).toContainText('Introduction');
 
-    // Check for list
-    await expect(page.locator('li')).toHaveCount(2);
+    // Check for list (scope to assistant message to exclude sidebar)
+    await expect(page.locator('.assistant-message li')).toHaveCount(2);
 
     // Check for code block
     await expect(page.locator('pre code')).toBeVisible();

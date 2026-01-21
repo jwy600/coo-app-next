@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 describe('Button Component', () => {
   it('should render with children', () => {
@@ -8,16 +8,16 @@ describe('Button Component', () => {
     expect(screen.getByText('Click me')).toBeDefined();
   });
 
-  it('should render with primary variant by default', () => {
+  it('should render with default variant', () => {
     render(<Button>Primary</Button>);
     const button = screen.getByRole('button');
-    expect(button.className).toContain('bg-black');
+    expect(button.className).toContain('bg-primary');
   });
 
   it('should render with secondary variant', () => {
     render(<Button variant="secondary">Secondary</Button>);
     const button = screen.getByRole('button');
-    expect(button.className).toContain('bg-gray-200');
+    expect(button.className).toContain('bg-secondary');
   });
 
   it('should be disabled when disabled prop is true', () => {

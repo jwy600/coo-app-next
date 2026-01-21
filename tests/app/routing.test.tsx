@@ -1,23 +1,25 @@
 /**
- * Tests for Phase 8: Pages & Routing
+ * Tests for Pages & Routing
  *
- * Verifies landing page and thread detail page work correctly
+ * Verifies landing page and thread detail page work correctly with new AppLayout
  */
 
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import LandingPage from '@/app/page';
 import ThreadPage from '@/app/t/[threadId]/page';
-import { notFound } from 'next/navigation';
 import type { Thread } from '@/types/thread';
-import type { Message } from '@/types/message';
-import type { Block } from '@/types/block';
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
   notFound: vi.fn(),
-  useRouter: vi.fn(),
-  usePathname: vi.fn(),
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+  })),
+  usePathname: vi.fn(() => '/'),
+  useParams: vi.fn(() => ({})),
 }));
 
 // Mock Supabase operations
@@ -34,32 +36,22 @@ vi.mock('@/lib/supabase/blocks', () => ({
   loadBlocksForThread: vi.fn(),
 }));
 
-// Mock components (we're only testing page structure)
-vi.mock('@/components/layout/Header', () => ({
-  Header: ({ mode }: { mode: string }) => <div data-testid="header" data-mode={mode} />,
-}));
-
-vi.mock('@/components/landing/ThreadList', () => ({
-  ThreadList: ({ threads }: { threads: Thread[] }) => (
-    <div data-testid="thread-list" data-count={threads.length} />
+// Mock AppLayout and related components
+vi.mock('@/components/layout/AppLayout', () => ({
+  AppLayout: ({ children, threads }: { children: React.ReactNode; threads: Thread[] }) => (
+    <div data-testid="app-layout" data-thread-count={threads.length}>
+      {children}
+    </div>
   ),
 }));
 
-vi.mock('@/components/ui/Orbs', () => ({
-  Orbs: () => <div data-testid="orbs" />,
+vi.mock('@/app/landing-content', () => ({
+  LandingContent: () => <div data-testid="landing-content" />,
 }));
 
-vi.mock('@/components/chat/ChatContainer', () => ({
-  ChatContainer: ({
-    threadId,
-    initialThread,
-  }: {
-    threadId: string;
-    initialThread?: Thread;
-  }) => (
-    <div data-testid="chat-container" data-thread-id={threadId} data-has-initial={!!initialThread}>
-      Chat for thread {threadId}
-    </div>
+vi.mock('@/app/t/[threadId]/thread-content', () => ({
+  ThreadContent: ({ threadId }: { threadId: string }) => (
+    <div data-testid="thread-content" data-thread-id={threadId} />
   ),
 }));
 
@@ -84,9 +76,9 @@ describe('Landing Page', () => {
     const Component = await LandingPage();
     render(Component);
 
-    expect(screen.getByTestId('orbs')).toBeInTheDocument();
-    expect(screen.getByTestId('header')).toHaveAttribute('data-mode', 'landing');
-    expect(screen.getByTestId('thread-list')).toHaveAttribute('data-count', '1');
+    expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+    expect(screen.getByTestId('app-layout')).toHaveAttribute('data-thread-count', '1');
+    expect(screen.getByTestId('landing-content')).toBeInTheDocument();
   });
 
   it('should render with empty thread list', async () => {
@@ -96,7 +88,8 @@ describe('Landing Page', () => {
     const Component = await LandingPage();
     render(Component);
 
-    expect(screen.getByTestId('thread-list')).toHaveAttribute('data-count', '0');
+    expect(screen.getByTestId('app-layout')).toHaveAttribute('data-thread-count', '0');
+    expect(screen.getByTestId('landing-content')).toBeInTheDocument();
   });
 });
 
@@ -105,71 +98,25 @@ describe('Thread Detail Page', () => {
     vi.clearAllMocks();
   });
 
-  // TODO: Update these tests for client component architecture
-  // These tests were written for server components but pages have been refactored to use 'use client'
-  it.skip('should render thread page with data', async () => {
-    const { loadThreadFromSupabase } = await import('@/lib/supabase/threads');
-    const { loadMessagesForThread } = await import('@/lib/supabase/messages');
-    const { loadBlocksForThread } = await import('@/lib/supabase/blocks');
-
-    const mockThread: Thread = {
-      id: 'thread-1',
-      title: 'Test Thread',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      messages: [],
-    };
-
-    const mockMessages: Message[] = [
+  it('should render thread page with correct threadId', async () => {
+    const { loadAllThreads } = await import('@/lib/supabase/threads');
+    const mockThreads: Thread[] = [
       {
-        id: 'msg-1',
-        threadId: 'thread-1',
-        role: 'user',
-        content: [{ blockId: 'block-1' }],
+        id: 'thread-1',
+        title: 'Test Thread',
         createdAt: Date.now(),
-        meta: {},
+        updatedAt: Date.now(),
+        messages: [],
       },
     ];
-
-    const mockBlocks: Block[] = [
-      {
-        id: 'block-1',
-        messageId: 'msg-1',
-        type: 'paragraph',
-        text: 'Hello',
-        edited: false,
-        selections: [],
-        prevText: null,
-        isRewritten: false,
-      },
-    ];
-
-    (loadThreadFromSupabase as Mock).mockResolvedValue(mockThread);
-    (loadMessagesForThread as Mock).mockResolvedValue(mockMessages);
-    (loadBlocksForThread as Mock).mockResolvedValue(mockBlocks);
+    (loadAllThreads as Mock).mockResolvedValue(mockThreads);
 
     const params = Promise.resolve({ threadId: 'thread-1' });
     const Component = await ThreadPage({ params });
     render(Component);
 
-    expect(screen.getByTestId('orbs')).toBeInTheDocument();
-    expect(screen.getByTestId('header')).toHaveAttribute('data-mode', 'thread');
-    expect(screen.getByTestId('chat-container')).toHaveAttribute('data-thread-id', 'thread-1');
-    expect(screen.getByTestId('chat-container')).toHaveAttribute('data-has-initial', 'true');
-  });
-
-  it.skip('should call notFound when thread does not exist', async () => {
-    const { loadThreadFromSupabase } = await import('@/lib/supabase/threads');
-    (loadThreadFromSupabase as Mock).mockResolvedValue(null);
-
-    const params = Promise.resolve({ threadId: 'invalid-thread' });
-
-    try {
-      await ThreadPage({ params });
-    } catch (error) {
-      // notFound throws an error that Next.js catches
-    }
-
-    expect(notFound).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+    expect(screen.getByTestId('thread-content')).toBeInTheDocument();
+    expect(screen.getByTestId('thread-content')).toHaveAttribute('data-thread-id', 'thread-1');
   });
 });

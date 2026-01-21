@@ -1,11 +1,14 @@
 'use client';
 
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 /**
  * Client Component - Block transformation action buttons
- * Reference: legacy/index.html lines 63-68
- * Needs 'use client' for click handlers
+ * Uses shadcn Button with outline variant for secondary actions
+ *
+ * Spacing rationale:
+ * - gap-2 (8px): Standard inline element spacing
+ * - size="sm": Compact buttons for toolbar density
  */
 export type BlockAction = 'translate' | 'example' | 'eli5' | 'expand';
 
@@ -23,11 +26,13 @@ export function BlockControls({ onAction, disabled = false }: BlockControlsProps
   ];
 
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-1.5 flex-wrap">
       {actions.map(({ action, label }) => (
         <Button
           key={action}
-          variant="secondary"
+          variant="outline"
+          size="xs"
+          className="rounded-full"
           onClick={() => onAction?.(action)}
           disabled={disabled}
         >

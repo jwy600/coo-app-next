@@ -123,8 +123,8 @@ export function PromptInput({
       onKeyDown={handleKeyDown}
       onMouseUp={handleSelectionCapture}
       onKeyUp={handleSelectionCapture}
-      className={`min-h-[48px] max-h-[300px] h-full px-4 py-3 border border-border rounded-lg bg-white overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500 text-[0.9375rem] leading-[1.5] ${
-        disabled ? 'bg-gray-100 cursor-not-allowed' : ''
+      className={`min-h-[48px] max-h-[300px] h-full px-3 py-2 border border-input rounded-md bg-background text-foreground overflow-y-auto focus:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] text-base transition-[color,box-shadow] ${
+        disabled ? 'bg-muted cursor-not-allowed opacity-50' : ''
       }`}
       data-placeholder={finalPlaceholder}
       role="textbox"

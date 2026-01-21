@@ -5,8 +5,11 @@ import { Thread } from '@/types/thread';
 
 /**
  * Client Component - Display list of threads
- * Reference: legacy/index.html lines 38-41
- * Needs 'use client' for potential Zustand store access and updates
+ * Uses shadcn styling patterns
+ *
+ * Spacing rationale (Tailwind 4px base):
+ * - py-6 (24px): Secondary section padding (less than hero's py-8)
+ * - mb-4 (16px): Separation between header and list
  */
 interface ThreadListProps {
   threads: Thread[];
@@ -15,17 +18,19 @@ interface ThreadListProps {
 export function ThreadList({ threads }: ThreadListProps) {
   if (!threads || threads.length === 0) {
     return (
-      <section className="px-6 py-4" aria-label="Artifacts">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Artifacts</h2>
-        <p className="text-sm text-gray-500">No threads yet. Start a conversation below.</p>
+      <section className="py-6" aria-label="Artifacts">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Artifacts</h2>
+        <p className="text-sm text-muted-foreground">
+          No threads yet. Start a conversation below.
+        </p>
       </section>
     );
   }
 
   return (
-    <section className="px-6 py-4" aria-label="Artifacts">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Artifacts</h2>
-      <div className="space-y-2">
+    <section className="py-6" aria-label="Artifacts">
+      <h2 className="text-lg font-semibold text-foreground mb-4">Artifacts</h2>
+      <div className="space-y-0">
         {threads.map((thread) => (
           <ThreadPill key={thread.id} thread={thread} />
         ))}

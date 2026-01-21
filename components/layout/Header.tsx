@@ -1,7 +1,7 @@
 'use client';
 
 import { Logo } from './Logo';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Client Component - Sticky header with mode-dependent display
@@ -19,7 +19,7 @@ export function Header({ mode }: HeaderProps) {
 
   return (
     <header
-      className={`bg-white border-b border-border px-6 py-4 ${
+      className={`bg-white border-b border-border py-4 ${
         isSticky ? 'sticky top-0 z-10' : ''
       }`}
     >

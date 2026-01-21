@@ -1,7 +1,8 @@
+import { Button } from '@/components/ui/button';
+
 /**
- * Server-compatible ErrorMessage component
- * Displays error state with optional retry
- * Reference: legacy/app.js lines 631-658
+ * ErrorMessage component - Displays error state with optional retry
+ * Uses shadcn Button for retry action
  */
 interface ErrorMessageProps {
   error: string;
@@ -12,12 +13,18 @@ export function ErrorMessage({ error, onRetry }: ErrorMessageProps) {
   return (
     <div className="assistant-message">
       <span className="assistant-label">Coo</span>
-      <div className="assistant-error">
-        <p>{error}</p>
+      <div className="py-4 grid gap-2">
+        <p className="text-sm text-foreground">{error}</p>
         {onRetry && (
-          <button type="button" className="assistant-retry" onClick={onRetry}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRetry}
+            className="justify-self-start"
+          >
             Retry
-          </button>
+          </Button>
         )}
       </div>
     </div>

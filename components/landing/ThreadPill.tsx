@@ -3,8 +3,9 @@ import { Thread } from '@/types/thread';
 
 /**
  * Server-compatible ThreadPill component
- * Displays thread title and links to thread page
- * Reference: legacy/app.js lines 398-407
+ * Compact row-style list item for thread navigation
+ *
+ * Spacing: py-2 (8px) vertical, inline layout with date on the right
  */
 interface ThreadPillProps {
   thread: Thread;
@@ -16,12 +17,12 @@ export function ThreadPill({ thread }: ThreadPillProps) {
   return (
     <Link
       href={`/t/${thread.id}`}
-      className="block px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-gray-900 no-underline"
+      className="flex items-center justify-between gap-4 py-2 px-3 -mx-3 rounded-md text-sm text-foreground hover:bg-muted/50 transition-colors no-underline"
     >
-      <div className="font-medium text-sm">{title}</div>
-      <div className="text-xs text-gray-500 mt-1">
+      <span className="truncate font-medium">{title}</span>
+      <span className="text-xs text-muted-foreground shrink-0">
         {new Date(thread.updatedAt).toLocaleDateString()}
-      </div>
+      </span>
     </Link>
   );
 }

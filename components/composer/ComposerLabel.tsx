@@ -1,7 +1,8 @@
+import { Label } from '@/components/ui/label';
+
 /**
  * Server-compatible ComposerLabel component
- * Displays label based on mode
- * Reference: legacy/app.js lines 432-434
+ * Displays label based on mode using shadcn Label
  */
 interface ComposerLabelProps {
   mode: 'landing' | 'chat';
@@ -14,8 +15,8 @@ export function ComposerLabel({ mode, hasBlockSelected }: ComposerLabelProps) {
     : 'Ask coo anything';
 
   return (
-    <label className="text-sm font-medium text-gray-700 block mb-2 flex-shrink-0" htmlFor="prompt">
+    <Label htmlFor="prompt" className="block mb-2 flex-shrink-0">
       {label}
-    </label>
+    </Label>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Message } from '@/types/message';
 import { Block, BlockData } from '@/types/block';
 import { UserMessage } from './UserMessage';
@@ -69,8 +69,11 @@ export function MessageList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, isPending, error]);
 
-  // Create block lookup map
-  const blockLookup = new Map(blocks.map((block) => [block.id, block]));
+  // Memoize block lookup map to avoid recreation on every render
+  const blockLookup = useMemo(
+    () => new Map(blocks.map((block) => [block.id, block])),
+    [blocks]
+  );
 
   return (
     <div

@@ -65,19 +65,42 @@ export function useThreadSync(
 
     const loadThread = async () => {
       const maxRetries = 5;
-      const retryDelay = 800;
+      const baseDelay = 500; // Start with 500ms
+
+      /**
+       * Check if an error is transient (worth retrying)
+       * - Network errors are transient
+       * - 5xx server errors are transient
+       * - 404 Not Found may be transient (replication lag)
+       * - 4xx client errors (except 404) are permanent
+       */
+      const isTransientError = (error: unknown): boolean => {
+        if (error instanceof Error) {
+          const message = error.message.toLowerCase();
+          // Network errors
+          if (message.includes('network') || message.includes('fetch')) return true;
+          // Not found - may be replication lag for newly created threads
+          if (message.includes('not found')) return true;
+        }
+        return true; // Default to retrying unknown errors
+      };
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
           const threadData = await loadThreadFromSupabase(threadId);
 
           if (!threadData) {
-            if (attempt < maxRetries - 1) {
-              console.log(`Thread not found, retrying... (${attempt + 1}/${maxRetries})`);
-              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            const notFoundError = new Error('Thread not found');
+            if (attempt < maxRetries - 1 && isTransientError(notFoundError)) {
+              // Exponential backoff: 500ms, 1000ms, 2000ms, 4000ms
+              const delay = baseDelay * Math.pow(2, attempt);
+              console.log(
+                `Thread not found, retrying in ${delay}ms... (${attempt + 1}/${maxRetries})`
+              );
+              await new Promise((resolve) => setTimeout(resolve, delay));
               continue;
             }
-            throw new Error('Thread not found');
+            throw notFoundError;
           }
 
           const messages = await loadMessagesForThread(threadId);
@@ -107,11 +130,28 @@ export function useThreadSync(
           loadedThreadRef.current = threadId;
           return;
         } catch (err) {
-          if (attempt === maxRetries - 1) {
+          // Don't retry permanent errors
+          if (!isTransientError(err)) {
             const errorMessage = getErrorMessage(err, 'Failed to load thread');
             setError(errorMessage);
             setIsLoading(false);
             loadingRef.current = false;
+            return;
+          }
+
+          if (attempt === maxRetries - 1) {
+            // Final attempt failed
+            const errorMessage = getErrorMessage(err, 'Failed to load thread');
+            setError(errorMessage);
+            setIsLoading(false);
+            loadingRef.current = false;
+          } else {
+            // Exponential backoff before retry
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.log(
+              `Load failed, retrying in ${delay}ms... (${attempt + 1}/${maxRetries})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
           }
         }
       }

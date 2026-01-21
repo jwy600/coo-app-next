@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Block } from '@/types/block';
 import { BlockContent } from '@/components/content/BlockContent';
 import { SelectionChips } from './SelectionChips';
@@ -8,6 +9,9 @@ import { SelectionChips } from './SelectionChips';
  * Client Component - Individual editable block with selection handle
  * Reference: legacy/app.js lines 500-573
  * Needs 'use client' for click handlers and selection state
+ *
+ * Wrapped in React.memo with custom comparator to prevent unnecessary re-renders
+ * when parent re-renders with new callback references but same data.
  */
 interface DocBlockProps {
   block: Block;
@@ -18,7 +22,7 @@ interface DocBlockProps {
   onRewrite?: (blockId: string) => void;
 }
 
-export function DocBlock({
+function DocBlockComponent({
   block,
   isSelected,
   onSelect,
@@ -72,3 +76,34 @@ export function DocBlock({
     </div>
   );
 }
+
+/**
+ * Memoized DocBlock - only re-renders when block data or selection state changes
+ * Ignores callback reference changes since they're stable in behavior
+ */
+export const DocBlock = memo(DocBlockComponent, (prevProps, nextProps) => {
+  // Re-render if selection state changed
+  if (prevProps.isSelected !== nextProps.isSelected) return false;
+
+  // Re-render if block data changed
+  const prevBlock = prevProps.block;
+  const nextBlock = nextProps.block;
+
+  if (prevBlock.id !== nextBlock.id) return false;
+  if (prevBlock.text !== nextBlock.text) return false;
+  if (prevBlock.type !== nextBlock.type) return false;
+  if (prevBlock.edited !== nextBlock.edited) return false;
+  if (prevBlock.isRewritten !== nextBlock.isRewritten) return false;
+  if (prevBlock.prevText !== nextBlock.prevText) return false;
+
+  // Check selections array (shallow string comparison)
+  if (prevBlock.selections.length !== nextBlock.selections.length) return false;
+  for (let i = 0; i < prevBlock.selections.length; i++) {
+    if (prevBlock.selections[i] !== nextBlock.selections[i]) {
+      return false;
+    }
+  }
+
+  // No changes detected - skip re-render
+  return true;
+});

@@ -100,6 +100,8 @@ export async function fetchChatCompletionStream(
 
     const decoder = new TextDecoder();
     let buffer = '';
+    let consecutiveParseFailures = 0;
+    const MAX_CONSECUTIVE_FAILURES = 10;
 
     try {
       while (true) {
@@ -108,7 +110,10 @@ export async function fetchChatCompletionStream(
         if (done) {
           // Process remaining buffer
           if (buffer.trim()) {
-            processStreamBuffer(buffer, callbacks);
+            const result = processStreamBuffer(buffer, callbacks);
+            consecutiveParseFailures = result.hadParseError
+              ? consecutiveParseFailures + 1
+              : 0;
           }
           break;
         }
@@ -120,7 +125,17 @@ export async function fetchChatCompletionStream(
         buffer = parts.pop() || '';
 
         for (const part of parts) {
-          processStreamBuffer(part, callbacks);
+          const result = processStreamBuffer(part, callbacks);
+          if (result.hadParseError) {
+            consecutiveParseFailures++;
+            if (consecutiveParseFailures >= MAX_CONSECUTIVE_FAILURES) {
+              throw new Error(
+                `Stream corrupted: ${MAX_CONSECUTIVE_FAILURES} consecutive parse failures`
+              );
+            }
+          } else {
+            consecutiveParseFailures = 0;
+          }
         }
       }
     } finally {
@@ -131,11 +146,20 @@ export async function fetchChatCompletionStream(
   }
 }
 
+interface ProcessBufferResult {
+  hadParseError: boolean;
+}
+
 /**
  * Process SSE buffer and dispatch to callbacks
+ * Returns whether any parse errors occurred for error threshold tracking
  */
-function processStreamBuffer(data: string, callbacks: StreamChatCallbacks): void {
+function processStreamBuffer(
+  data: string,
+  callbacks: StreamChatCallbacks
+): ProcessBufferResult {
   const lines = data.split('\n');
+  let hadParseError = false;
 
   for (const line of lines) {
     if (!line.startsWith('data: ')) continue;
@@ -156,8 +180,11 @@ function processStreamBuffer(data: string, callbacks: StreamChatCallbacks): void
         callbacks.onError(new Error(event.error || 'Stream error'));
       }
     } catch (e) {
-      // Skip malformed JSON
+      // Track parse errors for threshold detection
+      hadParseError = true;
       console.warn('Failed to parse stream event:', jsonStr);
     }
   }
+
+  return { hadParseError };
 }

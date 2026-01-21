@@ -1,0 +1,31 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { EmptyState } from '@/components/empty-state';
+import { useComposer } from '@/hooks/useComposer';
+import { useStore } from '@/lib/store/useStore';
+
+export function LandingContent() {
+  const router = useRouter();
+  const mode = useStore((state) => state.mode);
+  const activeThreadId = useStore((state) => state.activeThreadId);
+
+  const { prompt, setPrompt, handleSubmit, isSubmitting } = useComposer();
+
+  // Redirect to thread page when thread is created
+  useEffect(() => {
+    if (mode === 'thread' && activeThreadId) {
+      router.push(`/t/${activeThreadId}`);
+    }
+  }, [mode, activeThreadId, router]);
+
+  return (
+    <EmptyState
+      prompt={prompt}
+      onPromptChange={setPrompt}
+      onSubmit={handleSubmit}
+      disabled={isSubmitting}
+    />
+  );
+}

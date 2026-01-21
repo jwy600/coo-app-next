@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 
 describe('Badge Component', () => {
   it('should render with children', () => {
@@ -10,14 +10,20 @@ describe('Badge Component', () => {
 
   it('should apply correct styling classes', () => {
     const { container } = render(<Badge>Styled</Badge>);
-    const badge = container.querySelector('span');
-    expect(badge?.className).toContain('bg-gray-100');
-    expect(badge?.className).toContain('rounded-full');
+    const badge = container.querySelector('div');
+    expect(badge?.className).toContain('bg-primary');
+    expect(badge?.className).toContain('rounded-md');
   });
 
   it('should accept custom className', () => {
     const { container } = render(<Badge className="custom-class">Custom</Badge>);
-    const badge = container.querySelector('span');
+    const badge = container.querySelector('div');
     expect(badge?.className).toContain('custom-class');
+  });
+
+  it('should render with secondary variant', () => {
+    const { container } = render(<Badge variant="secondary">Secondary</Badge>);
+    const badge = container.querySelector('div');
+    expect(badge?.className).toContain('bg-secondary');
   });
 });

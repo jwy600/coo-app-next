@@ -1,19 +1,15 @@
 /**
  * Thread Detail Page
  *
- * Client-side page to avoid hydration mismatches when navigating from landing page.
+ * Uses new AppLayout with sidebar.
  * Data is loaded via useThreadSync hook which checks store first, then Supabase.
- *
- * Reference: legacy routing hash-based system (#/t/{id})
- * Phase 8: Pages & Routing Implementation
  */
 
-'use client';
+import { loadAllThreads } from '@/lib/supabase/threads';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { ThreadContent } from './thread-content';
 
-import { use } from 'react';
-import { ThreadPageClient } from './page-client';
-
-export const dynamic = 'force-dynamic'; // Always fetch fresh data
+export const dynamic = 'force-dynamic';
 
 interface ThreadPageProps {
   params: Promise<{
@@ -21,8 +17,13 @@ interface ThreadPageProps {
   }>;
 }
 
-export default function ThreadPage({ params }: ThreadPageProps) {
-  const { threadId } = use(params);
+export default async function ThreadPage({ params }: ThreadPageProps) {
+  const { threadId } = await params;
+  const threads = await loadAllThreads();
 
-  return <ThreadPageClient threadId={threadId} />;
+  return (
+    <AppLayout threads={threads}>
+      <ThreadContent threadId={threadId} />
+    </AppLayout>
+  );
 }

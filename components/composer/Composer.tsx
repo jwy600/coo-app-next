@@ -2,18 +2,15 @@
 
 import { FormEvent } from 'react';
 import { PromptInput } from './PromptInput';
-import { ComposerLabel } from './ComposerLabel';
 import { ComposerHint } from './ComposerHint';
 import { BlockControls, BlockAction } from '@/components/chat/BlockControls';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 /**
  * Client Component - Main composer form
- * Reference: legacy/index.html lines 46-73
  * Needs 'use client' for form submission and state
  */
 interface ComposerProps {
-  mode: 'landing' | 'thread';
   selectedBlockId: string | null;
   prompt: string;
   onPromptChange: (value: string) => void;
@@ -24,7 +21,6 @@ interface ComposerProps {
 }
 
 export function Composer({
-  mode,
   selectedBlockId,
   prompt,
   onPromptChange,
@@ -38,10 +34,8 @@ export function Composer({
   return (
     <form
       onSubmit={onSubmit}
-      className="composer fixed left-1/2 -translate-x-1/2 bottom-6 z-[5] bg-white rounded-xl border border-border composer-shadow p-4 w-[min(768px,calc(100%-48px))] max-h-[50vh] flex flex-col overflow-hidden"
+      className="composer bg-background rounded-xl border border-border composer-shadow p-4 max-h-[50vh] flex flex-col overflow-hidden w-full"
     >
-      <ComposerLabel mode={mode} hasBlockSelected={hasBlockSelected} />
-
       <div className="flex gap-2 items-stretch flex-1 min-h-0">
         <div className="flex-1 min-h-0 min-w-0">
           <PromptInput
@@ -50,10 +44,10 @@ export function Composer({
             onSelectionCapture={onSelectionCapture}
             onSubmit={() => onSubmit(new Event('submit') as any)}
             disabled={disabled}
-            mode={mode}
+            hasBlockSelected={hasBlockSelected}
           />
         </div>
-        <Button type="submit" variant="primary" disabled={disabled} className="flex-shrink-0 self-end">
+        <Button type="submit" variant="default" disabled={disabled} className="flex-shrink-0 self-end">
           <span>Send</span>
           <span aria-hidden="true" className="ml-1">
             →

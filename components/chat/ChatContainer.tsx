@@ -180,31 +180,38 @@ export function ChatContainer({
   const error = threadError || composerError;
 
   return (
-    <div className="app chat">
-      <MessageList
-        messages={messages}
-        blocks={blocks}
-        selectedBlockId={selectedBlockId}
-        isPending={isSubmitting}
-        error={error}
-        streamingMessage={streamingMessage}
-        onBlockSelect={selectBlock}
-        onRemoveSelection={handleRemoveSelection}
-        onClearSelections={handleClearSelections}
-        onRewrite={handleRewrite}
-        onRetry={handleRetry}
-      />
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-chat mx-auto">
+          <MessageList
+            messages={messages}
+            blocks={blocks}
+            selectedBlockId={selectedBlockId}
+            isPending={isSubmitting}
+            error={error}
+            streamingMessage={streamingMessage}
+            onBlockSelect={selectBlock}
+            onRemoveSelection={handleRemoveSelection}
+            onClearSelections={handleClearSelections}
+            onRewrite={handleRewrite}
+            onRetry={handleRetry}
+          />
+        </div>
+      </div>
 
-      <Composer
-        mode={mode}
-        selectedBlockId={selectedBlockId}
-        prompt={prompt}
-        onPromptChange={setPrompt}
-        onSubmit={handleSubmit}
-        onSelectionCapture={captureSelection}
-        onBlockAction={handleBlockAction}
-        disabled={isSubmitting || isLoadingThread}
-      />
+      <div className="flex-shrink-0 p-4 pb-6">
+        <div className="max-w-chat mx-auto">
+          <Composer
+            selectedBlockId={selectedBlockId}
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            onSubmit={handleSubmit}
+            onSelectionCapture={captureSelection}
+            onBlockAction={handleBlockAction}
+            disabled={isSubmitting || isLoadingThread}
+          />
+        </div>
+      </div>
     </div>
   );
 }

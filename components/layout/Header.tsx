@@ -1,7 +1,7 @@
 'use client';
 
 import { Logo } from './Logo';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Client Component - Sticky header with mode-dependent display

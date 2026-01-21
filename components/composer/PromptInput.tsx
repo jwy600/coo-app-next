@@ -16,7 +16,7 @@ interface PromptInputProps {
   onSubmit?: () => void;
   placeholder?: string;
   disabled?: boolean;
-  mode?: 'landing' | 'thread';
+  hasBlockSelected?: boolean;
 }
 
 export function PromptInput({
@@ -26,12 +26,12 @@ export function PromptInput({
   onSubmit,
   placeholder,
   disabled = false,
-  mode = 'landing',
+  hasBlockSelected = false,
 }: PromptInputProps) {
-  // Set default placeholder based on mode
-  const defaultPlaceholder = mode === 'landing'
-    ? 'Explain Cobb-Douglas function and its implications of capital/labour substitution.'
-    : 'Can you find a counter argument about this statement?';
+  // Set default placeholder based on block selection state
+  const defaultPlaceholder = hasBlockSelected
+    ? 'Ask about the selected block'
+    : 'Ask coo anything';
 
   const finalPlaceholder = placeholder || defaultPlaceholder;
   const inputRef = useRef<HTMLDivElement>(null);

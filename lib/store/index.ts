@@ -12,5 +12,5 @@ export {
   selectBlocksByMessage,
   selectActiveThreadBlocks,
   selectHasThreads,
-  selectIsBlockMode,
+  selectIsComposerBlockMode,
 } from './useStore';

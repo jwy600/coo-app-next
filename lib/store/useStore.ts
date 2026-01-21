@@ -124,5 +124,5 @@ export const selectHasThreads = (state: StoreState): boolean =>
 /**
  * Check if composer is in block mode (block selected)
  */
-export const selectIsBlockMode = (state: StoreState): boolean =>
+export const selectIsComposerBlockMode = (state: StoreState): boolean =>
   state.selectedBlockId !== null;

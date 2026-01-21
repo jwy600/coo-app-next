@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge';
  * No 'use client' needed - static content
  */
 interface HeroProps {
-  mode: 'landing' | 'chat';
+  mode: 'landing' | 'thread';
 }
 
 export function Hero({ mode }: HeroProps) {

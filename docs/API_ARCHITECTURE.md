@@ -72,7 +72,7 @@ API Client (/lib/api/chat.ts)
      │   - prompt < 4000 chars
      │
      │ POST /api/chat
-     │ { prompt, threadId, mode: 'chat' }
+     │ { prompt, threadId, mode: 'thread' }
      ▼
 Route Handler (/app/api/chat/route.ts)
      │

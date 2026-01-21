@@ -41,7 +41,7 @@ export const createInitialState = (
 };
 
 /**
- * Set application mode (landing or chat)
+ * Set application mode (landing or thread)
  */
 export const setMode = (state: AppState, mode: AppMode): AppState => {
   const next = { ...state, mode };
@@ -99,7 +99,7 @@ export const setHasInitialResponse = (state: AppState, value: boolean): AppState
  * Toggle block selection
  */
 export const toggleSelectedBlock = (state: AppState, blockId: string): AppState => {
-  if (state.mode !== 'chat') {
+  if (state.mode !== 'thread') {
     return { ...state, selectedBlockId: null };
   }
   const nextId = state.selectedBlockId === blockId ? null : blockId;

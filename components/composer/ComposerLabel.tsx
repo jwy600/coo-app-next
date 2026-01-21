@@ -4,7 +4,7 @@
  * Reference: legacy/app.js lines 432-434
  */
 interface ComposerLabelProps {
-  mode: 'landing' | 'chat';
+  mode: 'landing' | 'thread';
   hasBlockSelected: boolean;
 }
 

@@ -2,7 +2,7 @@
 export interface ChatRequest {
   prompt: string;
   threadId?: string;
-  mode?: 'chat';
+  mode?: 'thread';
   previousResponseId?: string;
   stream?: boolean;
 }

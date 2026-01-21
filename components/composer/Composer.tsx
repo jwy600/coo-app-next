@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
  * Needs 'use client' for form submission and state
  */
 interface ComposerProps {
-  mode: 'landing' | 'chat';
+  mode: 'landing' | 'thread';
   selectedBlockId: string | null;
   prompt: string;
   onPromptChange: (value: string) => void;

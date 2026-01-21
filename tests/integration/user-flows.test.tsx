@@ -40,7 +40,7 @@ describe('User Flow Tests', () => {
 
       // Simulate user submission - createThread updates store directly
       createThread();
-      setMode('chat'); // Simulate what useComposer does
+      setMode('thread'); // Simulate what useComposer does
 
       // Get the created thread ID
       const state1 = useStore.getState();
@@ -58,7 +58,7 @@ describe('User Flow Tests', () => {
       expect(state.threads[0].messages[0].role).toBe('user');
 
       // Verify mode changed to chat
-      expect(state.mode).toBe('chat');
+      expect(state.mode).toBe('thread');
       expect(state.activeThreadId).toBe(threadId);
     });
   });
@@ -72,7 +72,7 @@ describe('User Flow Tests', () => {
       const setMode = useStore.getState().setMode;
 
       createThread();
-      setMode('chat');
+      setMode('thread');
       addUserMessage('Explain React');
 
       const assistantText = 'React is a JavaScript library for building user interfaces.';
@@ -219,7 +219,7 @@ describe('User Flow Tests', () => {
       
       // Setup: Create thread with selected block
       createThread();
-      setMode('chat');
+      setMode('thread');
       addAssistantMessage(splitIntoBlocks('Some content'));
 
       const blocks = useStore.getState().blocks;
@@ -229,7 +229,7 @@ describe('User Flow Tests', () => {
       // Verify selection
       let state = useStore.getState();
       expect(state.selectedBlockId).toBe(blockId);
-      expect(state.mode).toBe('chat');
+      expect(state.mode).toBe('thread');
       
       // Return to landing
       clearSelectedBlock();
@@ -252,7 +252,7 @@ describe('User Flow Tests', () => {
 
       // Setup
       createThread();
-      setMode('chat');
+      setMode('thread');
       addAssistantMessage(splitIntoBlocks('Content'));
 
       const blocks = useStore.getState().blocks;

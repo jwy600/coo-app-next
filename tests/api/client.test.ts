@@ -38,7 +38,7 @@ describe('API Client Functions', () => {
           body: JSON.stringify({
             prompt: 'Hello',
             threadId: 'thread-123',
-            mode: 'chat',
+            mode: 'thread',
           }),
         })
       );

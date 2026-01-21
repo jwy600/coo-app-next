@@ -16,7 +16,7 @@ interface PromptInputProps {
   onSubmit?: () => void;
   placeholder?: string;
   disabled?: boolean;
-  mode?: 'landing' | 'chat';
+  mode?: 'landing' | 'thread';
 }
 
 export function PromptInput({

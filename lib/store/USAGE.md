@@ -221,10 +221,10 @@ function ModeSwitch() {
         Landing
       </button>
       <button
-        onClick={() => setMode('chat')}
-        disabled={mode === 'chat'}
+        onClick={() => setMode('thread')}
+        disabled={mode === 'thread'}
       >
-        Chat
+        Thread
       </button>
     </div>
   );

@@ -25,7 +25,8 @@ export class ChatPage {
     this.composer = page.locator('form.composer');
     this.promptInput = this.composer.locator('div#prompt, [role="textbox"]');
     this.sendButton = this.composer.locator('button[type="submit"]');
-    // Block controls wrapper (div with mt-2 class that contains the action buttons)
+    // Block controls wrapper (div with mt-2 class that contains the action badges)
+    // Note: BlockControls uses Badge components which render as <div> elements, not buttons
     this.blockControls = this.composer.locator('.mt-2').filter({ hasText: /Translate|ELI5|Example|Expand/ });
     this.messages = page.locator('.user-message, .assistant-message');
     this.userMessages = page.locator('.user-message');
@@ -97,9 +98,11 @@ export class ChatPage {
 
   /**
    * Get block controls (ELI5, Translate, etc.)
+   * Note: These are Badge components rendered as divs, not buttons
    */
   getBlockControl(action: string): Locator {
-    return this.blockControls.locator(`button`, { hasText: new RegExp(action, 'i') });
+    // Badge components render as divs with cursor-pointer class
+    return this.blockControls.locator(`div`, { hasText: new RegExp(`^${action}$`, 'i') });
   }
 
   /**

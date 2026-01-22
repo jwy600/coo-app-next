@@ -43,3 +43,5 @@ data/supabaseConfig.js
 
 # local notes
 docs/
+codemaps/
+.reports

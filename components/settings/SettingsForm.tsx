@@ -86,7 +86,7 @@ export function SettingsForm() {
             Web Search
           </Label>
           <p className="text-xs text-muted-foreground">
-            Allow AI to search the web for current information
+            Allow AI to search the web
           </p>
         </div>
         <Switch

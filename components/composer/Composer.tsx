@@ -61,7 +61,7 @@ export function Composer({
         </div>
       )}
 
-      <ComposerHint />
+      <ComposerHint hidden={hasBlockSelected} />
     </form>
   );
 }

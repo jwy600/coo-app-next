@@ -1,5 +1,6 @@
 import { apiFetch } from './client';
 import type { ChatRequest, ChatResponse } from '@/types/api';
+import type { Settings } from '@/types/settings';
 import { validatePrompt } from '@/lib/utils/validation';
 
 /**
@@ -8,13 +9,15 @@ import { validatePrompt } from '@/lib/utils/validation';
  * @param prompt - User prompt text
  * @param threadId - Optional thread ID for context
  * @param previousResponseId - Optional response ID for contextual chaining
+ * @param settings - Optional settings for model, reasoning, and web search
  * @returns Promise with AI response text and response ID
  * @throws ApiClientError on validation or API errors
  */
 export async function fetchChatCompletion(
   prompt: string,
   threadId?: string,
-  previousResponseId?: string
+  previousResponseId?: string,
+  settings?: Settings
 ): Promise<ChatResponse> {
   // Validate prompt
   const trimmedPrompt = prompt.trim();
@@ -30,6 +33,7 @@ export async function fetchChatCompletion(
     threadId,
     mode: 'thread',
     previousResponseId,
+    settings,
   };
 
   // Call API
@@ -57,12 +61,14 @@ export interface StreamChatCallbacks {
  * @param callbacks - Event handlers for stream events
  * @param threadId - Optional thread ID for context
  * @param previousResponseId - Optional response ID for contextual chaining
+ * @param settings - Optional settings for model, reasoning, and web search
  */
 export async function fetchChatCompletionStream(
   prompt: string,
   callbacks: StreamChatCallbacks,
   threadId?: string,
-  previousResponseId?: string
+  previousResponseId?: string,
+  settings?: Settings
 ): Promise<void> {
   // Validate prompt
   const trimmedPrompt = prompt.trim();
@@ -79,6 +85,7 @@ export async function fetchChatCompletionStream(
     mode: 'thread',
     previousResponseId,
     stream: true,
+    settings,
   };
 
   try {

@@ -12,6 +12,7 @@ export * from './thread';
 export * from './message';
 export * from './block';
 export * from './parser';
+export * from './settings';
 
 /**
  * Create initial application state

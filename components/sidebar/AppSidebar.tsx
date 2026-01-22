@@ -4,6 +4,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
@@ -15,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarLogo } from './SidebarLogo';
 import { NewChatButton } from './NewChatButton';
 import { SidebarThreadList } from './SidebarThreadList';
+import { SettingsSheet } from '@/components/settings';
 import type { Thread } from '@/types/thread';
 
 interface AppSidebarProps {
@@ -53,6 +55,10 @@ export function AppSidebar({ threads }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-2">
+        <SettingsSheet />
+      </SidebarFooter>
     </Sidebar>
   );
 }

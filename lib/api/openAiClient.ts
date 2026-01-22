@@ -3,6 +3,9 @@
  */
 
 import OpenAI from 'openai';
+import type { ReasoningEffort } from '@/types/settings';
+
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Get configured OpenAI client instance
@@ -35,6 +38,8 @@ export interface CreateResponseParams {
   input: string;
   instructions?: string;
   previousResponseId?: string;
+  reasoningEffort?: ReasoningEffort;
+  webSearchEnabled?: boolean;
 }
 
 /**
@@ -46,6 +51,52 @@ export interface ResponseResult {
 }
 
 /**
+ * Log OpenAI API request (dev only)
+ */
+const logRequest = (params: CreateResponseParams, streaming: boolean) => {
+  if (!isDev) return;
+
+  const inputPreview = params.input.length > 100
+    ? params.input.substring(0, 100) + '...'
+    : params.input;
+
+  console.log('\n[OpenAI Request]', {
+    model: params.model,
+    streaming,
+    reasoningEffort: params.reasoningEffort || 'none',
+    webSearch: params.webSearchEnabled || false,
+    previousResponseId: params.previousResponseId ? '...' + params.previousResponseId.slice(-8) : null,
+    inputPreview,
+  });
+};
+
+/**
+ * Log OpenAI API response (dev only)
+ */
+const logResponse = (responseId: string, text: string, streaming: boolean) => {
+  if (!isDev) return;
+
+  const outputPreview = text.length > 200
+    ? text.substring(0, 200) + '...'
+    : text;
+
+  console.log('[OpenAI Response]', {
+    responseId: '...' + responseId.slice(-8),
+    streaming,
+    outputLength: text.length,
+    outputPreview,
+  });
+};
+
+/**
+ * Log OpenAI API error (dev only)
+ */
+const logError = (error: Error) => {
+  if (!isDev) return;
+  console.error('[OpenAI Error]', error.message);
+};
+
+/**
  * Create a response using OpenAI's Responses API
  * This enables contextual conversations via previous_response_id
  *
@@ -55,20 +106,37 @@ export interface ResponseResult {
 export const createResponse = async (params: CreateResponseParams): Promise<ResponseResult> => {
   const client = getOpenAiClient();
 
-  const response = await client.responses.create({
-    model: params.model,
-    input: params.input,
-    instructions: params.instructions,
-    store: true,
-    ...(params.previousResponseId && { previous_response_id: params.previousResponseId }),
-  });
+  logRequest(params, false);
 
-  const text = response.output_text?.trim() || '';
+  try {
+    const response = await client.responses.create({
+      model: params.model,
+      input: params.input,
+      instructions: params.instructions,
+      store: true,
+      ...(params.previousResponseId && { previous_response_id: params.previousResponseId }),
+      // Add reasoning effort when not 'none'
+      ...(params.reasoningEffort && params.reasoningEffort !== 'none' && {
+        reasoning: { effort: params.reasoningEffort }
+      }),
+      // Add web search tool when enabled
+      ...(params.webSearchEnabled && {
+        tools: [{ type: 'web_search' as const }]
+      }),
+    });
 
-  return {
-    text,
-    responseId: response.id,
-  };
+    const text = response.output_text?.trim() || '';
+
+    logResponse(response.id, text, false);
+
+    return {
+      text,
+      responseId: response.id,
+    };
+  } catch (error) {
+    logError(error as Error);
+    throw error;
+  }
 };
 
 /**
@@ -94,6 +162,11 @@ export const createResponseStream = async (
 ): Promise<void> => {
   const client = getOpenAiClient();
 
+  logRequest(params, true);
+
+  let responseId = '';
+  let fullText = '';
+
   try {
     const stream = await client.responses.create({
       model: params.model,
@@ -102,25 +175,37 @@ export const createResponseStream = async (
       store: true,
       stream: true,
       ...(params.previousResponseId && { previous_response_id: params.previousResponseId }),
+      // Add reasoning effort when not 'none'
+      ...(params.reasoningEffort && params.reasoningEffort !== 'none' && {
+        reasoning: { effort: params.reasoningEffort }
+      }),
+      // Add web search tool when enabled
+      ...(params.webSearchEnabled && {
+        tools: [{ type: 'web_search' as const }]
+      }),
     });
 
     for await (const event of stream) {
       // Handle response creation event (contains response ID)
       if (event.type === 'response.created') {
+        responseId = event.response.id;
         handler.onResponseId(event.response.id);
       }
       // Handle text delta events (streaming tokens)
       else if (event.type === 'response.output_text.delta') {
         if (event.delta) {
+          fullText += event.delta;
           handler.onToken(event.delta);
         }
       }
       // Handle completion
       else if (event.type === 'response.completed') {
+        logResponse(responseId, fullText, true);
         handler.onComplete();
       }
     }
   } catch (error) {
+    logError(error as Error);
     handler.onError(error as Error);
   }
 };

@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 /**
- * Client Component - Block transformation action buttons
+ * Client Component - Block transformation action badges
  * Reference: legacy/index.html lines 63-68
  * Needs 'use client' for click handlers
  */
@@ -25,14 +25,17 @@ export function BlockControls({ onAction, disabled = false }: BlockControlsProps
   return (
     <div className="flex gap-2 flex-wrap">
       {actions.map(({ action, label }) => (
-        <Button
+        <Badge
           key={action}
-          variant="secondary"
-          onClick={() => onAction?.(action)}
-          disabled={disabled}
+          onClick={() => !disabled && onAction?.(action)}
+          className={
+            disabled
+              ? 'opacity-50 cursor-not-allowed'
+              : 'cursor-pointer'
+          }
         >
           {label}
-        </Button>
+        </Badge>
       ))}
     </div>
   );

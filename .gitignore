@@ -41,13 +41,5 @@ Thumbs.db
 # Config
 data/supabaseConfig.js
 
-# Legacy code (preserved for reference, archived in Phase 10)
-legacy/
-legacy-archive/
-
-# Claude
-.Claude
-LEGACY_CLEANUP_STRATEGY.md
-RENDERING_QUICK_START.md
-TEST_EXECUTION_SUMMARY.md
-CLAUDE.md
+# local notes
+docs/

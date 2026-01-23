@@ -91,6 +91,16 @@ export const getCommandOutput = ({
 
 const isListLine = (line: string): boolean => /^(\s*)([-*+]|\d+\.)\s+/.test(line);
 
+/**
+ * Get the indent level of a list line (number of leading spaces)
+ * Returns null if not a list line
+ */
+const getListIndent = (line: string): number | null => {
+  const match = line.match(/^(\s*)([-*+]|\d+\.)\s+/);
+  if (!match) return null;
+  return match[1].length;
+};
+
 const normalizeBlocks = (blocks: BlockData[]): BlockData[] => {
   const result: BlockData[] = [];
 
@@ -221,11 +231,21 @@ export const splitIntoBlocks = (content: string): BlockData[] => {
     }
 
     if (listLine) {
+      const indent = getListIndent(line);
+
       if (currentMode !== 'list') {
+        // Starting a new list section
         flushParagraph();
         currentMode = 'list';
+        buffer.push(line);
+      } else if (indent === 0 && buffer.length > 0) {
+        // New top-level item - flush current buffer as block, start new one
+        flushList();
+        buffer.push(line);
+      } else {
+        // Nested item or continuation - add to current buffer
+        buffer.push(line);
       }
-      buffer.push(line);
       return;
     }
 

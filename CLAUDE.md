@@ -68,12 +68,21 @@ Parser: `lib/state/parser.ts` → `splitIntoBlocks()`
 | `types/` | TypeScript definitions |
 
 ## Documentation
-Read these before working on specific areas:
-- `docs/architecture.md` — Full architecture, patterns, adding features
+
+**Codemaps** (quick context for AI):
+- `codemaps/architecture.md` — Structure and data flow
+- `codemaps/frontend.md` — Components, state, slices
+- `codemaps/backend.md` — API routes, integrations
+- `codemaps/data.md` — Types and schema
+
+**Detailed guides** (for implementation):
+- `docs/architecture.md` — Patterns and how-to guides
 - `docs/database.md` — Schema and Supabase patterns
 - `docs/testing.md` — Test commands and strategy
 
 ## Workflow Reminders
 - Use **conventional commits** (`feat:`, `fix:`, `docs:`, etc.)
 - For big changes: create branch + PR
-- **Update `/docs/`** when adding/removing files or changing architecture
+- **Update `/docs/` and `/codemaps/`** when adding/removing files or changing architecture:
+  - Use **doc-updater** agent for `/docs/` updates
+  - Use `/update-codemaps` skill for `/codemaps/` updates

@@ -47,7 +47,7 @@ describe('Chat API Route', () => {
     expect(mockResponsesCreate).toHaveBeenCalledWith({
       model: 'gpt-5-mini',
       input: 'Hello',
-      instructions: expect.stringContaining('You are a helpful assistant'),
+      instructions: expect.stringContaining('You are a knowledgeable assistant'),
       store: true,
     });
   });

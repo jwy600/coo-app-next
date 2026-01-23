@@ -34,6 +34,7 @@ export function useComposer(): UseComposerReturn {
   const [prompt, setPrompt] = useState('');
 
   // Store state
+  const settings = useStore((state) => state.settings);
   const selectedBlockId = useStore((state) => state.selectedBlockId);
   const selectedBlock = useStore(selectSelectedBlock);
   const addUserMessage = useStore((state) => state.addUserMessage);
@@ -93,7 +94,8 @@ export function useComposer(): UseComposerReturn {
         const result = await fetchBlockAction(
           action,
           selectedBlock.text,
-          action === 'ask' ? prompt : undefined
+          action === 'ask' ? prompt : undefined,
+          action === 'translate' ? settings.translateLanguage : undefined
         );
 
         // CRITICAL: Result goes to composer (editable draft), NOT as message
@@ -109,7 +111,7 @@ export function useComposer(): UseComposerReturn {
         setAwaitingResponse(false);
       }
     },
-    [selectedBlock, prompt, setAwaitingResponse]
+    [selectedBlock, prompt, setAwaitingResponse, settings.translateLanguage]
   );
 
   /**

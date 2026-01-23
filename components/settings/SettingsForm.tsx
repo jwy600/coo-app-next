@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/lib/store/useStore';
-import type { ModelType, ReasoningEffort } from '@/types/settings';
+import type { ModelType, ReasoningEffort, TranslateLanguage } from '@/types/settings';
 
 const MODEL_OPTIONS: { value: ModelType; label: string; description: string }[] = [
   { value: 'gpt-5-mini', label: 'GPT-5-mini', description: 'Fast and efficient' },
@@ -20,11 +20,19 @@ const REASONING_OPTIONS: { value: ReasoningEffort; label: string; description: s
   { value: 'high', label: 'High', description: 'Deep reasoning' },
 ];
 
+const LANGUAGE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
+  { value: 'English', label: 'English' },
+  { value: 'Chinese', label: '中文' },
+  { value: 'Spanish', label: 'Español' },
+  { value: 'French', label: 'Français' },
+];
+
 export function SettingsForm() {
   const settings = useStore((state) => state.settings);
   const updateModel = useStore((state) => state.updateModel);
   const updateReasoningEffort = useStore((state) => state.updateReasoningEffort);
   const updateWebSearchEnabled = useStore((state) => state.updateWebSearchEnabled);
+  const updateTranslateLanguage = useStore((state) => state.updateTranslateLanguage);
   const resetSettings = useStore((state) => state.resetSettings);
 
   return (
@@ -94,6 +102,30 @@ export function SettingsForm() {
           checked={settings.webSearchEnabled}
           onCheckedChange={updateWebSearchEnabled}
         />
+      </div>
+
+      <Separator />
+
+      {/* Translation Language */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Translation Language</Label>
+        <RadioGroup
+          value={settings.translateLanguage}
+          onValueChange={(value) => updateTranslateLanguage(value as TranslateLanguage)}
+          className="grid grid-cols-2 gap-2"
+        >
+          {LANGUAGE_OPTIONS.map((option) => (
+            <div key={option.value} className="flex items-center space-x-2">
+              <RadioGroupItem value={option.value} id={`lang-${option.value}`} />
+              <Label
+                htmlFor={`lang-${option.value}`}
+                className="cursor-pointer font-medium"
+              >
+                {option.label}
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
       </div>
 
       <Separator />

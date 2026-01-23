@@ -4,7 +4,7 @@
 
 import { StateCreator } from 'zustand';
 import * as settingsFns from '@/lib/state/settings';
-import type { Settings, ModelType, ReasoningEffort } from '@/types/settings';
+import type { Settings, ModelType, ReasoningEffort, TranslateLanguage } from '@/types/settings';
 
 export interface SettingsSlice {
   settings: Settings;
@@ -13,6 +13,7 @@ export interface SettingsSlice {
   updateModel: (model: ModelType) => void;
   updateReasoningEffort: (effort: ReasoningEffort) => void;
   updateWebSearchEnabled: (enabled: boolean) => void;
+  updateTranslateLanguage: (language: TranslateLanguage) => void;
   resetSettings: () => void;
 }
 
@@ -36,6 +37,11 @@ export const settingsSlice: StateCreator<
 
   updateWebSearchEnabled: (enabled) => {
     const updated = settingsFns.updateWebSearchEnabled(get().settings, enabled);
+    set({ settings: updated });
+  },
+
+  updateTranslateLanguage: (language) => {
+    const updated = settingsFns.updateTranslateLanguage(get().settings, language);
     set({ settings: updated });
   },
 

@@ -1,4 +1,4 @@
-import type { Settings } from './settings';
+import type { Settings, TranslateLanguage } from './settings';
 
 // Chat API Types
 export interface ChatRequest {
@@ -23,6 +23,7 @@ export interface BlockActionRequest {
   blockText: string;
   prompt?: string;
   mode?: 'block';
+  translateLanguage?: TranslateLanguage;
 }
 
 export interface BlockActionResponse {

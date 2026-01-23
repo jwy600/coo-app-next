@@ -36,6 +36,8 @@ export function PromptInput({
   const finalPlaceholder = placeholder || defaultPlaceholder;
   const inputRef = useRef<HTMLDivElement>(null);
   const isUserInputRef = useRef<boolean>(false);
+  // Track if Ctrl/Cmd+A was just pressed (select all) to skip chip creation
+  const isSelectAllRef = useRef<boolean>(false);
 
   // Sync value to DOM (preserve cursor position)
   useEffect(() => {
@@ -91,22 +93,20 @@ export function PromptInput({
         onSubmit();
       }
     }
+
+    // Detect Ctrl+A / Cmd+A (select all) to skip chip creation
+    if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+      isSelectAllRef.current = true;
+    }
   };
 
   const handleSelectionCapture = () => {
     if (!onSelectionCapture || !inputRef.current) return;
 
-    // Check if entire text is selected (Ctrl+A / Cmd+A behavior)
-    // If so, skip creating a highlight chip - user probably wants to delete/replace text
-    const selection = window.getSelection();
-    if (selection && selection.toString().trim()) {
-      const fullText = (inputRef.current.textContent || '').trim();
-      const selectedText = selection.toString().trim();
-
-      // If selected text equals full text, it's likely Ctrl+A - don't create chip
-      if (selectedText === fullText) {
-        return;
-      }
+    // Skip chip creation if Ctrl+A / Cmd+A was just pressed
+    if (isSelectAllRef.current) {
+      isSelectAllRef.current = false;
+      return;
     }
 
     // Pass the input element to the handler from useTextSelection

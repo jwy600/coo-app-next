@@ -133,7 +133,7 @@ export function MessageList({
         />
       )}
 
-      {isPending && !streamingMessage && <PendingMessage />}
+      {isPending && !selectedBlockId && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
       {error && <ErrorMessage error={error} onRetry={onRetry} />}
     </div>
   );

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { POST } from '@/app/api/block-action/route';
 import { NextRequest } from 'next/server';
 import { setupTestEnv, clearTestEnv, createMockCompletion } from './setup';
+import { BLOCK_ACTION_PROMPT } from '@/lib/config/openai';
 
 // Create mock function that can be imported
 const mockCreate = vi.fn();
@@ -50,10 +51,8 @@ describe('Block Action API Route', () => {
         expect.objectContaining({
           model: 'gpt-5-mini',
           messages: [
-            {
-              role: 'user',
-              content: 'Translate the following text into Chinese:\n\nHello world',
-            },
+            { role: 'system', content: BLOCK_ACTION_PROMPT },
+            { role: 'user', content: 'Translate into Chinese:\n\nHello world' },
           ],
         })
       );
@@ -120,10 +119,8 @@ describe('Block Action API Route', () => {
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           messages: [
-            {
-              role: 'user',
-              content: 'Explain the following text like I\'m five:\n\nQuantum entanglement occurs when...',
-            },
+            { role: 'system', content: BLOCK_ACTION_PROMPT },
+            { role: 'user', content: 'Explain this like I\'m five:\n\nQuantum entanglement occurs when...' },
           ],
         })
       );
@@ -151,10 +148,8 @@ describe('Block Action API Route', () => {
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           messages: [
-            {
-              role: 'user',
-              content: expect.stringContaining('Highlighted phrases:\ncat, mat'),
-            },
+            { role: 'system', content: BLOCK_ACTION_PROMPT },
+            { role: 'user', content: expect.stringContaining('Phrases to incorporate: cat, mat') },
           ],
         })
       );
@@ -198,10 +193,8 @@ describe('Block Action API Route', () => {
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           messages: [
-            {
-              role: 'user',
-              content: expect.stringContaining('User\'s question:\n"What is React?"'),
-            },
+            { role: 'system', content: BLOCK_ACTION_PROMPT },
+            { role: 'user', content: 'Text: "React is a JavaScript library for building user interfaces."\n\nQuestion: What is React?' },
           ],
         })
       );

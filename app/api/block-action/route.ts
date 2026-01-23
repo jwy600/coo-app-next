@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { BlockActionRequest, BlockActionResponse, ApiError, BlockAction } from '@/types/api';
+import type { TranslateLanguage } from '@/types/settings';
 import { getOpenAiClient } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
 import { getOpenAIModelConfig, BLOCK_ACTION_PROMPT } from '@/lib/config/openai';
@@ -8,13 +9,16 @@ import { getOpenAIModelConfig, BLOCK_ACTION_PROMPT } from '@/lib/config/openai';
 function buildActionPrompt(
   action: BlockAction,
   blockText: string,
-  prompt?: string
+  prompt?: string,
+  translateLanguage?: TranslateLanguage
 ): string {
   const trimmedBlock = blockText.trim();
 
   switch (action) {
-    case 'translate':
-      return `Translate into Chinese:\n\n${trimmedBlock}`;
+    case 'translate': {
+      const language = translateLanguage || 'Chinese';
+      return `Translate into ${language}:\n\n${trimmedBlock}`;
+    }
 
     case 'example':
       return `Give one concrete example of this:\n\n${trimmedBlock}`;
@@ -47,6 +51,7 @@ export async function POST(request: NextRequest) {
     const action = parseString(body?.action);
     const blockText = parseString(body?.blockText);
     const prompt = parseString(body?.prompt);
+    const translateLanguage = body?.translateLanguage;
 
     // Validation: Required fields
     if (!action || !blockText) {
@@ -65,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Build action-specific prompt
-    const actionPrompt = buildActionPrompt(action as BlockAction, blockText, prompt);
+    const actionPrompt = buildActionPrompt(action as BlockAction, blockText, prompt, translateLanguage);
 
     if (!actionPrompt) {
       return NextResponse.json<ApiError>(

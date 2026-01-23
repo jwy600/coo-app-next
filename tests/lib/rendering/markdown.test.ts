@@ -131,6 +131,110 @@ describe('parseInlineMarkdown', () => {
       { type: 'inline-math', content: 'x + y' },
     ]);
   });
+
+  // Italic tests
+  it('should parse italic text with asterisks', () => {
+    const result = parseInlineMarkdown('This is *italic* text');
+    expect(result).toEqual([
+      { type: 'text', content: 'This is ' },
+      { type: 'italic', content: 'italic' },
+      { type: 'text', content: ' text' },
+    ]);
+  });
+
+  it('should parse italic text with underscores', () => {
+    const result = parseInlineMarkdown('This is _italic_ text');
+    expect(result).toEqual([
+      { type: 'text', content: 'This is ' },
+      { type: 'italic', content: 'italic' },
+      { type: 'text', content: ' text' },
+    ]);
+  });
+
+  it('should parse multiple italic segments', () => {
+    const result = parseInlineMarkdown('*First* and _second_ italic');
+    expect(result).toEqual([
+      { type: 'italic', content: 'First' },
+      { type: 'text', content: ' and ' },
+      { type: 'italic', content: 'second' },
+      { type: 'text', content: ' italic' },
+    ]);
+  });
+
+  it('should differentiate bold and italic', () => {
+    const result = parseInlineMarkdown('**bold** and *italic* text');
+    expect(result).toEqual([
+      { type: 'bold', content: 'bold' },
+      { type: 'text', content: ' and ' },
+      { type: 'italic', content: 'italic' },
+      { type: 'text', content: ' text' },
+    ]);
+  });
+
+  // Link tests
+  it('should parse links', () => {
+    const result = parseInlineMarkdown('Visit [Google](https://google.com) now');
+    expect(result).toEqual([
+      { type: 'text', content: 'Visit ' },
+      { type: 'link', content: 'Google', href: 'https://google.com' },
+      { type: 'text', content: ' now' },
+    ]);
+  });
+
+  it('should parse multiple links', () => {
+    const result = parseInlineMarkdown('[Link1](url1) and [Link2](url2)');
+    expect(result).toEqual([
+      { type: 'link', content: 'Link1', href: 'url1' },
+      { type: 'text', content: ' and ' },
+      { type: 'link', content: 'Link2', href: 'url2' },
+    ]);
+  });
+
+  it('should parse link at start', () => {
+    const result = parseInlineMarkdown('[Start](url) text');
+    expect(result).toEqual([
+      { type: 'link', content: 'Start', href: 'url' },
+      { type: 'text', content: ' text' },
+    ]);
+  });
+
+  it('should parse link at end', () => {
+    const result = parseInlineMarkdown('text [End](url)');
+    expect(result).toEqual([
+      { type: 'text', content: 'text ' },
+      { type: 'link', content: 'End', href: 'url' },
+    ]);
+  });
+
+  // Mixed formatting tests
+  it('should parse mixed bold, italic, and links', () => {
+    const result = parseInlineMarkdown('**bold** *italic* [link](url)');
+    expect(result).toEqual([
+      { type: 'bold', content: 'bold' },
+      { type: 'text', content: ' ' },
+      { type: 'italic', content: 'italic' },
+      { type: 'text', content: ' ' },
+      { type: 'link', content: 'link', href: 'url' },
+    ]);
+  });
+
+  it('should handle italic with line breaks', () => {
+    const result = parseInlineMarkdown('*italic*\nnew line');
+    expect(result).toEqual([
+      { type: 'italic', content: 'italic' },
+      { type: 'break', content: '' },
+      { type: 'text', content: 'new line' },
+    ]);
+  });
+
+  // Nested formatting (bold content may contain italic markers for rendering)
+  it('should parse bold with nested italic markers', () => {
+    const result = parseInlineMarkdown('**William James, *The Varieties* (1902)**');
+    expect(result).toEqual([
+      { type: 'bold', content: 'William James, *The Varieties* (1902)' },
+    ]);
+    // Note: The nested italic is handled at render time by parseNestedFormatting
+  });
 });
 
 describe('hasMath', () => {
@@ -226,5 +330,21 @@ describe('stripMarkdown', () => {
 
   it('should return empty string for empty input', () => {
     expect(stripMarkdown('')).toBe('');
+  });
+
+  it('should remove italic formatting with asterisks', () => {
+    expect(stripMarkdown('*italic* text')).toBe('italic text');
+  });
+
+  it('should remove italic formatting with underscores', () => {
+    expect(stripMarkdown('_italic_ text')).toBe('italic text');
+  });
+
+  it('should remove link formatting keeping text', () => {
+    expect(stripMarkdown('Visit [Google](https://google.com)')).toBe('Visit Google');
+  });
+
+  it('should handle mixed bold, italic, and links', () => {
+    expect(stripMarkdown('**bold** *italic* [link](url)')).toBe('bold italic link');
   });
 });

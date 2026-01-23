@@ -4,8 +4,10 @@
  */
 
 export interface MarkdownSegment {
-  type: 'text' | 'bold' | 'inline-math' | 'block-math' | 'break';
+  type: 'text' | 'bold' | 'italic' | 'link' | 'inline-math' | 'block-math' | 'break';
   content: string;
+  /** URL for link segments */
+  href?: string;
 }
 
 export interface MathExpression {
@@ -34,7 +36,7 @@ export function parseInlineMarkdown(text: string): MarkdownSegment[] {
     // Process text before math
     const before = text.slice(lastIndex, match.index);
     if (before) {
-      segments.push(...parseBoldAndBreaks(before));
+      segments.push(...parseInlineFormatting(before));
     }
 
     // Process math
@@ -52,66 +54,149 @@ export function parseInlineMarkdown(text: string): MarkdownSegment[] {
 
   // Process remaining text
   if (lastIndex < text.length) {
-    segments.push(...parseBoldAndBreaks(text.slice(lastIndex)));
+    segments.push(...parseInlineFormatting(text.slice(lastIndex)));
   }
 
   return segments;
 }
 
 /**
- * Parse bold text and line breaks from a text segment
- * Helper function for parseInlineMarkdown
+ * Token for inline markdown parsing
  */
-function parseBoldAndBreaks(text: string): MarkdownSegment[] {
+interface InlineToken {
+  type: 'text' | 'bold' | 'italic' | 'link';
+  content: string;
+  href?: string;
+  start: number;
+  end: number;
+}
+
+/**
+ * Parse inline formatting (bold, italic, links) from a text segment
+ * Helper function for parseInlineMarkdown
+ *
+ * Parsing order matters:
+ * 1. Links [text](url) - parsed first to avoid conflicts with brackets
+ * 2. Bold **text** - parsed before italic to avoid ** matching as two *
+ * 3. Italic *text* or _text_
+ */
+function parseInlineFormatting(text: string): MarkdownSegment[] {
   if (!text) return [];
 
   const segments: MarkdownSegment[] = [];
   const parts = text.split('\n');
 
-  parts.forEach((part, index) => {
-    // Parse bold in this part
-    const boldRegex = /\*\*(.+?)\*\*/g;
-    let lastIndex = 0;
+  parts.forEach((part, partIndex) => {
+    // Collect all tokens with their positions
+    const tokens: InlineToken[] = [];
+
+    // Find links: [text](url)
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     let match: RegExpExecArray | null;
 
+    while ((match = linkRegex.exec(part)) !== null) {
+      tokens.push({
+        type: 'link',
+        content: match[1],
+        href: match[2],
+        start: match.index,
+        end: match.index + match[0].length,
+      });
+    }
+
+    // Find bold: **text**
+    const boldRegex = /\*\*(.+?)\*\*/g;
     while ((match = boldRegex.exec(part)) !== null) {
-      // Add text before bold
-      if (match.index > lastIndex) {
-        const textContent = part.slice(lastIndex, match.index);
+      // Check if this overlaps with existing tokens
+      const overlaps = tokens.some(
+        (t) => match!.index < t.end && match!.index + match![0].length > t.start
+      );
+      if (!overlaps) {
+        tokens.push({
+          type: 'bold',
+          content: match[1],
+          start: match.index,
+          end: match.index + match[0].length,
+        });
+      }
+    }
+
+    // Find italic: *text* (single asterisk, not followed/preceded by another asterisk)
+    // Use negative lookbehind/lookahead to avoid matching ** as italic
+    const italicAsteriskRegex = /(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g;
+    while ((match = italicAsteriskRegex.exec(part)) !== null) {
+      const overlaps = tokens.some(
+        (t) => match!.index < t.end && match!.index + match![0].length > t.start
+      );
+      if (!overlaps) {
+        tokens.push({
+          type: 'italic',
+          content: match[1],
+          start: match.index,
+          end: match.index + match[0].length,
+        });
+      }
+    }
+
+    // Find italic: _text_ (underscores)
+    const italicUnderscoreRegex = /_([^_]+?)_/g;
+    while ((match = italicUnderscoreRegex.exec(part)) !== null) {
+      const overlaps = tokens.some(
+        (t) => match!.index < t.end && match!.index + match![0].length > t.start
+      );
+      if (!overlaps) {
+        tokens.push({
+          type: 'italic',
+          content: match[1],
+          start: match.index,
+          end: match.index + match[0].length,
+        });
+      }
+    }
+
+    // Sort tokens by start position
+    tokens.sort((a, b) => a.start - b.start);
+
+    // Build segments from tokens
+    let lastIndex = 0;
+
+    tokens.forEach((token) => {
+      // Add text before this token
+      if (token.start > lastIndex) {
+        const textContent = part.slice(lastIndex, token.start);
         if (textContent) {
-          segments.push({
-            type: 'text',
-            content: textContent,
-          });
+          segments.push({ type: 'text', content: textContent });
         }
       }
 
-      // Add bold segment
-      segments.push({
-        type: 'bold',
-        content: match[1],
-      });
+      // Add the token as a segment
+      if (token.type === 'link') {
+        segments.push({
+          type: 'link',
+          content: token.content,
+          href: token.href,
+        });
+      } else {
+        segments.push({
+          type: token.type,
+          content: token.content,
+        });
+      }
 
-      lastIndex = match.index + match[0].length;
-    }
+      lastIndex = token.end;
+    });
 
     // Add remaining text
     if (lastIndex < part.length) {
       const textContent = part.slice(lastIndex);
       if (textContent) {
-        segments.push({
-          type: 'text',
-          content: textContent,
-        });
+        segments.push({ type: 'text', content: textContent });
       }
     }
 
     // Add line break if not the last part
-    if (index < parts.length - 1) {
-      segments.push({
-        type: 'break',
-        content: '',
-      });
+    if (partIndex < parts.length - 1) {
+      segments.push({ type: 'break', content: '' });
     }
   });
 
@@ -157,6 +242,9 @@ export function stripMarkdown(text: string): string {
   return text
     .replace(/\\\[([\s\S]*?)\\\]/g, (_, tex) => tex) // Block math
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, tex) => tex) // Inline math
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links - keep text, remove URL
     .replace(/\*\*(.*?)\*\*/g, '$1') // Bold
+    .replace(/(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g, '$1') // Italic (asterisk)
+    .replace(/_([^_]+?)_/g, '$1') // Italic (underscore)
     .replace(/\n/g, ' '); // Line breaks
 }

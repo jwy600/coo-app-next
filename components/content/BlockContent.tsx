@@ -24,6 +24,87 @@ export interface BlockContentProps {
 }
 
 /**
+ * Parse nested inline formatting (for content inside bold/italic)
+ * Only parses italic when inside bold, and vice versa, plus links
+ */
+function parseNestedFormatting(text: string, excludeType?: 'bold' | 'italic'): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  let remaining = text;
+  let keyIndex = 0;
+
+  // Patterns to match (excluding the parent type to avoid infinite recursion)
+  const patterns: Array<{
+    type: 'bold' | 'italic' | 'link';
+    regex: RegExp;
+  }> = [];
+
+  if (excludeType !== 'bold') {
+    patterns.push({ type: 'bold', regex: /\*\*(.+?)\*\*/ });
+  }
+  if (excludeType !== 'italic') {
+    patterns.push({ type: 'italic', regex: /(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/ });
+    patterns.push({ type: 'italic', regex: /_([^_]+?)_/ });
+  }
+  patterns.push({ type: 'link', regex: /\[([^\]]+)\]\(([^)]+)\)/ });
+
+  while (remaining.length > 0) {
+    let earliestMatch: { type: 'bold' | 'italic' | 'link'; match: RegExpExecArray; index: number } | null = null;
+
+    // Find the earliest match among all patterns
+    for (const pattern of patterns) {
+      const match = pattern.regex.exec(remaining);
+      if (match && (earliestMatch === null || match.index < earliestMatch.index)) {
+        earliestMatch = { type: pattern.type, match, index: match.index };
+      }
+    }
+
+    if (!earliestMatch) {
+      // No more matches, add remaining text
+      if (remaining) nodes.push(remaining);
+      break;
+    }
+
+    // Add text before the match
+    if (earliestMatch.index > 0) {
+      nodes.push(remaining.slice(0, earliestMatch.index));
+    }
+
+    // Add the formatted element
+    const { type, match } = earliestMatch;
+    if (type === 'bold') {
+      nodes.push(
+        <strong key={keyIndex++}>
+          {parseNestedFormatting(match[1], 'bold')}
+        </strong>
+      );
+    } else if (type === 'italic') {
+      nodes.push(
+        <em key={keyIndex++}>
+          {parseNestedFormatting(match[1], 'italic')}
+        </em>
+      );
+    } else if (type === 'link') {
+      nodes.push(
+        <a
+          key={keyIndex++}
+          href={match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline dark:text-blue-400"
+        >
+          {match[1]}
+        </a>
+      );
+    }
+
+    // Continue with remaining text
+    remaining = remaining.slice(earliestMatch.index + match[0].length);
+  }
+
+  return nodes;
+}
+
+/**
  * Render a single markdown segment to React element
  */
 function renderSegment(segment: MarkdownSegment, index: number): React.ReactNode {
@@ -32,7 +113,25 @@ function renderSegment(segment: MarkdownSegment, index: number): React.ReactNode
       return segment.content;
 
     case 'bold':
-      return <strong key={index}>{segment.content}</strong>;
+      // Recursively parse content for nested italic/links
+      return <strong key={index}>{parseNestedFormatting(segment.content, 'bold')}</strong>;
+
+    case 'italic':
+      // Recursively parse content for nested bold/links
+      return <em key={index}>{parseNestedFormatting(segment.content, 'italic')}</em>;
+
+    case 'link':
+      return (
+        <a
+          key={index}
+          href={segment.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline dark:text-blue-400"
+        >
+          {segment.content}
+        </a>
+      );
 
     case 'inline-math':
       return <MathComponent key={index} tex={segment.content} display={false} />;

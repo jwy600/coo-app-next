@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { BlockActionRequest, BlockActionResponse, ApiError, BlockAction } from '@/types/api';
 import { getOpenAiClient } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
-import { getOpenAIModelConfig } from '@/lib/config/openai';
+import { getOpenAIModelConfig, BLOCK_ACTION_PROMPT } from '@/lib/config/openai';
 
 // Build action-specific prompt based on action type
 function buildActionPrompt(
@@ -14,25 +14,25 @@ function buildActionPrompt(
 
   switch (action) {
     case 'translate':
-      return `Translate the following text into Chinese:\n\n${trimmedBlock}`;
+      return `Translate into Chinese:\n\n${trimmedBlock}`;
 
     case 'example':
-      return `Provide a concise example that illustrates the following text:\n\n${trimmedBlock}`;
+      return `Give one concrete example of this:\n\n${trimmedBlock}`;
 
     case 'expand':
-      return `Expand on the following text with more depth and detail:\n\n${trimmedBlock}`;
+      return `Expand on this with more detail:\n\n${trimmedBlock}`;
 
     case 'eli5':
-      return `Explain the following text like I'm five:\n\n${trimmedBlock}`;
+      return `Explain this like I'm five:\n\n${trimmedBlock}`;
 
     case 'rewrite': {
       const highlightPrompt = prompt?.trim() || '';
-      return `Rewrite the following text, preserving meaning while emphasizing the highlighted phrases.\n\nHighlighted phrases:\n${highlightPrompt}\n\nText to rewrite:\n${trimmedBlock}`;
+      return `Rewrite this text, incorporating the highlighted phrases naturally. If a phrase is in a different language, substitute it directly.\n\nPhrases to incorporate: ${highlightPrompt}\n\nText: ${trimmedBlock}`;
     }
 
     case 'ask': {
       const trimmedPrompt = prompt?.trim() || '';
-      return `You are given a selected paragraph:\n"${trimmedBlock}"\n\nUser's question:\n"${trimmedPrompt}"\n\nAnswer the question about the selected paragraph only.`;
+      return `Text: "${trimmedBlock}"\n\nQuestion: ${trimmedPrompt}`;
     }
 
     default:
@@ -92,7 +92,10 @@ export async function POST(request: NextRequest) {
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: modelConfig.model,
-      messages: [{ role: 'user', content: actionPrompt }],
+      messages: [
+        { role: 'system', content: BLOCK_ACTION_PROMPT },
+        { role: 'user', content: actionPrompt },
+      ],
     });
 
     // Extract response text

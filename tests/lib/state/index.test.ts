@@ -453,20 +453,26 @@ describe('splitIntoBlocks', () => {
     expect(blocks[0].text).toContain('const x = 1');
   });
 
-  it('should detect list blocks', () => {
+  it('should split top-level list items into separate blocks', () => {
     const text = '- Item 1\n- Item 2\n- Item 3';
     const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(1);
+    expect(blocks).toHaveLength(3);
     expect(blocks[0].type).toBe('list');
+    expect(blocks[0].text).toBe('- Item 1');
+    expect(blocks[1].text).toBe('- Item 2');
+    expect(blocks[2].text).toBe('- Item 3');
   });
 
   it('should handle mixed content types', () => {
     const text = 'Intro paragraph\n\n- List item 1\n- List item 2\n\nConclusion';
     const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
+    expect(blocks).toHaveLength(4);
     expect(blocks[0].type).toBe('paragraph');
     expect(blocks[1].type).toBe('list');
-    expect(blocks[2].type).toBe('paragraph');
+    expect(blocks[1].text).toBe('- List item 1');
+    expect(blocks[2].type).toBe('list');
+    expect(blocks[2].text).toBe('- List item 2');
+    expect(blocks[3].type).toBe('paragraph');
   });
 
   it('should handle code blocks with language specifier', () => {
@@ -485,11 +491,21 @@ describe('splitIntoBlocks', () => {
     expect(blocks[2].type).toBe('code');
   });
 
-  it('should handle list with numbered items', () => {
+  it('should split numbered list items into separate blocks', () => {
     const text = '1. First\n2. Second\n3. Third';
     const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(1);
+    expect(blocks).toHaveLength(3);
     expect(blocks[0].type).toBe('list');
+    expect(blocks[0].text).toBe('1. First');
+  });
+
+  it('should keep nested list items with their parent block', () => {
+    const text = '- Python\n  - Django\n  - Flask\n- JavaScript\n- Rust';
+    const blocks = splitIntoBlocks(text);
+    expect(blocks).toHaveLength(3);
+    expect(blocks[0].text).toBe('- Python\n  - Django\n  - Flask');
+    expect(blocks[1].text).toBe('- JavaScript');
+    expect(blocks[2].text).toBe('- Rust');
   });
 
   it('should trim whitespace from blocks', () => {

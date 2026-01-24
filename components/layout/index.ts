@@ -1,6 +1,5 @@
 /**
- * Layout Components - Navigation and layout elements
+ * Layout Components - App shell and layout wrappers
  */
 
-export { ExportButton } from './ExportButton';
-export { OfflineBanner } from './OfflineBanner';
+export { AppLayout } from './AppLayout';

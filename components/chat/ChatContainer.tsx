@@ -14,8 +14,8 @@
 import { useEffect, useState } from 'react';
 import { MessageList } from './MessageList';
 import { Composer } from '@/components/composer/Composer';
-import { ExportButton } from '@/components/layout/ExportButton';
-import { OfflineBanner } from '@/components/layout/OfflineBanner';
+import { ExportButton } from './ExportButton';
+import { OfflineBanner } from './OfflineBanner';
 import { isOfflineMode } from '@/lib/utils/offlineMode';
 import {
   useComposer,

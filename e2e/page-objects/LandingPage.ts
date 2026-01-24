@@ -37,11 +37,9 @@ export class LandingPage {
    * This creates a new thread and navigates to the thread page
    */
   async submitFirstPrompt(text: string): Promise<void> {
-    // For contenteditable divs, we need to set textContent directly
-    await this.promptInput.evaluate((el, value) => {
-      el.textContent = value;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    }, text);
+    // Use pressSequentially for cross-browser compatibility (especially WebKit)
+    await this.promptInput.click();
+    await this.promptInput.pressSequentially(text, { delay: 5 });
     await this.sendButton.click();
   }
 
@@ -49,10 +47,9 @@ export class LandingPage {
    * Type into the prompt input without submitting
    */
   async typePrompt(text: string): Promise<void> {
-    await this.promptInput.evaluate((el, value) => {
-      el.textContent = value;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    }, text);
+    // Use pressSequentially for cross-browser compatibility (especially WebKit)
+    await this.promptInput.click();
+    await this.promptInput.pressSequentially(text, { delay: 5 });
   }
 
   /**

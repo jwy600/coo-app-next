@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import type { TitleRequest, TitleResponse, ApiError } from '@/types/api';
+import { getOpenAiClient } from '@/lib/api/openAiClient';
 
-const client = new OpenAI();
+const TITLE_INSTRUCTIONS = `Generate a concise title (5-7 words max) for a conversation thread.
+The title should be descriptive and capture the main topic.
+Return ONLY the title, no quotes or extra formatting.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,25 +17,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const systemPrompt = `Generate a concise title (5-7 words max) for a conversation thread.
-The title should be descriptive and capture the main topic.
-Return ONLY the title, no quotes or extra formatting.`;
+    const client = getOpenAiClient();
 
-    const userContent = body.response
+    const inputContent = body.response
       ? `User's question: ${body.prompt}\n\nAI's response: ${body.response}`
       : `User's question: ${body.prompt}`;
 
-    const completion = await client.chat.completions.create({
+    // Use the Responses API (consistent with the rest of the codebase)
+    const response = await client.responses.create({
       model: 'gpt-5-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userContent },
-      ],
-      max_tokens: 30,
-      temperature: 0.7,
+      input: inputContent,
+      instructions: TITLE_INSTRUCTIONS,
     });
 
-    const generatedTitle = completion.choices[0]?.message?.content?.trim();
+    const generatedTitle = response.output_text?.trim();
 
     // Fallback to truncated prompt if generation fails
     const title = generatedTitle || (
@@ -44,10 +41,11 @@ Return ONLY the title, no quotes or extra formatting.`;
 
     return NextResponse.json<TitleResponse>({ title });
   } catch (error: unknown) {
-    console.error('Thread title API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Thread title API error:', errorMessage, error);
 
     return NextResponse.json<ApiError>(
-      { error: 'Failed to generate thread title' },
+      { error: 'Failed to generate thread title', details: errorMessage },
       { status: 500 }
     );
   }

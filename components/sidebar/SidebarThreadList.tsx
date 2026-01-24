@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
@@ -9,17 +10,37 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { useStore } from '@/lib/store/useStore';
 import type { Thread } from '@/types/thread';
 
 interface SidebarThreadListProps {
   threads: Thread[];
 }
 
-export function SidebarThreadList({ threads }: SidebarThreadListProps) {
+export function SidebarThreadList({ threads: serverThreads }: SidebarThreadListProps) {
   const params = useParams();
   const currentThreadId = params?.threadId as string | undefined;
   const { setOpen, isMobile, state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+
+  // Subscribe to store threads for reactivity (title updates, new threads)
+  const storeThreads = useStore((state) => state.threads);
+  const mergeThreadFromSupabase = useStore((state) => state.mergeThreadFromSupabase);
+  const hasSynced = useRef(false);
+
+  // Sync server threads to store on mount (once)
+  useEffect(() => {
+    if (hasSynced.current || serverThreads.length === 0) return;
+    hasSynced.current = true;
+
+    // Merge server threads into the store (preserves any local changes)
+    serverThreads.forEach((thread) => {
+      mergeThreadFromSupabase(thread, thread.messages, []);
+    });
+  }, [serverThreads, mergeThreadFromSupabase]);
+
+  // Use store threads (reactive) for display
+  const threads = storeThreads;
 
   const handleClick = () => {
     // On mobile, close the sidebar when navigating

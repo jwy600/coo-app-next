@@ -1,6 +1,6 @@
 /**
- * Layout Components - Header, navigation, and layout elements
+ * Layout Components - Navigation and layout elements
  */
 
-export { Header } from './Header';
-export { Logo } from './Logo';
+export { ExportButton } from './ExportButton';
+export { OfflineBanner } from './OfflineBanner';

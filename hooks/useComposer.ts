@@ -14,7 +14,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useStore, selectSelectedBlock } from '@/lib/store/useStore';
-import { fetchChatCompletionStream, fetchBlockAction } from '@/lib/api';
+import { fetchChatCompletionStream, fetchBlockAction, generateThreadTitle } from '@/lib/api';
 import { getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import type { BlockAction } from '@/types/api';
@@ -155,14 +155,6 @@ export function useComposer(): UseComposerReturn {
         // IMPORTANT: Get fresh activeThreadId from store (after potential createThread())
         const currentThreadId = useStore.getState().activeThreadId;
 
-        // Update thread title ONLY for the first message (when creating new thread)
-        if (isNewThread) {
-          const threadTitle = trimmedPrompt.length > 50
-            ? trimmedPrompt.substring(0, 50) + '...'
-            : trimmedPrompt;
-          updateThreadTitle(currentThreadId, threadTitle);
-        }
-
         // Get previous response ID for contextual chat (chains conversation)
         const currentState = useStore.getState();
         const previousResponseId = getLastAssistantResponseId(currentState, currentThreadId);
@@ -194,6 +186,9 @@ export function useComposer(): UseComposerReturn {
               const finalState = useStore.getState();
               const streamingMessage = finalState.streamingMessage;
 
+              // Capture accumulated text for title generation before clearing
+              const accumulatedText = streamingMessage?.accumulatedText || '';
+
               if (streamingMessage && streamingMessage.blocks.length > 0) {
                 // Store blocks locally before clearing streaming state
                 // This prevents both streaming and final message from rendering simultaneously
@@ -221,6 +216,22 @@ export function useComposer(): UseComposerReturn {
 
               // Done submitting
               setAwaitingResponse(false);
+
+              // Generate AI title for new threads (fire-and-forget, non-blocking)
+              if (isNewThread) {
+                generateThreadTitle(trimmedPrompt, accumulatedText)
+                  .then((title) => {
+                    updateThreadTitle(currentThreadId, title);
+                  })
+                  .catch((err) => {
+                    console.error('Failed to generate thread title:', err);
+                    // Fallback: use truncated prompt
+                    const fallbackTitle = trimmedPrompt.length > 50
+                      ? trimmedPrompt.substring(0, 50) + '...'
+                      : trimmedPrompt;
+                    updateThreadTitle(currentThreadId, fallbackTitle);
+                  });
+              }
             },
             onError: (error: Error) => {
               clearStream();

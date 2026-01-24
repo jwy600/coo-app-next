@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { ChatRequest, ChatResponse } from '@/types/api';
+import type { ChatRequest, ChatResponse, TitleRequest, TitleResponse } from '@/types/api';
 import type { Settings } from '@/types/settings';
 import { validatePrompt } from '@/lib/utils/validation';
 
@@ -194,4 +194,32 @@ function processStreamBuffer(
   }
 
   return { hadParseError };
+}
+
+/**
+ * Generate a succinct title for a thread using AI
+ *
+ * @param prompt - User's first message in the thread
+ * @param response - Optional AI response for better context
+ * @returns Promise with generated title
+ * @throws Error on API failure
+ */
+export async function generateThreadTitle(
+  prompt: string,
+  response?: string
+): Promise<string> {
+  const requestBody: TitleRequest = { prompt, response };
+
+  const res = await fetch('/api/thread-title', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to generate thread title');
+  }
+
+  const data: TitleResponse = await res.json();
+  return data.title;
 }

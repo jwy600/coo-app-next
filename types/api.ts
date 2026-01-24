@@ -36,6 +36,16 @@ export interface ConfigResponse {
   supabaseAnonKey: string;
 }
 
+// Thread Title API Types
+export interface TitleRequest {
+  prompt: string;
+  response?: string;
+}
+
+export interface TitleResponse {
+  title: string;
+}
+
 // Error Response
 export interface ApiError {
   error: string;

@@ -49,7 +49,10 @@ export function SidebarThreadList({ threads: serverThreads }: SidebarThreadListP
 
   // Use server threads for SSR/initial render, then switch to store threads after mount
   // This prevents hydration mismatch while keeping reactivity for title updates
-  const threads = hasMounted ? storeThreads : serverThreads;
+  // Filter out empty threads (the default "Main" thread created by store initialization)
+  // to avoid showing placeholder threads when database is empty
+  const rawThreads = hasMounted ? storeThreads : serverThreads;
+  const threads = rawThreads.filter((thread) => thread.messages.length > 0);
 
   const handleClick = () => {
     // On mobile, close the sidebar when navigating

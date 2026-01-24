@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
@@ -23,10 +23,18 @@ export function SidebarThreadList({ threads: serverThreads }: SidebarThreadListP
   const { setOpen, isMobile, state } = useSidebar();
   const isCollapsed = state === 'collapsed';
 
+  // Track hydration state to avoid mismatch
+  const [hasMounted, setHasMounted] = useState(false);
+
   // Subscribe to store threads for reactivity (title updates, new threads)
   const storeThreads = useStore((state) => state.threads);
   const mergeThreadFromSupabase = useStore((state) => state.mergeThreadFromSupabase);
   const hasSynced = useRef(false);
+
+  // Mark as mounted after hydration
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // Sync server threads to store on mount (once)
   useEffect(() => {
@@ -39,8 +47,9 @@ export function SidebarThreadList({ threads: serverThreads }: SidebarThreadListP
     });
   }, [serverThreads, mergeThreadFromSupabase]);
 
-  // Use store threads (reactive) for display
-  const threads = storeThreads;
+  // Use server threads for SSR/initial render, then switch to store threads after mount
+  // This prevents hydration mismatch while keeping reactivity for title updates
+  const threads = hasMounted ? storeThreads : serverThreads;
 
   const handleClick = () => {
     // On mobile, close the sidebar when navigating

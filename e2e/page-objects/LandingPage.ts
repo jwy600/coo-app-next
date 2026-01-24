@@ -45,11 +45,28 @@ export class LandingPage {
 
   /**
    * Type into the prompt input without submitting
+   * For short text, uses pressSequentially for cross-browser compatibility
+   * For long text (>100 chars), uses direct DOM manipulation for speed
    */
   async typePrompt(text: string): Promise<void> {
-    // Use pressSequentially for cross-browser compatibility (especially WebKit)
     await this.promptInput.click();
-    await this.promptInput.pressSequentially(text, { delay: 5 });
+
+    // For long text, use direct DOM manipulation (faster for tests)
+    if (text.length > 100) {
+      await this.promptInput.evaluate((el, value) => {
+        el.textContent = '';
+        el.textContent = value;
+        el.dispatchEvent(new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertText',
+          data: value,
+        }));
+      }, text);
+    } else {
+      // For short text, use pressSequentially for WebKit compatibility
+      await this.promptInput.pressSequentially(text, { delay: 5 });
+    }
   }
 
   /**

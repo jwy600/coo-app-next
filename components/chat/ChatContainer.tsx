@@ -11,9 +11,12 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MessageList } from './MessageList';
 import { Composer } from '@/components/composer/Composer';
+import { ExportButton } from './ExportButton';
+import { OfflineBanner } from './OfflineBanner';
+import { isOfflineMode } from '@/lib/utils/offlineMode';
 import {
   useComposer,
   useBlockSelection,
@@ -179,8 +182,22 @@ export function ChatContainer({
   // Combined error (thread loading or composer)
   const error = threadError || composerError;
 
+  // Check offline mode only on client to avoid hydration mismatch
+  const [showOfflineBanner, setShowOfflineBanner] = useState(false);
+  useEffect(() => {
+    setShowOfflineBanner(isOfflineMode());
+  }, []);
+
   return (
     <div className="flex flex-col h-full">
+      {/* Toolbar with offline banner and export button */}
+      <div className="relative flex items-center justify-center px-4 border-b border-border/50 min-h-[52px]">
+        {showOfflineBanner && <OfflineBanner />}
+        <div className="absolute right-4">
+          <ExportButton />
+        </div>
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-chat mx-auto">
           <MessageList

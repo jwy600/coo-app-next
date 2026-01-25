@@ -214,6 +214,7 @@ export class ApiMocker {
 
   /**
    * Mock config endpoint (for Supabase config)
+   * Returns empty config to run in offline mode
    */
   async mockConfig(): Promise<void> {
     await this.page.route('**/api/config', (route: Route) => {
@@ -221,8 +222,8 @@ export class ApiMocker {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          supabaseUrl: 'https://test.supabase.co',
-          supabaseAnonKey: 'test-anon-key',
+          supabaseUrl: null,
+          supabaseAnonKey: null,
         }),
       });
     });

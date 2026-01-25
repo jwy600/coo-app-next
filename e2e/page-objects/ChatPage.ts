@@ -128,22 +128,39 @@ export class ChatPage {
    * Submit a prompt in chat mode
    */
   async submitPrompt(text: string): Promise<void> {
-    // For contenteditable divs, we need to set textContent directly
-    await this.promptInput.evaluate((el, value) => {
-      el.textContent = value;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    }, text);
+    // Use pressSequentially for cross-browser compatibility (especially WebKit)
+    await this.promptInput.click();
+    await this.promptInput.pressSequentially(text, { delay: 5 });
     await this.sendButton.click();
   }
 
   /**
    * Type into prompt without submitting
+   * For short text, uses pressSequentially for cross-browser compatibility
+   * For long text (>100 chars), uses direct DOM manipulation for speed
    */
   async typePrompt(text: string): Promise<void> {
-    await this.promptInput.evaluate((el, value) => {
-      el.textContent = value;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    }, text);
+    await this.promptInput.click();
+
+    // For long text, use direct DOM manipulation (faster for tests)
+    if (text.length > 100) {
+      await this.promptInput.evaluate((el, value) => {
+        // Clear existing content
+        el.textContent = '';
+        // Set new content
+        el.textContent = value;
+        // Dispatch InputEvent (more compatible than Event)
+        el.dispatchEvent(new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertText',
+          data: value,
+        }));
+      }, text);
+    } else {
+      // For short text, use pressSequentially for WebKit compatibility
+      await this.promptInput.pressSequentially(text, { delay: 5 });
+    }
   }
 
   /**

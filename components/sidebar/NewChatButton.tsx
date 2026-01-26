@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { SquarePen } from 'lucide-react';
 import { SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
 import { useStore } from '@/lib/store/useStore';
 
@@ -27,7 +27,7 @@ export function NewChatButton() {
       tooltip="New chat"
       className="w-full"
     >
-      <Plus className="h-4 w-4" />
+      <SquarePen className="h-4 w-4" />
       <span>New chat</span>
     </SidebarMenuButton>
   );

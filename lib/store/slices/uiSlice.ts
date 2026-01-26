@@ -54,18 +54,53 @@ export const uiSlice: StateCreator<
     const state = get();
     const block = state.blocks.find((b) => b.id === blockId);
 
-    // If clicking a paragraph while in section mode, narrow selection to just that paragraph
+    // If clicking a paragraph while in section mode
     if (state.sectionHeadingId && block?.type !== 'heading') {
+      const sectionBlockIds = stateFns.getSectionBlockIds(state, state.sectionHeadingId);
+      const isInsideSection = sectionBlockIds.includes(blockId);
       const isAlreadySelected = state.selectedBlockIds.includes(blockId);
-      if (isAlreadySelected) {
-        // Deselect - go back to section mode (all content implicitly selected)
-        set({ selectedBlockIds: [], isSelectionOutsideSection: false });
+
+      if (isInsideSection) {
+        // INSIDE section: single-select only (replace, no multi-select)
+        if (isAlreadySelected) {
+          // Deselect - go back to section mode (all content implicitly selected)
+          set({ selectedBlockIds: [], isSelectionOutsideSection: false });
+        } else {
+          // Clear selections from previously selected block(s) before switching
+          const previousSelectedIds = state.selectedBlockIds;
+          const updatedBlocks = previousSelectedIds.length > 0
+            ? state.blocks.map((b) =>
+                previousSelectedIds.includes(b.id)
+                  ? { ...b, selections: [], isRewritten: false, prevText: null }
+                  : b
+              )
+            : state.blocks;
+
+          set({
+            selectedBlockIds: [blockId],
+            isSelectionOutsideSection: false,
+            blocks: updatedBlocks,
+          });
+        }
       } else {
-        // Check if block is in the current section
-        const sectionBlockIds = stateFns.getSectionBlockIds(state, state.sectionHeadingId);
-        const isOutside = !sectionBlockIds.includes(blockId);
-        // Narrow to this paragraph only (replace, don't add - no multi-select in section mode)
-        set({ selectedBlockIds: [blockId], isSelectionOutsideSection: isOutside });
+        // OUTSIDE section: multi-select allowed (toggle)
+        if (isAlreadySelected) {
+          // Remove from selection
+          const newSelectedIds = state.selectedBlockIds.filter((id) => id !== blockId);
+          const hasOutsideSelection = newSelectedIds.some(
+            (id) => !sectionBlockIds.includes(id)
+          );
+          set({
+            selectedBlockIds: newSelectedIds,
+            isSelectionOutsideSection: hasOutsideSelection,
+          });
+        } else {
+          // Add to selection
+          set({
+            selectedBlockIds: [...state.selectedBlockIds, blockId],
+            isSelectionOutsideSection: true,
+          });
+        }
       }
       return;
     }

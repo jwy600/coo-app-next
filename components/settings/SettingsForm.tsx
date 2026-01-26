@@ -39,7 +39,7 @@ export function SettingsForm() {
     <div className="flex flex-col gap-6 py-4">
       {/* Model Selection */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Model</Label>
+        <Label className="text-sm font-semibold">Model</Label>
         <RadioGroup
           value={settings.model}
           onValueChange={(value) => updateModel(value as ModelType)}
@@ -50,9 +50,9 @@ export function SettingsForm() {
               <RadioGroupItem value={option.value} id={`model-${option.value}`} />
               <Label
                 htmlFor={`model-${option.value}`}
-                className="flex flex-col cursor-pointer"
+                className="flex flex-col cursor-pointer font-normal"
               >
-                <span className="font-medium">{option.label}</span>
+                <span>{option.label}</span>
                 <span className="text-xs text-muted-foreground">{option.description}</span>
               </Label>
             </div>
@@ -64,7 +64,7 @@ export function SettingsForm() {
 
       {/* Reasoning Effort */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Reasoning Effort</Label>
+        <Label className="text-sm font-semibold">Reasoning Effort</Label>
         <RadioGroup
           value={settings.reasoningEffort}
           onValueChange={(value) => updateReasoningEffort(value as ReasoningEffort)}
@@ -75,9 +75,9 @@ export function SettingsForm() {
               <RadioGroupItem value={option.value} id={`reasoning-${option.value}`} />
               <Label
                 htmlFor={`reasoning-${option.value}`}
-                className="flex flex-col cursor-pointer"
+                className="flex flex-col cursor-pointer font-normal"
               >
-                <span className="font-medium">{option.label}</span>
+                <span>{option.label}</span>
                 <span className="text-xs text-muted-foreground">{option.description}</span>
               </Label>
             </div>
@@ -90,7 +90,7 @@ export function SettingsForm() {
       {/* Web Search Toggle */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label htmlFor="web-search" className="text-sm font-medium">
+          <Label htmlFor="web-search" className="text-sm font-semibold">
             Web Search
           </Label>
           <p className="text-xs text-muted-foreground">
@@ -108,7 +108,7 @@ export function SettingsForm() {
 
       {/* Translation Language */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Translation Language</Label>
+        <Label className="text-sm font-semibold">Translation Language</Label>
         <RadioGroup
           value={settings.translateLanguage}
           onValueChange={(value) => updateTranslateLanguage(value as TranslateLanguage)}
@@ -119,7 +119,7 @@ export function SettingsForm() {
               <RadioGroupItem value={option.value} id={`lang-${option.value}`} />
               <Label
                 htmlFor={`lang-${option.value}`}
-                className="cursor-pointer font-medium"
+                className="cursor-pointer font-normal"
               >
                 {option.label}
               </Label>

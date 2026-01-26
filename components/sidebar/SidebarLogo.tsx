@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Feather } from 'lucide-react';
 import { useStore } from '@/lib/store/useStore';
 import { SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
 
@@ -30,12 +31,14 @@ export function SidebarLogo() {
   return (
     <SidebarMenuButton
       asChild
-      size="lg"
       tooltip={isCollapsed ? "Open sidebar" : "Home"}
       className="hover:bg-transparent"
     >
-      <Link href="/" onClick={handleClick}>
-        <span className="font-semibold text-base text-foreground">coo</span>
+      <Link href="/" onClick={handleClick} className="flex items-center gap-2">
+        <Feather className="h-5 w-5 text-foreground" />
+        {!isCollapsed && (
+          <span className="font-semibold text-base text-foreground">coo</span>
+        )}
       </Link>
     </SidebarMenuButton>
   );

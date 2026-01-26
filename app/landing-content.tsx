@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/empty-state/EmptyState';
 import { useComposer } from '@/hooks/useComposer';
 import { useStore } from '@/lib/store/useStore';
 

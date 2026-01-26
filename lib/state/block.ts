@@ -74,10 +74,22 @@ export const toggleRewrite = (
         edited: true,
       };
     }
+
+    let newText = rewriteSentence;
+
+    // Preserve heading prefix if original was a heading but rewrite lacks one
+    if (block.type === 'heading') {
+      const originalPrefix = block.text.match(/^#{1,6}\s+/)?.[0] ?? '';
+      const hasHeadingPrefix = /^#{1,6}\s+/.test(newText);
+      if (originalPrefix && !hasHeadingPrefix) {
+        newText = originalPrefix + newText;
+      }
+    }
+
     return {
       ...block,
       prevText: block.text,
-      text: rewriteSentence,
+      text: newText,
       isRewritten: true,
       edited: true,
     };

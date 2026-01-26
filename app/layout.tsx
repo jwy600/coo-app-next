@@ -3,8 +3,8 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Coo - Blockwise AI Chat',
-  description: 'Edit AI answers in place with block-level granularity',
+  title: 'coo - your personalized Wiki',
+  description: 'a chatbot that you can edit its responses in context',
   keywords: ['AI', 'chat', 'blocks', 'editing', 'OpenAI', 'GPT'],
   authors: [{ name: 'Coo Team' }],
 };

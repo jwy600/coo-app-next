@@ -151,6 +151,17 @@ function renderSegment(segment: MarkdownSegment, index: number): React.ReactNode
  * Render paragraph with inline markdown support
  */
 function renderParagraph(text: string, className?: string): React.ReactElement {
+  // Check if it's a blockquote (starts with "> ")
+  if (text.startsWith('> ')) {
+    const quoteText = text.slice(2); // Remove "> " prefix
+    const segments = parseInlineMarkdown(quoteText);
+    return (
+      <p className={`doc-paragraph ${className || ''}`}>
+        <em>{segments.map((segment, index) => renderSegment(segment, index))}</em>
+      </p>
+    );
+  }
+
   // Check if it's a heading
   const heading = parseHeading(text);
   if (heading) {

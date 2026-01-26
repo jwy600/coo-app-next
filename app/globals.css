@@ -405,6 +405,11 @@
     font-weight: 600;
   }
 
+  /* Spacing between parent item text and nested list */
+  .doc-list .doc-list {
+    margin-top: 8px;
+  }
+
   /* Reduce gap between consecutive list blocks (sibling items from same logical list) */
   /* Don't reduce gap when preceding block is selected (has chips/buttons visible) */
   .doc-block:has(> .doc-content > .doc-list):not(.is-selected) + .doc-block:has(> .doc-content > .doc-list) {

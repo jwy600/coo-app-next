@@ -56,10 +56,12 @@ describe('Settings State Functions', () => {
         model: 'gpt-5-mini',
         reasoningEffort: 'high',
         webSearchEnabled: true,
+        translateLanguage: 'English',
       };
       const updated = updateModel(settings, 'gpt-5.2');
       expect(updated.reasoningEffort).toBe('high');
       expect(updated.webSearchEnabled).toBe(true);
+      expect(updated.translateLanguage).toBe('English');
     });
   });
 
@@ -100,10 +102,12 @@ describe('Settings State Functions', () => {
         model: 'gpt-5.2',
         reasoningEffort: 'none',
         webSearchEnabled: true,
+        translateLanguage: 'Spanish',
       };
       const updated = updateReasoningEffort(settings, 'medium');
       expect(updated.model).toBe('gpt-5.2');
       expect(updated.webSearchEnabled).toBe(true);
+      expect(updated.translateLanguage).toBe('Spanish');
     });
   });
 
@@ -132,10 +136,12 @@ describe('Settings State Functions', () => {
         model: 'gpt-5.2',
         reasoningEffort: 'high',
         webSearchEnabled: false,
+        translateLanguage: 'French',
       };
       const updated = updateWebSearchEnabled(settings, true);
       expect(updated.model).toBe('gpt-5.2');
       expect(updated.reasoningEffort).toBe('high');
+      expect(updated.translateLanguage).toBe('French');
     });
   });
 

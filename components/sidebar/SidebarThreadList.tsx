@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { MessageSquare } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -52,7 +52,7 @@ export function SidebarThreadList({ threads }: SidebarThreadListProps) {
               tooltip={thread.title || 'Untitled'}
             >
               <Link href={`/t/${thread.id}`} onClick={handleClick}>
-                <MessageSquare className="h-4 w-4" />
+                <FileText className="h-4 w-4" />
                 <span className="truncate">{thread.title || 'Untitled'}</span>
               </Link>
             </SidebarMenuButton>

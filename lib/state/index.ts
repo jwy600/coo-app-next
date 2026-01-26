@@ -123,23 +123,7 @@ export const toggleBlockInSelection = (state: AppState, blockId: string): AppSta
     };
   }
 
-  // Check if the block being selected is a heading
-  const blockToSelect = state.blocks.find((b) => b.id === blockId);
-  const isSelectingHeading = blockToSelect?.type === 'heading';
-
-  if (isSelectingHeading) {
-    // Remove any previously selected headings (headings are mutually exclusive)
-    const selectedWithoutHeadings = state.selectedBlockIds.filter((id) => {
-      const block = state.blocks.find((b) => b.id === id);
-      return block?.type !== 'heading';
-    });
-    return {
-      ...state,
-      selectedBlockIds: [...selectedWithoutHeadings, blockId],
-    };
-  }
-
-  // Add to selection (non-heading block)
+  // Add to selection (headings and paragraphs can all be multi-selected)
   return {
     ...state,
     selectedBlockIds: [...state.selectedBlockIds, blockId],

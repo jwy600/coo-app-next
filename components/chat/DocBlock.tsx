@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useRef, useCallback } from 'react';
 import { Block } from '@/types/block';
 import { BlockContent } from '@/components/content/BlockContent';
 import { SelectionChips } from './SelectionChips';
@@ -24,6 +24,9 @@ interface DocBlockProps {
   onRewrite?: (blockId: string) => void;
 }
 
+// Delay to distinguish single-click from double-click (in ms)
+const CLICK_DELAY = 200;
+
 function DocBlockComponent({
   block,
   isSelected,
@@ -34,24 +37,44 @@ function DocBlockComponent({
   onClearSelections,
   onRewrite,
 }: DocBlockProps) {
-  // Single-click: select block (all blocks including headings)
-  const handleClick = () => {
-    onSelect?.(block.id);
-  };
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle gutter click with delay for headings to distinguish from double-click
+  const handleClick = useCallback(() => {
+    if (block.type === 'heading') {
+      // For headings, delay single-click to check for double-click
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+      clickTimeoutRef.current = setTimeout(() => {
+        onSelect?.(block.id);
+        clickTimeoutRef.current = null;
+      }, CLICK_DELAY);
+    } else {
+      // For non-headings, execute immediately
+      onSelect?.(block.id);
+    }
+  }, [block.id, block.type, onSelect]);
 
   // Double-click gutter: enter section mode (headings only)
-  const handleGutterDoubleClick = () => {
+  const handleGutterDoubleClick = useCallback(() => {
     if (block.type === 'heading' && onEnterSectionMode) {
+      // Cancel pending single-click
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
       onEnterSectionMode(block.id);
     }
-  };
+  }, [block.id, block.type, onEnterSectionMode]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleClick();
+      // For keyboard, always execute single-click immediately
+      onSelect?.(block.id);
     }
-  };
+  }, [block.id, onSelect]);
 
   // Determine visual state
   // isSelected = explicitly selected (in selectedBlockIds)

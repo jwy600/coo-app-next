@@ -54,8 +54,8 @@ export const uiSlice: StateCreator<
     const state = get();
     const block = state.blocks.find((b) => b.id === blockId);
 
-    // If clicking a heading while in section mode, exit section mode and select the heading
-    if (state.sectionHeadingId && block?.type === 'heading') {
+    // If clicking the section's own heading - exit section mode, select heading
+    if (state.sectionHeadingId && blockId === state.sectionHeadingId) {
       set({
         sectionHeadingId: null,
         selectedBlockIds: [blockId],
@@ -64,8 +64,8 @@ export const uiSlice: StateCreator<
       return;
     }
 
-    // If clicking a paragraph while in section mode
-    if (state.sectionHeadingId && block?.type !== 'heading') {
+    // If clicking any block while in section mode (headings outside section treated same as paragraphs)
+    if (state.sectionHeadingId) {
       const sectionBlockIds = stateFns.getSectionBlockIds(state, state.sectionHeadingId);
       const isInsideSection = sectionBlockIds.includes(blockId);
       const isAlreadySelected = state.selectedBlockIds.includes(blockId);
@@ -74,7 +74,13 @@ export const uiSlice: StateCreator<
         // INSIDE section: single-select only (replace, no multi-select)
         if (isAlreadySelected) {
           // Deselect - go back to section mode (all content implicitly selected)
-          set({ selectedBlockIds: [], isSelectionOutsideSection: false });
+          // Clear selections from the deselected block
+          const updatedBlocks = state.blocks.map((b) =>
+            b.id === blockId
+              ? { ...b, selections: [], isRewritten: false, prevText: null }
+              : b
+          );
+          set({ selectedBlockIds: [], isSelectionOutsideSection: false, blocks: updatedBlocks });
         } else {
           // Clear selections from previously selected block(s) before switching
           const previousSelectedIds = state.selectedBlockIds;
@@ -121,19 +127,24 @@ export const uiSlice: StateCreator<
   },
 
   enterSectionMode: (headingId) => {
-    // Single-click heading - enter section mode
+    // Double-click heading gutter - enter section mode
     const state = get();
     if (state.sectionHeadingId === headingId) {
-      // Clicking same heading again - exit section mode
+      // Double-clicking same heading - exit section mode
       set({ sectionHeadingId: null, selectedBlockIds: [], isSelectionOutsideSection: false });
+    } else if (state.sectionHeadingId) {
+      // Already in section mode for a different heading - ignore double-click
+      // (can't have two section modes; user must single-click to enter block mode instead)
+      return;
     } else {
-      // Enter section mode for this heading
+      // Not in section mode - enter section mode for this heading
       set({ sectionHeadingId: headingId, selectedBlockIds: [], isSelectionOutsideSection: false });
     }
   },
 
   selectHeadingDirectly: (headingId) => {
-    // Double-click heading - select heading itself (not section mode)
+    // Select heading itself directly (block mode, not section mode)
+    // Called when single-clicking a heading gutter
     set({ sectionHeadingId: null, selectedBlockIds: [headingId], isSelectionOutsideSection: false });
   },
 

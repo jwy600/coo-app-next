@@ -350,4 +350,70 @@ export class ChatPage {
       { timeout }
     );
   }
+
+  /**
+   * Get section border element (visible when in section mode)
+   */
+  getSectionBorder(): Locator {
+    return this.page.locator('.block-section');
+  }
+
+  /**
+   * Check if section mode is active (section border visible)
+   */
+  async isInSectionMode(): Promise<boolean> {
+    return await this.getSectionBorder().isVisible();
+  }
+
+  /**
+   * Enter section mode by double-clicking a heading block's gutter
+   */
+  async enterSectionMode(headingIndex: number): Promise<void> {
+    const block = this.getBlock(headingIndex);
+    const gutterHandle = block.locator('.gutter-handle');
+    await gutterHandle.dblclick();
+  }
+
+  /**
+   * Get blocks inside the current section (when in section mode)
+   */
+  getSectionBlocks(): Locator {
+    return this.getSectionBorder().locator('.doc-block');
+  }
+
+  /**
+   * Get the count of selected blocks
+   */
+  async getSelectedBlockCount(): Promise<number> {
+    return await this.page.locator('.doc-block.is-selected').count();
+  }
+
+  /**
+   * Check if block is visually muted (not selected and not in section)
+   */
+  async isBlockMuted(index: number): Promise<boolean> {
+    const block = this.getBlock(index);
+    const className = await block.getAttribute('class');
+    return className?.includes('is-muted') || false;
+  }
+
+  /**
+   * Check if a block is inside the section border
+   */
+  async isBlockInSection(index: number): Promise<boolean> {
+    const block = this.getBlock(index);
+    const sectionBorder = this.getSectionBorder();
+
+    // Check if section border exists and contains the block
+    if (!(await sectionBorder.isVisible())) {
+      return false;
+    }
+
+    // Get block ID and check if it's inside section
+    const blockId = await block.getAttribute('data-block-id');
+    if (!blockId) return false;
+
+    const sectionBlock = sectionBorder.locator(`[data-block-id="${blockId}"]`);
+    return await sectionBlock.isVisible();
+  }
 }

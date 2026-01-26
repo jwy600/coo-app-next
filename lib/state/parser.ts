@@ -123,7 +123,7 @@ const normalizeBlocks = (blocks: BlockData[]): BlockData[] => {
             buffer = [];
           }
           // Add heading as separate block
-          result.push({ type: 'paragraph', text: line.trim() });
+          result.push({ type: 'heading', text: line.trim() });
         } else {
           buffer.push(line);
         }
@@ -225,7 +225,7 @@ export const splitIntoBlocks = (content: string): BlockData[] => {
       } else {
         flushParagraph();
       }
-      blocks.push({ type: 'paragraph', text: line.trim() });
+      blocks.push({ type: 'heading', text: line.trim() });
       currentMode = 'paragraph';
       return;
     }

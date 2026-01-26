@@ -23,7 +23,7 @@ export interface DbBlock {
   thread_id: string;
   message_id: string;
   position: number;
-  type: 'paragraph' | 'list' | 'code';
+  type: 'paragraph' | 'list' | 'code' | 'heading';
   text: string;
   edited: boolean;
   selections: string[]; // JSONB array
@@ -48,7 +48,7 @@ export interface ThreadPersistData {
   blocks: Array<{
     id: string;
     messageId: string;
-    type: 'paragraph' | 'list' | 'code';
+    type: 'paragraph' | 'list' | 'code' | 'heading';
     text: string;
     edited: boolean;
     selections: string[];

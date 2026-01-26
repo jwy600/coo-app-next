@@ -148,6 +148,32 @@ function renderSegment(segment: MarkdownSegment, index: number): React.ReactNode
 }
 
 /**
+ * Render heading with inline markdown support
+ */
+function renderHeading(text: string, className?: string): React.ReactElement {
+  const heading = parseHeading(text);
+
+  // Fallback to paragraph if parsing fails (shouldn't happen for heading blocks)
+  if (!heading) {
+    return renderParagraph(text, className);
+  }
+
+  const level = heading.level as 1 | 2 | 3 | 4 | 5 | 6;
+  const segments = parseInlineMarkdown(heading.text);
+  const headingClass = `doc-heading ${className || ''}`;
+  const content = segments.map((segment, index) => renderSegment(segment, index));
+
+  switch (level) {
+    case 1: return <h1 className={headingClass}>{content}</h1>;
+    case 2: return <h2 className={headingClass}>{content}</h2>;
+    case 3: return <h3 className={headingClass}>{content}</h3>;
+    case 4: return <h4 className={headingClass}>{content}</h4>;
+    case 5: return <h5 className={headingClass}>{content}</h5>;
+    case 6: return <h6 className={headingClass}>{content}</h6>;
+  }
+}
+
+/**
  * Render paragraph with inline markdown support
  */
 function renderParagraph(text: string, className?: string): React.ReactElement {
@@ -162,20 +188,10 @@ function renderParagraph(text: string, className?: string): React.ReactElement {
     );
   }
 
-  // Check if it's a heading
+  // Legacy support: handle headings in paragraph blocks (for backward compatibility)
   const heading = parseHeading(text);
   if (heading) {
-    const level = heading.level as 1 | 2 | 3 | 4 | 5 | 6;
-    const segments = parseInlineMarkdown(heading.text);
-    const headingClass = `doc-paragraph doc-heading ${className || ''}`;
-
-    // Render appropriate heading based on level
-    if (level === 1) return <h1 className={headingClass}>{segments.map((segment, index) => renderSegment(segment, index))}</h1>;
-    if (level === 2) return <h2 className={headingClass}>{segments.map((segment, index) => renderSegment(segment, index))}</h2>;
-    if (level === 3) return <h3 className={headingClass}>{segments.map((segment, index) => renderSegment(segment, index))}</h3>;
-    if (level === 4) return <h4 className={headingClass}>{segments.map((segment, index) => renderSegment(segment, index))}</h4>;
-    if (level === 5) return <h5 className={headingClass}>{segments.map((segment, index) => renderSegment(segment, index))}</h5>;
-    return <h6 className={headingClass}>{segments.map((segment, index) => renderSegment(segment, index))}</h6>;
+    return renderHeading(text, className);
   }
 
   // Regular paragraph
@@ -314,6 +330,9 @@ export function BlockContent({ text, type, className = '' }: BlockContentProps) 
   }
 
   switch (type) {
+    case 'heading':
+      return renderHeading(text, className);
+
     case 'paragraph':
       return renderParagraph(text, className);
 

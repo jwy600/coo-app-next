@@ -152,9 +152,14 @@ describe('detectBlockType', () => {
     expect(detectBlockType('1. Item')).toBe('list');
   });
 
+  it('should detect headings', () => {
+    expect(detectBlockType('# Heading')).toBe('heading');
+    expect(detectBlockType('## Heading 2')).toBe('heading');
+    expect(detectBlockType('###### Heading 6')).toBe('heading');
+  });
+
   it('should default to paragraph', () => {
     expect(detectBlockType('Regular text')).toBe('paragraph');
-    expect(detectBlockType('# Heading')).toBe('paragraph');
   });
 
   it('should return paragraph for empty', () => {
@@ -325,12 +330,14 @@ describe('countBlockTypes', () => {
       { type: 'paragraph' as const },
       { type: 'list' as const },
       { type: 'code' as const },
+      { type: 'heading' as const },
     ];
     const result = countBlockTypes(blocks);
     expect(result).toEqual({
       paragraph: 2,
       list: 1,
       code: 1,
+      heading: 1,
     });
   });
 
@@ -340,6 +347,7 @@ describe('countBlockTypes', () => {
       paragraph: 0,
       list: 0,
       code: 0,
+      heading: 0,
     });
   });
 
@@ -352,5 +360,17 @@ describe('countBlockTypes', () => {
     expect(result.paragraph).toBe(2);
     expect(result.list).toBe(0);
     expect(result.code).toBe(0);
+    expect(result.heading).toBe(0);
+  });
+
+  it('should count heading blocks', () => {
+    const blocks = [
+      { type: 'heading' as const },
+      { type: 'paragraph' as const },
+      { type: 'heading' as const },
+    ];
+    const result = countBlockTypes(blocks);
+    expect(result.heading).toBe(2);
+    expect(result.paragraph).toBe(1);
   });
 });

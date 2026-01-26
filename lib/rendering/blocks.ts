@@ -78,6 +78,7 @@ export function detectBlockType(text: string): BlockType {
 
   if (isCodeBlock(text)) return 'code';
   if (isListText(text)) return 'list';
+  if (hasHeading(text)) return 'heading';
 
   return 'paragraph';
 }
@@ -195,6 +196,7 @@ export function countBlockTypes(blocks: { type: BlockType }[]): Record<BlockType
     paragraph: 0,
     list: 0,
     code: 0,
+    heading: 0,
   };
 
   blocks.forEach((block) => {

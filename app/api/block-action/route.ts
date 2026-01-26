@@ -31,7 +31,7 @@ function buildActionPrompt(
 
     case 'rewrite': {
       const highlightPrompt = prompt?.trim() || '';
-      return `Rewrite this text, incorporating the highlighted phrases naturally. If a phrase is in a different language, substitute it directly.\n\nPhrases to incorporate: ${highlightPrompt}\n\nText: ${trimmedBlock}`;
+      return `Rewrite this text, incorporating the highlighted phrases naturally. If a phrase is in a different language, INSERT each highlighted phrase in parentheses immediately after the most relevant word/phrase in the text.\n\nPhrases to incorporate: ${highlightPrompt}\n\nText: ${trimmedBlock}`;
     }
 
     case 'ask': {

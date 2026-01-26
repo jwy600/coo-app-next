@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useStore, selectActiveThread, selectSelectedBlock } from '@/lib/store/useStore';
+import { useStore, selectActiveThread, selectSelectedBlocks, selectSingleSelectedBlock } from '@/lib/store/useStore';
 import * as supabaseThreads from '@/lib/supabase/threads';
 import * as supabaseBlocks from '@/lib/supabase/blocks';
 
@@ -25,7 +25,7 @@ describe('useStore', () => {
       blocks: [],
       activeThreadId: '',
       mode: 'landing',
-      selectedBlockId: null,
+      selectedBlockIds: [],
       hasInitialResponse: false,
       isAwaitingResponse: false,
     });
@@ -243,11 +243,11 @@ describe('useStore', () => {
 
       setMode('landing');
       expect(useStore.getState().mode).toBe('landing');
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      expect(useStore.getState().selectedBlockIds).toEqual([]);
     });
 
-    it('should toggle selected block', () => {
-      const { createThread, addUserMessage, setMode, toggleSelectedBlock } = useStore.getState();
+    it('should toggle block in selection (multi-select)', () => {
+      const { createThread, addUserMessage, setMode, toggleBlockInSelection } = useStore.getState();
 
       createThread('thread-1');
       addUserMessage('Test message');
@@ -256,26 +256,26 @@ describe('useStore', () => {
       const blockId = useStore.getState().blocks[0].id;
 
       // Select block
-      toggleSelectedBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBe(blockId);
+      toggleBlockInSelection(blockId);
+      expect(useStore.getState().selectedBlockIds).toContain(blockId);
 
       // Deselect block
-      toggleSelectedBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      toggleBlockInSelection(blockId);
+      expect(useStore.getState().selectedBlockIds).toEqual([]);
     });
 
-    it('should clear selected block', () => {
-      const { createThread, addUserMessage, setMode, toggleSelectedBlock, clearSelectedBlock } = useStore.getState();
+    it('should clear selected blocks', () => {
+      const { createThread, addUserMessage, setMode, toggleBlockInSelection, clearSelectedBlocks } = useStore.getState();
 
       createThread('thread-1');
       addUserMessage('Test message');
       setMode('thread');
 
       const blockId = useStore.getState().blocks[0].id;
-      toggleSelectedBlock(blockId);
+      toggleBlockInSelection(blockId);
 
-      clearSelectedBlock();
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      clearSelectedBlocks();
+      expect(useStore.getState().selectedBlockIds).toEqual([]);
     });
 
     it('should set hasInitialResponse', () => {
@@ -315,24 +315,64 @@ describe('useStore', () => {
       expect(activeThread?.id).toBe('thread-1');
     });
 
-    it('should select selected block', () => {
+    it('should select single selected block', () => {
       const state = useStore.getState();
       const blockId = state.blocks[0].id;
 
-      state.toggleSelectedBlock(blockId);
+      state.toggleBlockInSelection(blockId);
 
       const updatedState = useStore.getState();
-      const selectedBlock = selectSelectedBlock(updatedState);
+      const selectedBlock = selectSingleSelectedBlock(updatedState);
 
       expect(selectedBlock).toBeDefined();
       expect(selectedBlock?.id).toBe(blockId);
     });
 
-    it('should return null for selected block when none selected', () => {
+    it('should return all selected blocks', () => {
+      const { createThread, addAssistantMessage, setMode, toggleBlockInSelection } = useStore.getState();
+
+      createThread('thread-2');
+      addAssistantMessage([
+        { text: 'Block 1', type: 'paragraph' },
+        { text: 'Block 2', type: 'paragraph' },
+      ]);
+      setMode('thread');
+
+      const blocks = useStore.getState().blocks;
+      toggleBlockInSelection(blocks[0].id);
+      toggleBlockInSelection(blocks[1].id);
+
+      const updatedState = useStore.getState();
+      const selectedBlocks = selectSelectedBlocks(updatedState);
+
+      expect(selectedBlocks).toHaveLength(2);
+    });
+
+    it('should return null for single selected block when none selected', () => {
       const state = useStore.getState();
-      const selectedBlock = selectSelectedBlock(state);
+      const selectedBlock = selectSingleSelectedBlock(state);
 
       expect(selectedBlock).toBeNull();
+    });
+
+    it('should return null for single selected block when multiple selected', () => {
+      const { createThread, addAssistantMessage, setMode, toggleBlockInSelection } = useStore.getState();
+
+      createThread('thread-3');
+      addAssistantMessage([
+        { text: 'Block 1', type: 'paragraph' },
+        { text: 'Block 2', type: 'paragraph' },
+      ]);
+      setMode('thread');
+
+      const blocks = useStore.getState().blocks;
+      toggleBlockInSelection(blocks[0].id);
+      toggleBlockInSelection(blocks[1].id);
+
+      const updatedState = useStore.getState();
+      const singleBlock = selectSingleSelectedBlock(updatedState);
+
+      expect(singleBlock).toBeNull();
     });
   });
 

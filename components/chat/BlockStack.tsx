@@ -10,7 +10,7 @@ import { DocBlock } from './DocBlock';
  */
 interface BlockStackProps {
   blocks: Block[];
-  selectedBlockId: string | null;
+  selectedBlockIds: string[];
   onBlockSelect?: (blockId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
@@ -19,7 +19,7 @@ interface BlockStackProps {
 
 export function BlockStack({
   blocks,
-  selectedBlockId,
+  selectedBlockIds,
   onBlockSelect,
   onRemoveSelection,
   onClearSelections,
@@ -28,7 +28,7 @@ export function BlockStack({
   return (
     <div className="block-stack">
       {blocks.map((block) => {
-        const isSelected = selectedBlockId === block.id;
+        const isSelected = selectedBlockIds.includes(block.id);
 
         return (
           <DocBlock

@@ -1,7 +1,8 @@
 /**
  * useBlockSelection Hook
  *
- * Manages block selection state and interactions.
+ * Manages multi-block selection state and interactions.
+ * Supports selecting multiple blocks for card export.
  *
  * Reference: legacy/app.js lines 1147-1158 (Escape key handler)
  */
@@ -12,44 +13,64 @@ import { useCallback } from 'react';
 import { useStore } from '@/lib/store/useStore';
 
 export interface UseBlockSelectionReturn {
-  selectedBlockId: string | null;
-  selectBlock: (blockId: string) => void;
+  selectedBlockIds: string[];
+  selectedBlockCount: number;
+  isBlockSelected: (blockId: string) => boolean;
+  toggleBlockSelection: (blockId: string) => void;
   clearSelection: () => void;
-  isComposerBlockMode: boolean;
+  /** Exactly one block selected - enables block mode features (rewrite, expand, etc.) */
+  isSingleBlockMode: boolean;
+  /** Two or more blocks selected - disables composer */
+  isMultiSelectMode: boolean;
+  /** Any blocks selected (1+) */
+  hasSelection: boolean;
 }
 
 export function useBlockSelection(): UseBlockSelectionReturn {
   // Store state
-  const selectedBlockId = useStore((state) => state.selectedBlockId);
-  const toggleSelectedBlock = useStore((state) => state.toggleSelectedBlock);
-  const clearSelectedBlock = useStore((state) => state.clearSelectedBlock);
+  const selectedBlockIds = useStore((state) => state.selectedBlockIds);
+  const toggleBlockInSelection = useStore((state) => state.toggleBlockInSelection);
+  const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
 
   /**
-   * Select or toggle a block
+   * Check if a block is selected
    */
-  const selectBlock = useCallback(
-    (blockId: string) => {
-      toggleSelectedBlock(blockId);
-    },
-    [toggleSelectedBlock]
+  const isBlockSelected = useCallback(
+    (blockId: string) => selectedBlockIds.includes(blockId),
+    [selectedBlockIds]
   );
 
   /**
-   * Clear selection
+   * Toggle a block in the selection set
    */
-  const clearSelection = useCallback(() => {
-    clearSelectedBlock();
-  }, [clearSelectedBlock]);
+  const toggleBlockSelection = useCallback(
+    (blockId: string) => {
+      toggleBlockInSelection(blockId);
+    },
+    [toggleBlockInSelection]
+  );
 
   /**
-   * Computed: Is composer in block mode?
+   * Clear all selections
    */
-  const isComposerBlockMode = selectedBlockId !== null;
+  const clearSelection = useCallback(() => {
+    clearSelectedBlocks();
+  }, [clearSelectedBlocks]);
+
+  // Computed values
+  const selectedBlockCount = selectedBlockIds.length;
+  const isSingleBlockMode = selectedBlockCount === 1;
+  const isMultiSelectMode = selectedBlockCount >= 2;
+  const hasSelection = selectedBlockCount > 0;
 
   return {
-    selectedBlockId,
-    selectBlock,
+    selectedBlockIds,
+    selectedBlockCount,
+    isBlockSelected,
+    toggleBlockSelection,
     clearSelection,
-    isComposerBlockMode,
+    isSingleBlockMode,
+    isMultiSelectMode,
+    hasSelection,
   };
 }

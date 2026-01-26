@@ -25,7 +25,7 @@ interface StreamingMessageData {
 interface MessageListProps {
   messages: Message[];
   blocks: Block[];
-  selectedBlockId?: string | null;
+  selectedBlockIds?: string[];
   isPending?: boolean;
   error?: string | null;
   streamingMessage?: StreamingMessageData | null;
@@ -39,7 +39,7 @@ interface MessageListProps {
 export function MessageList({
   messages,
   blocks,
-  selectedBlockId = null,
+  selectedBlockIds = [],
   isPending = false,
   error = null,
   streamingMessage = null,
@@ -52,11 +52,11 @@ export function MessageList({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages
-  // Skip auto-scroll in block mode (when a block is selected) so user can see the selected block
+  // Skip auto-scroll in block mode (when any block is selected) so user can see the selected block
   // Note: Auto-scroll is disabled during streaming to prevent jumping
   useEffect(() => {
     // Don't scroll if in block mode
-    if (selectedBlockId) return;
+    if (selectedBlockIds.length > 0) return;
 
     if (containerRef.current) {
       const lastChild = containerRef.current.lastElementChild;
@@ -98,7 +98,7 @@ export function MessageList({
             key={message.id}
             message={message}
             blocks={messageBlocks}
-            selectedBlockId={selectedBlockId}
+            selectedBlockIds={selectedBlockIds}
             onBlockSelect={onBlockSelect}
             onRemoveSelection={onRemoveSelection}
             onClearSelections={onClearSelections}
@@ -129,11 +129,11 @@ export function MessageList({
             prevText: null,
             isRewritten: false,
           }))}
-          selectedBlockId={null}
+          selectedBlockIds={[]}
         />
       )}
 
-      {isPending && !selectedBlockId && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
+      {isPending && selectedBlockIds.length === 0 && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
       {error && <ErrorMessage error={error} onRetry={onRetry} />}
     </div>
   );

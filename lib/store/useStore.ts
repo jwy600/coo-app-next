@@ -77,11 +77,20 @@ export const selectBlockById = (blockId: string) => (state: StoreState): Block |
   state.blocks.find((b) => b.id === blockId);
 
 /**
- * Select the currently selected block
+ * Select all currently selected blocks (in selection order)
  */
-export const selectSelectedBlock = (state: StoreState): Block | null =>
-  state.selectedBlockId
-    ? state.blocks.find((b) => b.id === state.selectedBlockId) || null
+export const selectSelectedBlocks = (state: StoreState): Block[] =>
+  state.selectedBlockIds
+    .map((id) => state.blocks.find((b) => b.id === id))
+    .filter((b): b is Block => b !== undefined);
+
+/**
+ * Select the single selected block (only when exactly one is selected)
+ * Used for backward compatibility with block mode features (rewrite, expand, etc.)
+ */
+export const selectSingleSelectedBlock = (state: StoreState): Block | null =>
+  state.selectedBlockIds.length === 1
+    ? state.blocks.find((b) => b.id === state.selectedBlockIds[0]) || null
     : null;
 
 /**
@@ -126,7 +135,15 @@ export const selectHasThreads = (state: StoreState): boolean =>
   state.threads.length > 0;
 
 /**
- * Check if composer is in block mode (block selected)
+ * Check if composer is in single-block mode (exactly one block selected)
+ * This enables block-specific actions like rewrite, expand, etc.
  */
-export const selectIsComposerBlockMode = (state: StoreState): boolean =>
-  state.selectedBlockId !== null;
+export const selectIsSingleBlockMode = (state: StoreState): boolean =>
+  state.selectedBlockIds.length === 1;
+
+/**
+ * Check if multi-select mode is active (2+ blocks selected)
+ * When true, composer should be disabled
+ */
+export const selectIsMultiSelectMode = (state: StoreState): boolean =>
+  state.selectedBlockIds.length >= 2;

@@ -6,7 +6,7 @@ export type ComposerMode = 'chat' | 'block';
 
 export interface AppState {
   mode: AppMode;
-  selectedBlockId: string | null;
+  selectedBlockIds: string[];
   hasInitialResponse: boolean;
   activeThreadId: string;
   threads: Thread[];

@@ -8,15 +8,15 @@ import { AppMode, AppState } from '@/types/state';
 
 export interface UISlice {
   mode: AppMode;
-  selectedBlockId: string | null;
+  selectedBlockIds: string[];
   hasInitialResponse: boolean;
   isAwaitingResponse: boolean;
   error: string | null;
 
   // Actions
   setMode: (mode: AppMode) => void;
-  toggleSelectedBlock: (blockId: string) => void;
-  clearSelectedBlock: () => void;
+  toggleBlockInSelection: (blockId: string) => void;
+  clearSelectedBlocks: () => void;
   setHasInitialResponse: (value: boolean) => void;
   setAwaitingResponse: (value: boolean) => void;
   setError: (error: string | null) => void;
@@ -29,7 +29,7 @@ export const uiSlice: StateCreator<
   UISlice
 > = (set, get) => ({
   mode: 'landing',
-  selectedBlockId: null,
+  selectedBlockIds: [],
   hasInitialResponse: false,
   isAwaitingResponse: false,
   error: null,
@@ -38,19 +38,19 @@ export const uiSlice: StateCreator<
     const result = stateFns.setMode(get(), mode);
     set({
       mode: result.mode,
-      selectedBlockId: result.selectedBlockId,
+      selectedBlockIds: result.selectedBlockIds,
     });
   },
 
-  toggleSelectedBlock: (blockId) => {
-    const result = stateFns.toggleSelectedBlock(get(), blockId);
-    set({ selectedBlockId: result.selectedBlockId });
+  toggleBlockInSelection: (blockId) => {
+    const result = stateFns.toggleBlockInSelection(get(), blockId);
+    set({ selectedBlockIds: result.selectedBlockIds });
   },
 
-  clearSelectedBlock: () => {
-    const result = stateFns.clearSelectedBlock(get());
+  clearSelectedBlocks: () => {
+    const result = stateFns.clearSelectedBlocks(get());
     set({
-      selectedBlockId: result.selectedBlockId,
+      selectedBlockIds: result.selectedBlockIds,
       blocks: result.blocks,  // Update blocks to clear session state
     });
   },

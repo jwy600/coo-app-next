@@ -27,7 +27,7 @@ describe('Store Integration Tests', () => {
       blocks: [],
       activeThreadId: '',
       mode: 'landing',
-      selectedBlockId: null,
+      selectedBlockIds: [],
       hasInitialResponse: false,
       isAwaitingResponse: false,
     });
@@ -98,8 +98,8 @@ describe('Store Integration Tests', () => {
       const blockId = useStore.getState().blocks[1].id; // Get assistant block
 
       // 1. User clicks block to select it
-      store.toggleSelectedBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBe(blockId);
+      store.toggleBlockInSelection(blockId);
+      expect(useStore.getState().selectedBlockIds).toContain(blockId);
 
       // 2. User highlights text within block
       store.addSelection(blockId, 'important text');
@@ -120,8 +120,8 @@ describe('Store Integration Tests', () => {
       expect(blockAfterRemoval?.selections).toHaveLength(1);
 
       // 5. User deselects block
-      store.toggleSelectedBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      store.toggleBlockInSelection(blockId);
+      expect(useStore.getState().selectedBlockIds).toEqual([]);
     });
   });
 
@@ -298,15 +298,15 @@ describe('Store Integration Tests', () => {
       const blockId = useStore.getState().blocks[0].id;
 
       // Chat mode (no block selected)
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      expect(useStore.getState().selectedBlockIds).toEqual([]);
 
       // Switch to block mode
-      store.toggleSelectedBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBe(blockId);
+      store.toggleBlockInSelection(blockId);
+      expect(useStore.getState().selectedBlockIds).toContain(blockId);
 
       // Back to chat mode
-      store.clearSelectedBlock();
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      store.clearSelectedBlocks();
+      expect(useStore.getState().selectedBlockIds).toEqual([]);
     });
 
     it('should clear selection when switching to landing mode', () => {
@@ -320,11 +320,11 @@ describe('Store Integration Tests', () => {
       ]);
 
       const blockId = useStore.getState().blocks[0].id;
-      store.toggleSelectedBlock(blockId);
+      store.toggleBlockInSelection(blockId);
 
       // Switch to landing mode
       store.setMode('landing');
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      expect(useStore.getState().selectedBlockIds).toEqual([]);
     });
   });
 });

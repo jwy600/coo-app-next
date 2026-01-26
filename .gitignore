@@ -45,3 +45,6 @@ data/supabaseConfig.js
 docs/
 codemaps/
 .reports
+
+# Pencil
+.pen

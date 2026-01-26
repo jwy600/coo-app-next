@@ -85,6 +85,68 @@ export const selectSelectedBlocks = (state: StoreState): Block[] =>
     .filter((b): b is Block => b !== undefined);
 
 /**
+ * Get heading level from block text (counts # characters)
+ */
+const getHeadingLevel = (text: string): number => {
+  const match = text.match(/^(#{1,6})\s/);
+  return match ? match[1].length : 0;
+};
+
+/**
+ * Get section range for a heading block (start to end index)
+ * Section ends at next heading of same or higher level
+ */
+const getSectionRange = (
+  blocks: Block[],
+  headingIndex: number
+): { start: number; end: number } => {
+  const headingLevel = getHeadingLevel(blocks[headingIndex].text);
+  let endIndex = blocks.length - 1;
+
+  for (let i = headingIndex + 1; i < blocks.length; i++) {
+    const block = blocks[i];
+    if (block.type === 'heading') {
+      const level = getHeadingLevel(block.text);
+      if (level <= headingLevel) {
+        endIndex = i - 1;
+        break;
+      }
+    }
+  }
+
+  return { start: headingIndex, end: endIndex };
+};
+
+/**
+ * Select blocks for export - expands heading selections to include their sections
+ * Non-heading blocks are included as-is, heading blocks include all content until next heading
+ */
+export const selectBlocksForExport = (state: StoreState): Block[] => {
+  const { blocks, selectedBlockIds } = state;
+  const includeIndices = new Set<number>();
+
+  for (const blockId of selectedBlockIds) {
+    const index = blocks.findIndex((b) => b.id === blockId);
+    if (index === -1) continue;
+
+    const block = blocks[index];
+
+    if (block.type === 'heading') {
+      const range = getSectionRange(blocks, index);
+      for (let i = range.start; i <= range.end; i++) {
+        includeIndices.add(i);
+      }
+    } else {
+      includeIndices.add(index);
+    }
+  }
+
+  return [...includeIndices]
+    .sort((a, b) => a - b)
+    .map((i) => blocks[i]);
+};
+
+/**
  * Select the single selected block (only when exactly one is selected)
  * Used for backward compatibility with block mode features (rewrite, expand, etc.)
  */

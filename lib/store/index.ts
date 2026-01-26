@@ -8,6 +8,7 @@ export {
   selectActiveThread,
   selectBlockById,
   selectSelectedBlocks,
+  selectBlocksForExport,
   selectSingleSelectedBlock,
   selectMessagesByThread,
   selectBlocksByMessage,

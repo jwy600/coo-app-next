@@ -8,7 +8,7 @@ import {
   useStore,
   selectActiveThread,
   selectActiveThreadBlocks,
-  selectSelectedBlocks,
+  selectBlocksForExport,
 } from '@/lib/store/useStore';
 import {
   threadToMarkdown,
@@ -28,7 +28,7 @@ import { ExportCardDialog } from './ExportCardDialog';
 export function ExportButton() {
   const activeThread = useStore(selectActiveThread);
   const allBlocks = useStore(useShallow(selectActiveThreadBlocks));
-  const selectedBlocks = useStore(useShallow(selectSelectedBlocks));
+  const blocksForExport = useStore(useShallow(selectBlocksForExport));
   const selectedBlockIds = useStore((state) => state.selectedBlockIds);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -60,7 +60,7 @@ export function ExportButton() {
     const markdown = blocksToCardMarkdown(
       title,
       activeThread.title, // original question
-      selectedBlocks
+      blocksForExport
     );
     const filename = generateCardFilename(title);
     downloadMarkdown(markdown, filename);
@@ -111,7 +111,7 @@ export function ExportButton() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onConfirm={handleExportCard}
-        selectedBlockCount={selectedBlockIds.length}
+        selectedBlockCount={blocksForExport.length}
       />
     </>
   );

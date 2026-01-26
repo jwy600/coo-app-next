@@ -101,6 +101,10 @@ export const setHasInitialResponse = (state: AppState, value: boolean): AppState
  *
  * Selection is additive - clicking a block adds/removes it from the set.
  * The array maintains selection order (useful for export).
+ *
+ * Special case: Headings are mutually exclusive - selecting a heading
+ * deselects any previously selected heading (only one heading section
+ * can be displayed at a time).
  */
 export const toggleBlockInSelection = (state: AppState, blockId: string): AppState => {
   if (state.mode !== 'thread') {
@@ -117,7 +121,23 @@ export const toggleBlockInSelection = (state: AppState, blockId: string): AppSta
     };
   }
 
-  // Add to selection
+  // Check if the block being selected is a heading
+  const blockToSelect = state.blocks.find((b) => b.id === blockId);
+  const isSelectingHeading = blockToSelect?.type === 'heading';
+
+  if (isSelectingHeading) {
+    // Remove any previously selected headings (headings are mutually exclusive)
+    const selectedWithoutHeadings = state.selectedBlockIds.filter((id) => {
+      const block = state.blocks.find((b) => b.id === id);
+      return block?.type !== 'heading';
+    });
+    return {
+      ...state,
+      selectedBlockIds: [...selectedWithoutHeadings, blockId],
+    };
+  }
+
+  // Add to selection (non-heading block)
   return {
     ...state,
     selectedBlockIds: [...state.selectedBlockIds, blockId],

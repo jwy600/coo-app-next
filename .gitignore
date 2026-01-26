@@ -39,3 +39,6 @@ codemaps/
 
 # Pencil
 *.pen
+
+# Claude
+.mcp.json

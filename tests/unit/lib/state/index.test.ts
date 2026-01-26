@@ -528,4 +528,39 @@ describe('splitIntoBlocks', () => {
     expect(blocks[0].text).toBe('Single line');
     expect(blocks[0].type).toBe('paragraph');
   });
+
+  it('should detect headings as heading type', () => {
+    const text = '# Main Title\n\nSome paragraph';
+    const blocks = splitIntoBlocks(text);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].type).toBe('heading');
+    expect(blocks[0].text).toBe('# Main Title');
+    expect(blocks[1].type).toBe('paragraph');
+  });
+
+  it('should handle multiple heading levels', () => {
+    const text = '# H1\n\n## H2\n\n### H3';
+    const blocks = splitIntoBlocks(text);
+    expect(blocks).toHaveLength(3);
+    blocks.forEach((block) => expect(block.type).toBe('heading'));
+  });
+
+  it('should separate headings from adjacent content', () => {
+    const text = 'Intro\n\n## Section\n\n- Item';
+    const blocks = splitIntoBlocks(text);
+    expect(blocks).toHaveLength(3);
+    expect(blocks[0].type).toBe('paragraph');
+    expect(blocks[1].type).toBe('heading');
+    expect(blocks[2].type).toBe('list');
+  });
+
+  it('should handle heading immediately followed by list', () => {
+    const text = '## Features\n- Feature 1\n- Feature 2';
+    const blocks = splitIntoBlocks(text);
+    expect(blocks).toHaveLength(3);
+    expect(blocks[0].type).toBe('heading');
+    expect(blocks[0].text).toBe('## Features');
+    expect(blocks[1].type).toBe('list');
+    expect(blocks[2].type).toBe('list');
+  });
 });

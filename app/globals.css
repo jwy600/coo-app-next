@@ -322,19 +322,22 @@
     font-weight: 600;
     letter-spacing: 0;
     margin: 0;
-    color: var(--gray-900);
-  }
-
-  .doc-heading.doc-paragraph {
-    font-size: 1.125rem;
     margin-bottom: 4px;
     color: var(--black);
   }
 
-  .doc-heading.doc-paragraph * {
+  .doc-heading * {
     color: inherit;
     font-weight: inherit;
   }
+
+  /* Heading level sizes */
+  h1.doc-heading { font-size: 1.5rem; }
+  h2.doc-heading { font-size: 1.25rem; }
+  h3.doc-heading { font-size: 1.125rem; }
+  h4.doc-heading { font-size: 1rem; }
+  h5.doc-heading { font-size: 0.9375rem; }
+  h6.doc-heading { font-size: 0.875rem; }
 
   .doc-math-block {
     margin: 12px 0;
@@ -358,7 +361,7 @@
     color: inherit !important;
   }
 
-  .doc-heading.doc-paragraph .katex {
+  .doc-heading .katex {
     font-weight: 600;
   }
 

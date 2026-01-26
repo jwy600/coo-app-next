@@ -38,4 +38,4 @@ codemaps/
 .reports
 
 # Pencil
-.pen
+*.pen

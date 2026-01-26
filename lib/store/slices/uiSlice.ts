@@ -10,6 +10,7 @@ export interface UISlice {
   mode: AppMode;
   selectedBlockIds: string[];
   sectionHeadingId: string | null;
+  isSelectionOutsideSection: boolean;
   hasInitialResponse: boolean;
   isAwaitingResponse: boolean;
   error: string | null;
@@ -34,6 +35,7 @@ export const uiSlice: StateCreator<
   mode: 'landing',
   selectedBlockIds: [],
   sectionHeadingId: null,
+  isSelectionOutsideSection: false,
   hasInitialResponse: false,
   isAwaitingResponse: false,
   error: null,
@@ -44,6 +46,7 @@ export const uiSlice: StateCreator<
       mode: result.mode,
       selectedBlockIds: result.selectedBlockIds,
       sectionHeadingId: null,
+      isSelectionOutsideSection: false,
     });
   },
 
@@ -56,17 +59,20 @@ export const uiSlice: StateCreator<
       const isAlreadySelected = state.selectedBlockIds.includes(blockId);
       if (isAlreadySelected) {
         // Deselect - go back to section mode (all content implicitly selected)
-        set({ selectedBlockIds: [] });
+        set({ selectedBlockIds: [], isSelectionOutsideSection: false });
       } else {
+        // Check if block is in the current section
+        const sectionBlockIds = stateFns.getSectionBlockIds(state, state.sectionHeadingId);
+        const isOutside = !sectionBlockIds.includes(blockId);
         // Narrow to this paragraph only (replace, don't add - no multi-select in section mode)
-        set({ selectedBlockIds: [blockId] });
+        set({ selectedBlockIds: [blockId], isSelectionOutsideSection: isOutside });
       }
       return;
     }
 
     // Outside section mode - use normal toggle logic
     const result = stateFns.toggleBlockInSelection(get(), blockId);
-    set({ selectedBlockIds: result.selectedBlockIds });
+    set({ selectedBlockIds: result.selectedBlockIds, isSelectionOutsideSection: false });
   },
 
   enterSectionMode: (headingId) => {
@@ -74,16 +80,16 @@ export const uiSlice: StateCreator<
     const state = get();
     if (state.sectionHeadingId === headingId) {
       // Clicking same heading again - exit section mode
-      set({ sectionHeadingId: null, selectedBlockIds: [] });
+      set({ sectionHeadingId: null, selectedBlockIds: [], isSelectionOutsideSection: false });
     } else {
       // Enter section mode for this heading
-      set({ sectionHeadingId: headingId, selectedBlockIds: [] });
+      set({ sectionHeadingId: headingId, selectedBlockIds: [], isSelectionOutsideSection: false });
     }
   },
 
   selectHeadingDirectly: (headingId) => {
     // Double-click heading - select heading itself (not section mode)
-    set({ sectionHeadingId: null, selectedBlockIds: [headingId] });
+    set({ sectionHeadingId: null, selectedBlockIds: [headingId], isSelectionOutsideSection: false });
   },
 
   clearSelectedBlocks: () => {
@@ -91,6 +97,7 @@ export const uiSlice: StateCreator<
     set({
       selectedBlockIds: result.selectedBlockIds,
       sectionHeadingId: null,
+      isSelectionOutsideSection: false,
       blocks: result.blocks,  // Update blocks to clear session state
     });
   },

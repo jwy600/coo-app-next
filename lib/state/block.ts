@@ -86,6 +86,15 @@ export const toggleRewrite = (
       }
     }
 
+    // Preserve list prefix if original was a list item but rewrite lacks one
+    if (block.type === 'list') {
+      const originalPrefix = block.text.match(/^(\s*)([-*+]|\d+\.)\s+/)?.[0] ?? '';
+      const hasListPrefix = /^(\s*)([-*+]|\d+\.)\s+/.test(newText);
+      if (originalPrefix && !hasListPrefix) {
+        newText = originalPrefix + newText;
+      }
+    }
+
     return {
       ...block,
       prevText: block.text,

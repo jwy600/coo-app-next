@@ -27,6 +27,7 @@ export const createInitialState = (
     mode: 'landing',
     selectedBlockIds: [],
     sectionHeadingId: null,
+    isSelectionOutsideSection: false,
     hasInitialResponse: false,
     activeThreadId: threadId,
     threads: [
@@ -143,4 +144,27 @@ export const toggleBlockInSelection = (state: AppState, blockId: string): AppSta
     ...state,
     selectedBlockIds: [...state.selectedBlockIds, blockId],
   };
+};
+
+/**
+ * Get block IDs that belong to a section (heading + all blocks until next heading)
+ *
+ * A section includes:
+ * - The heading block itself
+ * - All blocks after the heading until the next heading (or end of blocks)
+ */
+export const getSectionBlockIds = (state: AppState, headingId: string): string[] => {
+  const headingIndex = state.blocks.findIndex((b) => b.id === headingId);
+  if (headingIndex === -1) return [];
+
+  const sectionBlockIds: string[] = [headingId];
+
+  // Add all blocks after heading until next heading
+  for (let i = headingIndex + 1; i < state.blocks.length; i++) {
+    const block = state.blocks[i];
+    if (block.type === 'heading') break;
+    sectionBlockIds.push(block.id);
+  }
+
+  return sectionBlockIds;
 };

@@ -28,12 +28,15 @@ export interface UseBlockSelectionReturn {
   hasSelection: boolean;
   /** In section mode (heading gutter double-clicked) */
   isInSectionMode: boolean;
+  /** In section mode with a block selected outside the current section */
+  hasSelectionOutsideSection: boolean;
 }
 
 export function useBlockSelection(): UseBlockSelectionReturn {
   // Store state
   const selectedBlockIds = useStore((state) => state.selectedBlockIds);
   const sectionHeadingId = useStore((state) => state.sectionHeadingId);
+  const isSelectionOutsideSection = useStore((state) => state.isSelectionOutsideSection);
   const toggleBlockInSelection = useStore((state) => state.toggleBlockInSelection);
   const enterSectionModeAction = useStore((state) => state.enterSectionMode);
   const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
@@ -92,5 +95,6 @@ export function useBlockSelection(): UseBlockSelectionReturn {
     isMultiSelectMode,
     hasSelection,
     isInSectionMode,
+    hasSelectionOutsideSection: isSelectionOutsideSection,
   };
 }

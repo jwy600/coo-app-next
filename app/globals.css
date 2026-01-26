@@ -260,6 +260,14 @@
     box-shadow: none;
   }
 
+  .block-section {
+    display: grid;
+    gap: 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
   .doc-block {
     position: relative;
     padding-left: 32px;

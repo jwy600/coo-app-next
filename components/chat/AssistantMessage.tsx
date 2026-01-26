@@ -12,7 +12,7 @@ import { BlockStack } from './BlockStack';
 interface AssistantMessageProps {
   message: Message;
   blocks: Block[];
-  selectedBlockId?: string | null;
+  selectedBlockIds?: string[];
   onBlockSelect?: (blockId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
@@ -22,7 +22,7 @@ interface AssistantMessageProps {
 export function AssistantMessage({
   message,
   blocks,
-  selectedBlockId = null,
+  selectedBlockIds = [],
   onBlockSelect,
   onRemoveSelection,
   onClearSelections,
@@ -33,7 +33,7 @@ export function AssistantMessage({
       <span className="assistant-label">Coo</span>
       <BlockStack
         blocks={blocks}
-        selectedBlockId={selectedBlockId}
+        selectedBlockIds={selectedBlockIds}
         onBlockSelect={onBlockSelect}
         onRemoveSelection={onRemoveSelection}
         onClearSelections={onClearSelections}

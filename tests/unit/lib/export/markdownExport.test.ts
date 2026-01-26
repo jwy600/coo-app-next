@@ -3,6 +3,8 @@ import {
   threadToMarkdown,
   sanitizeFilename,
   generateExportFilename,
+  blocksToCardMarkdown,
+  generateCardFilename,
 } from '@/lib/export/markdownExport';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
@@ -211,6 +213,115 @@ describe('markdownExport', () => {
     it('should sanitize special characters in title', () => {
       const result = generateExportFilename('Thread/with:special*chars');
       expect(result).toMatch(/^Thread-with-special-chars-\d{4}-\d{2}-\d{2}\.md$/);
+    });
+  });
+
+  describe('blocksToCardMarkdown', () => {
+    it('should generate card markdown with frontmatter', () => {
+      const blocks: Block[] = [
+        {
+          id: 'block-1',
+          messageId: 'msg-1',
+          type: 'paragraph',
+          text: 'First selected block.',
+          edited: false,
+          selections: [],
+          prevText: null,
+          isRewritten: false,
+        },
+        {
+          id: 'block-2',
+          messageId: 'msg-2',
+          type: 'paragraph',
+          text: 'Second selected block.',
+          edited: false,
+          selections: [],
+          prevText: null,
+          isRewritten: false,
+        },
+      ];
+
+      const result = blocksToCardMarkdown('My Card', 'What is React?', blocks);
+
+      // Check frontmatter
+      expect(result).toMatch(/^---\n/);
+      expect(result).toContain('title: "My Card"');
+      expect(result).toContain('original question: "What is React?"');
+      expect(result).toMatch(/exported: \d{4}-\d{2}-\d{2}T/);
+      expect(result).toContain('type: card');
+      expect(result).not.toContain('blocks:');
+
+      // Check content
+      expect(result).toContain('First selected block.');
+      expect(result).toContain('Second selected block.');
+      expect(result).toContain('First selected block.\n\nSecond selected block.');
+    });
+
+    it('should handle single block', () => {
+      const blocks: Block[] = [
+        {
+          id: 'block-1',
+          messageId: 'msg-1',
+          type: 'paragraph',
+          text: 'Only block content.',
+          edited: false,
+          selections: [],
+          prevText: null,
+          isRewritten: false,
+        },
+      ];
+
+      const result = blocksToCardMarkdown('Single Block Card', 'How does it work?', blocks);
+
+      expect(result).toContain('title: "Single Block Card"');
+      expect(result).toContain('original question: "How does it work?"');
+      expect(result).toContain('Only block content.');
+    });
+
+    it('should escape double quotes in title and original question', () => {
+      const blocks: Block[] = [];
+      const result = blocksToCardMarkdown('Card with "quotes"', 'What is "this"?', blocks);
+
+      expect(result).toContain('title: "Card with \\"quotes\\""');
+      expect(result).toContain('original question: "What is \\"this\\"?"');
+    });
+
+    it('should preserve code blocks', () => {
+      const codeContent = '```typescript\nconst x: number = 1;\n```';
+      const blocks: Block[] = [
+        {
+          id: 'block-1',
+          messageId: 'msg-1',
+          type: 'code',
+          text: codeContent,
+          edited: false,
+          selections: [],
+          prevText: null,
+          isRewritten: false,
+        },
+      ];
+
+      const result = blocksToCardMarkdown('Code Card', 'Show me TypeScript', blocks);
+
+      expect(result).toContain(codeContent);
+    });
+  });
+
+  describe('generateCardFilename', () => {
+    it('should generate filename with sanitized title', () => {
+      const result = generateCardFilename('My Card');
+      expect(result).toBe('My Card.md');
+    });
+
+    it('should sanitize special characters in title', () => {
+      const result = generateCardFilename('Card/with:special*chars');
+      expect(result).toBe('Card-with-special-chars.md');
+    });
+
+    it('should not include date', () => {
+      const result = generateCardFilename('Simple Card');
+      expect(result).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+      expect(result).toBe('Simple Card.md');
     });
   });
 });

@@ -84,26 +84,35 @@ export function ChatContainer({
   const composerError = useStore((state) => state.error);
 
   // Block selection hook
-  const { selectedBlockId, selectBlock, clearSelection } = useBlockSelection();
+  const {
+    selectedBlockIds,
+    isBlockSelected,
+    toggleBlockSelection,
+    clearSelection,
+    isSingleBlockMode,
+    isMultiSelectMode,
+    hasSelection,
+  } = useBlockSelection();
 
-  // Text selection hook (for prompt input)
+  // Text selection hook (for prompt input) - only active in single block mode
+  const singleSelectedBlockId = isSingleBlockMode ? selectedBlockIds[0] : null;
   const {
     captureSelection,
     removeSelection: removeSelectionFromHook,
     clearSelections: clearSelectionsFromHook,
-  } = useTextSelection(selectedBlockId);
+  } = useTextSelection(singleSelectedBlockId);
 
   // Wrap handlers to match MessageList expected signatures
   const handleRemoveSelection = (blockId: string, index: number) => {
-    // Verify blockId matches selectedBlockId
-    if (blockId === selectedBlockId) {
+    // Verify blockId matches the single selected block
+    if (blockId === singleSelectedBlockId) {
       removeSelectionFromHook(index);
     }
   };
 
   const handleClearSelections = (blockId: string) => {
-    // Verify blockId matches selectedBlockId
-    if (blockId === selectedBlockId) {
+    // Verify blockId matches the single selected block
+    if (blockId === singleSelectedBlockId) {
       clearSelectionsFromHook();
     }
   };
@@ -117,13 +126,18 @@ export function ChatContainer({
   // Reference: legacy/app.js lines 1154-1163
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Only handle if a block is selected
-      if (!selectedBlockId) return;
+      // Only handle if any blocks are selected
+      if (!hasSelection) return;
 
       const target = event.target as HTMLElement;
 
-      // Don't deselect if clicking inside composer or doc-block
-      if (target.closest('.composer') || target.closest('.doc-block')) {
+      // Don't deselect if clicking inside composer, doc-block, toolbar, or dialog
+      if (
+        target.closest('.composer') ||
+        target.closest('.doc-block') ||
+        target.closest('.chat-toolbar') ||
+        target.closest('[role="dialog"]')
+      ) {
         return;
       }
 
@@ -136,15 +150,15 @@ export function ChatContainer({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [selectedBlockId, clearSelection]);
+  }, [hasSelection, clearSelection]);
 
   // Clear prompt when exiting block mode (returning to chat mode)
   useEffect(() => {
-    // When selectedBlockId becomes null, we're exiting block mode
-    if (selectedBlockId === null) {
+    // When no blocks are selected, we're exiting block mode
+    if (!hasSelection) {
       setPrompt('');
     }
-  }, [selectedBlockId, setPrompt]);
+  }, [hasSelection, setPrompt]);
 
   // Handle rewrite action (special case - modifies block directly)
   const handleRewrite = async (blockId: string) => {
@@ -191,7 +205,7 @@ export function ChatContainer({
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar with offline banner and export button */}
-      <div className="relative flex items-center justify-center px-4 border-b border-border/50 min-h-[52px]">
+      <div className="chat-toolbar relative flex items-center justify-center px-4 border-b border-border/50 min-h-[52px]">
         {showOfflineBanner && <OfflineBanner />}
         <div className="absolute right-4">
           <ExportButton />
@@ -203,11 +217,11 @@ export function ChatContainer({
           <MessageList
             messages={messages}
             blocks={blocks}
-            selectedBlockId={selectedBlockId}
+            selectedBlockIds={selectedBlockIds}
             isPending={isSubmitting}
             error={error}
             streamingMessage={streamingMessage}
-            onBlockSelect={selectBlock}
+            onBlockSelect={toggleBlockSelection}
             onRemoveSelection={handleRemoveSelection}
             onClearSelections={handleClearSelections}
             onRewrite={handleRewrite}
@@ -219,13 +233,13 @@ export function ChatContainer({
       <div className="flex-shrink-0 p-4 pb-6">
         <div className="max-w-chat mx-auto">
           <Composer
-            selectedBlockId={selectedBlockId}
+            selectedBlockId={singleSelectedBlockId}
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleSubmit}
             onSelectionCapture={captureSelection}
             onBlockAction={handleBlockAction}
-            disabled={isSubmitting || isLoadingThread}
+            disabled={isSubmitting || isLoadingThread || isMultiSelectMode}
           />
         </div>
       </div>

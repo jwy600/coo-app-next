@@ -8,11 +8,11 @@ import { useStore } from '@/lib/store/useStore';
 export function NewChatButton() {
   const router = useRouter();
   const setMode = useStore((state) => state.setMode);
-  const clearSelectedBlock = useStore((state) => state.clearSelectedBlock);
+  const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
   const { setOpen, isMobile } = useSidebar();
 
   const handleClick = () => {
-    clearSelectedBlock();
+    clearSelectedBlocks();
     setMode('landing');
     router.push('/');
     // On mobile, close the sidebar when navigating

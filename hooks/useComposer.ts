@@ -13,7 +13,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useStore, selectSelectedBlock } from '@/lib/store/useStore';
+import { useStore, selectSingleSelectedBlock } from '@/lib/store/useStore';
 import { fetchChatCompletionStream, fetchBlockAction } from '@/lib/api';
 import { getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
@@ -35,11 +35,11 @@ export function useComposer(): UseComposerReturn {
 
   // Store state
   const settings = useStore((state) => state.settings);
-  const selectedBlockId = useStore((state) => state.selectedBlockId);
-  const selectedBlock = useStore(selectSelectedBlock);
+  const selectedBlockIds = useStore((state) => state.selectedBlockIds);
+  const selectedBlock = useStore(selectSingleSelectedBlock);
   const addUserMessage = useStore((state) => state.addUserMessage);
   const addAssistantMessage = useStore((state) => state.addAssistantMessage);
-  const clearSelectedBlock = useStore((state) => state.clearSelectedBlock);
+  const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
   const mode = useStore((state) => state.mode);
   const setMode = useStore((state) => state.setMode);
   const createThread = useStore((state) => state.createThread);
@@ -131,8 +131,8 @@ export function useComposer(): UseComposerReturn {
       if (isSubmitting) return;
       if (!trimmedPrompt) return;
 
-      // BLOCK MODE: Result goes to composer
-      if (selectedBlockId && selectedBlock) {
+      // BLOCK MODE: Result goes to composer (only when exactly 1 block selected)
+      if (selectedBlockIds.length === 1 && selectedBlock) {
         await handleBlockAction('ask');
         return;
       }
@@ -213,8 +213,8 @@ export function useComposer(): UseComposerReturn {
               // Mark that we have initial response
               setHasInitialResponse(true);
 
-              // Clear any selected block
-              clearSelectedBlock();
+              // Clear any selected blocks
+              clearSelectedBlocks();
 
               // Clear error on success
               setError(null);
@@ -243,7 +243,7 @@ export function useComposer(): UseComposerReturn {
     [
       prompt,
       isSubmitting,
-      selectedBlockId,
+      selectedBlockIds,
       selectedBlock,
       mode,
       activeThreadId,
@@ -252,7 +252,7 @@ export function useComposer(): UseComposerReturn {
       setMode,
       addUserMessage,
       addAssistantMessage,
-      clearSelectedBlock,
+      clearSelectedBlocks,
       setHasInitialResponse,
       updateThreadTitle,
       setAwaitingResponse,

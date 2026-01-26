@@ -7,10 +7,12 @@ export type { StoreState } from './useStore';
 export {
   selectActiveThread,
   selectBlockById,
-  selectSelectedBlock,
+  selectSelectedBlocks,
+  selectSingleSelectedBlock,
   selectMessagesByThread,
   selectBlocksByMessage,
   selectActiveThreadBlocks,
   selectHasThreads,
-  selectIsComposerBlockMode,
+  selectIsSingleBlockMode,
+  selectIsMultiSelectMode,
 } from './useStore';

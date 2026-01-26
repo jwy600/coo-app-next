@@ -7,7 +7,7 @@ import { SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
 
 export function SidebarLogo() {
   const setMode = useStore((state) => state.setMode);
-  const clearSelectedBlock = useStore((state) => state.clearSelectedBlock);
+  const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
   const { setOpen, isMobile, state } = useSidebar();
   const isCollapsed = state === 'collapsed';
 
@@ -20,7 +20,7 @@ export function SidebarLogo() {
     }
 
     // When expanded, navigate to home
-    clearSelectedBlock();
+    clearSelectedBlocks();
     setMode('landing');
     // On mobile, close the sidebar when navigating
     if (isMobile) {

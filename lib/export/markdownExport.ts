@@ -84,3 +84,49 @@ export const generateExportFilename = (title: string): string => {
   const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   return `${sanitizedTitle}-${date}.md`;
 };
+
+/**
+ * Convert selected blocks to a card markdown format
+ *
+ * Cards are lightweight exports containing only the selected blocks,
+ * useful for extracting specific content from a conversation.
+ *
+ * @param title - User-defined card title (becomes the filename)
+ * @param originalQuestion - The thread title (user's first question)
+ * @param blocks - Selected blocks (in selection order)
+ * @returns Markdown string with YAML frontmatter
+ */
+export const blocksToCardMarkdown = (
+  title: string,
+  originalQuestion: string,
+  blocks: Block[]
+): string => {
+  const exportDate = new Date().toISOString();
+
+  // Build YAML frontmatter
+  const frontmatter = [
+    '---',
+    `title: "${escapeYamlString(title)}"`,
+    `original question: "${escapeYamlString(originalQuestion)}"`,
+    `exported: ${exportDate}`,
+    `type: card`,
+    '---',
+    '',
+  ].join('\n');
+
+  // Join block content with double newlines
+  const content = blocks.map((block) => block.text).join('\n\n');
+
+  return frontmatter + content;
+};
+
+/**
+ * Generate filename for a card export
+ *
+ * @param title - User-defined card title
+ * @returns Sanitized filename in format: {title}.md
+ */
+export const generateCardFilename = (title: string): string => {
+  const sanitizedTitle = sanitizeFilename(title);
+  return `${sanitizedTitle}.md`;
+};

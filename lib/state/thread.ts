@@ -32,7 +32,7 @@ export const createThread = (
   state: AppState,
   threadId: string,
   nowFactory: () => number,
-  title: string = 'Main'
+  title: string = 'current thread'
 ): { state: AppState; thread: Thread } => {
   const now = nowFactory();
   const thread: Thread = {
@@ -80,7 +80,7 @@ export const ensureThreadExists = (
   const now = nowFactory();
   const thread: Thread = {
     id: threadId,
-    title: 'Main',
+    title: 'current thread',
     createdAt: now,
     updatedAt: now,
     messages: [],

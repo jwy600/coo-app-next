@@ -45,8 +45,8 @@ describe('State Management - Core Functions', () => {
       expect(state.blocks).toHaveLength(0);
     });
 
-    it('should create a default thread with title "Main"', () => {
-      expect(state.threads[0].title).toBe('Main');
+    it('should create a default thread with title "current thread"', () => {
+      expect(state.threads[0].title).toBe('current thread');
       expect(state.threads[0].messages).toEqual([]);
     });
   });

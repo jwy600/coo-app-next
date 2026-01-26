@@ -43,7 +43,7 @@ describe('useStore', () => {
       const state = useStore.getState();
       expect(state.threads).toHaveLength(1);
       expect(state.threads[0].id).toBe('test-thread-id');
-      expect(state.threads[0].title).toBe('Main');
+      expect(state.threads[0].title).toBe('current thread');
       expect(state.activeThreadId).toBe('test-thread-id');
     });
 

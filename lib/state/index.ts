@@ -31,7 +31,7 @@ export const createInitialState = (
     threads: [
       {
         id: threadId,
-        title: 'Main',
+        title: 'current thread',
         createdAt: now,
         updatedAt: now,
         messages: [],

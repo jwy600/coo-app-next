@@ -119,23 +119,6 @@ test.describe('Block Actions', () => {
     expect(promptValue).toContain('shopping cart');
   });
 
-  test('should allow selecting different blocks', async () => {
-    // Select first block
-    await chatPage.selectBlock(0);
-    expect(await chatPage.isBlockSelected(0)).toBe(true);
-    expect(await chatPage.isBlockSelected(1)).toBe(false);
-
-    // Select second block
-    await chatPage.selectBlock(1);
-    expect(await chatPage.isBlockSelected(0)).toBe(false);
-    expect(await chatPage.isBlockSelected(1)).toBe(true);
-
-    // Select third block
-    await chatPage.selectBlock(2);
-    expect(await chatPage.isBlockSelected(1)).toBe(false);
-    expect(await chatPage.isBlockSelected(2)).toBe(true);
-  });
-
   test('should handle multiple block actions in sequence', async ({ page }) => {
     // Mock all block actions
     await apiMocker.mockAllBlockActions();

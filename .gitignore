@@ -9,19 +9,10 @@
 node_modules/
 
 # Testing
-coverage/
+.artifacts/
 .vitest-cache/
 tests/core/
-
-# Playwright E2E test artifacts
-test-results/
-playwright-report/
 playwright/.cache/
-
-# Integration test artifacts
-tests-integration/reports/
-playwright-report-integration/
-test-results-integration/
 
 # Build
 .vercel

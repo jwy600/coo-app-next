@@ -1,0 +1,11 @@
+{
+  "totalTests": 0,
+  "totalApiCalls": 0,
+  "totalCost": 0,
+  "totalTokens": 0,
+  "avgLatencyMs": 0,
+  "minLatencyMs": 0,
+  "maxLatencyMs": 0,
+  "calls": [],
+  "generatedAt": "2026-01-20T05:41:37.806Z"
+}

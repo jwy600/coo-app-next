@@ -16,7 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarLogo } from './SidebarLogo';
 import { NewChatButton } from './NewChatButton';
 import { SidebarThreadList } from './SidebarThreadList';
-import { SettingsSheet } from '@/components/settings';
+import { SettingsSheet } from '@/components/settings/SettingsSheet';
 import type { Thread } from '@/types/thread';
 
 interface AppSidebarProps {

@@ -54,6 +54,16 @@ export const uiSlice: StateCreator<
     const state = get();
     const block = state.blocks.find((b) => b.id === blockId);
 
+    // If clicking a heading while in section mode, exit section mode and select the heading
+    if (state.sectionHeadingId && block?.type === 'heading') {
+      set({
+        sectionHeadingId: null,
+        selectedBlockIds: [blockId],
+        isSelectionOutsideSection: false,
+      });
+      return;
+    }
+
     // If clicking a paragraph while in section mode
     if (state.sectionHeadingId && block?.type !== 'heading') {
       const sectionBlockIds = stateFns.getSectionBlockIds(state, state.sectionHeadingId);

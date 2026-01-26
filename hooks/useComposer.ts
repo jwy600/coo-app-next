@@ -13,7 +13,8 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useStore, selectSingleSelectedBlock } from '@/lib/store/useStore';
+import { useShallow } from 'zustand/react/shallow';
+import { useStore, selectSingleSelectedBlock, selectContentForTransform } from '@/lib/store/useStore';
 import { fetchChatCompletionStream, fetchBlockAction } from '@/lib/api';
 import { getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
@@ -36,7 +37,9 @@ export function useComposer(): UseComposerReturn {
   // Store state
   const settings = useStore((state) => state.settings);
   const selectedBlockIds = useStore((state) => state.selectedBlockIds);
+  const sectionHeadingId = useStore((state) => state.sectionHeadingId);
   const selectedBlock = useStore(selectSingleSelectedBlock);
+  const contentForTransform = useStore(useShallow(selectContentForTransform));
   const addUserMessage = useStore((state) => state.addUserMessage);
   const addAssistantMessage = useStore((state) => state.addAssistantMessage);
   const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
@@ -72,12 +75,17 @@ export function useComposer(): UseComposerReturn {
    * Handle block action (ELI5, Translate, Expand, Example, Ask)
    * Result goes to composer (NOT as new message)
    *
+   * Uses contentForTransform which handles:
+   * - Section mode: all content blocks in section (or narrowed selection)
+   * - Direct heading selection: heading text
+   * - Normal selection: selected blocks
+   *
    * Reference: legacy/app.js lines 835-856 (handleBlockCommand)
    */
   const handleBlockAction = useCallback(
     async (action: BlockAction) => {
-      if (!selectedBlock) {
-        setError('No block selected');
+      if (contentForTransform.length === 0) {
+        setError('No content selected');
         return;
       }
 
@@ -91,9 +99,12 @@ export function useComposer(): UseComposerReturn {
       setAwaitingResponse(true);
 
       try {
+        // Join all content blocks for transformation
+        const contentText = contentForTransform.map((b) => b.text).join('\n\n');
+
         const result = await fetchBlockAction(
           action,
-          selectedBlock.text,
+          contentText,
           action === 'ask' ? prompt : undefined,
           action === 'translate' ? settings.translateLanguage : undefined
         );
@@ -111,7 +122,7 @@ export function useComposer(): UseComposerReturn {
         setAwaitingResponse(false);
       }
     },
-    [selectedBlock, prompt, setAwaitingResponse, settings.translateLanguage]
+    [contentForTransform, prompt, setAwaitingResponse, settings.translateLanguage]
   );
 
   /**
@@ -131,8 +142,11 @@ export function useComposer(): UseComposerReturn {
       if (isSubmitting) return;
       if (!trimmedPrompt) return;
 
-      // BLOCK MODE: Result goes to composer (only when exactly 1 block selected)
-      if (selectedBlockIds.length === 1 && selectedBlock) {
+      // BLOCK MODE: Result goes to composer
+      // - Section mode (heading clicked): uses section content
+      // - Single block selected: uses that block
+      const hasContent = contentForTransform.length > 0;
+      if (hasContent && (sectionHeadingId || selectedBlockIds.length === 1)) {
         await handleBlockAction('ask');
         return;
       }

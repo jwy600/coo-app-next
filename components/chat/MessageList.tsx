@@ -26,10 +26,12 @@ interface MessageListProps {
   messages: Message[];
   blocks: Block[];
   selectedBlockIds?: string[];
+  sectionHeadingId?: string | null;
   isPending?: boolean;
   error?: string | null;
   streamingMessage?: StreamingMessageData | null;
   onBlockSelect?: (blockId: string) => void;
+  onEnterSectionMode?: (headingId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -40,10 +42,12 @@ export function MessageList({
   messages,
   blocks,
   selectedBlockIds = [],
+  sectionHeadingId = null,
   isPending = false,
   error = null,
   streamingMessage = null,
   onBlockSelect,
+  onEnterSectionMode,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
@@ -99,7 +103,9 @@ export function MessageList({
             message={message}
             blocks={messageBlocks}
             selectedBlockIds={selectedBlockIds}
+            sectionHeadingId={sectionHeadingId}
             onBlockSelect={onBlockSelect}
+            onEnterSectionMode={onEnterSectionMode}
             onRemoveSelection={onRemoveSelection}
             onClearSelections={onClearSelections}
             onRewrite={onRewrite}
@@ -133,7 +139,7 @@ export function MessageList({
         />
       )}
 
-      {isPending && selectedBlockIds.length === 0 && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
+      {isPending && selectedBlockIds.length === 0 && !sectionHeadingId && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
       {error && <ErrorMessage error={error} onRetry={onRetry} />}
     </div>
   );

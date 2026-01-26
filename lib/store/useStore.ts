@@ -147,6 +147,66 @@ export const selectBlocksForExport = (state: StoreState): Block[] => {
 };
 
 /**
+ * Get section content blocks for a heading (excludes the heading itself)
+ */
+const getSectionContentBlocks = (state: StoreState, headingId: string): Block[] => {
+  const { blocks } = state;
+  const headingIndex = blocks.findIndex((b) => b.id === headingId);
+  if (headingIndex === -1) return [];
+
+  const range = getSectionRange(blocks, headingIndex);
+  // Return content blocks only (start + 1 to skip heading)
+  return blocks.slice(range.start + 1, range.end + 1);
+};
+
+/**
+ * Select content blocks for transformation (used by API)
+ * - Section mode: all content blocks in section (or narrowed selection)
+ * - Direct heading selection: heading text
+ * - Normal selection: selected blocks
+ */
+export const selectContentForTransform = (state: StoreState): Block[] => {
+  const { sectionHeadingId, selectedBlockIds, blocks } = state;
+
+  // Section mode
+  if (sectionHeadingId) {
+    if (selectedBlockIds.length > 0) {
+      // Narrowed selection - return only explicitly selected paragraph(s)
+      return selectedBlockIds
+        .map((id) => blocks.find((b) => b.id === id))
+        .filter((b): b is Block => b !== undefined);
+    }
+    // No narrowed selection - return all section content blocks
+    return getSectionContentBlocks(state, sectionHeadingId);
+  }
+
+  // Normal mode - return selected blocks
+  return selectedBlockIds
+    .map((id) => blocks.find((b) => b.id === id))
+    .filter((b): b is Block => b !== undefined);
+};
+
+/**
+ * Check if in section mode (single-click heading)
+ */
+export const selectIsInSectionMode = (state: StoreState): boolean =>
+  state.sectionHeadingId !== null;
+
+/**
+ * Get section range when in section mode (for visual rendering)
+ */
+export const selectSectionRange = (state: StoreState): { startIndex: number; endIndex: number } | null => {
+  const { sectionHeadingId, blocks } = state;
+  if (!sectionHeadingId) return null;
+
+  const headingIndex = blocks.findIndex((b) => b.id === sectionHeadingId);
+  if (headingIndex === -1) return null;
+
+  const range = getSectionRange(blocks, headingIndex);
+  return { startIndex: range.start, endIndex: range.end };
+};
+
+/**
  * Select the single selected block (only when exactly one is selected)
  * Used for backward compatibility with block mode features (rewrite, expand, etc.)
  */

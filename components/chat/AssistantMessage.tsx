@@ -13,7 +13,9 @@ interface AssistantMessageProps {
   message: Message;
   blocks: Block[];
   selectedBlockIds?: string[];
+  sectionHeadingId?: string | null;
   onBlockSelect?: (blockId: string) => void;
+  onEnterSectionMode?: (headingId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -23,7 +25,9 @@ export function AssistantMessage({
   message,
   blocks,
   selectedBlockIds = [],
+  sectionHeadingId = null,
   onBlockSelect,
+  onEnterSectionMode,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
@@ -34,7 +38,9 @@ export function AssistantMessage({
       <BlockStack
         blocks={blocks}
         selectedBlockIds={selectedBlockIds}
+        sectionHeadingId={sectionHeadingId}
         onBlockSelect={onBlockSelect}
+        onEnterSectionMode={onEnterSectionMode}
         onRemoveSelection={onRemoveSelection}
         onClearSelections={onClearSelections}
         onRewrite={onRewrite}

@@ -5,13 +5,14 @@ import { DocBlock } from './DocBlock';
 
 /**
  * Client Component - Container for multiple blocks
- * Applies muted styling to non-selected blocks when one is selected
- * Reference: legacy/app.js lines 575-595
+ * Handles section mode display and block selection
  */
 interface BlockStackProps {
   blocks: Block[];
   selectedBlockIds: string[];
+  sectionHeadingId: string | null;
   onBlockSelect?: (blockId: string) => void;
+  onEnterSectionMode?: (headingId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -22,23 +23,17 @@ function getHeadingLevel(text: string): number {
   return match ? match[1].length : 0;
 }
 
-function getSelectedHeadingSectionRange(
+function getSectionRange(
   blocks: Block[],
-  selectedBlockIds: string[]
+  headingId: string
 ): { startIndex: number; endIndex: number } | null {
-  // Find if any selected block is a heading
-  const selectedHeadingIndex = blocks.findIndex(
-    (block) => block.type === 'heading' && selectedBlockIds.includes(block.id)
-  );
+  const headingIndex = blocks.findIndex((b) => b.id === headingId);
+  if (headingIndex === -1) return null;
 
-  if (selectedHeadingIndex === -1) return null;
+  const headingLevel = getHeadingLevel(blocks[headingIndex].text);
 
-  const selectedHeading = blocks[selectedHeadingIndex];
-  const headingLevel = getHeadingLevel(selectedHeading.text);
-
-  // Find end of section: next heading of same or higher level (lower number)
   let endIndex = blocks.length - 1;
-  for (let i = selectedHeadingIndex + 1; i < blocks.length; i++) {
+  for (let i = headingIndex + 1; i < blocks.length; i++) {
     const block = blocks[i];
     if (block.type === 'heading') {
       const level = getHeadingLevel(block.text);
@@ -49,27 +44,34 @@ function getSelectedHeadingSectionRange(
     }
   }
 
-  return { startIndex: selectedHeadingIndex, endIndex };
+  return { startIndex: headingIndex, endIndex };
 }
 
 export function BlockStack({
   blocks,
   selectedBlockIds,
+  sectionHeadingId,
   onBlockSelect,
+  onEnterSectionMode,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
 }: BlockStackProps) {
-  const sectionRange = getSelectedHeadingSectionRange(blocks, selectedBlockIds);
+  // Get section range if in section mode
+  const sectionRange = sectionHeadingId
+    ? getSectionRange(blocks, sectionHeadingId)
+    : null;
 
-  const renderBlock = (block: Block) => {
+  const renderBlock = (block: Block, isInSection: boolean = false) => {
     const isSelected = selectedBlockIds.includes(block.id);
     return (
       <DocBlock
         key={block.id}
         block={block}
         isSelected={isSelected}
+        isInSection={isInSection}
         onSelect={onBlockSelect}
+        onEnterSectionMode={onEnterSectionMode}
         onRemoveSelection={onRemoveSelection}
         onClearSelections={onClearSelections}
         onRewrite={onRewrite}
@@ -77,16 +79,16 @@ export function BlockStack({
     );
   };
 
-  // No heading selected - render all blocks normally
+  // No section mode - render all blocks normally
   if (!sectionRange) {
     return (
       <div className="block-stack">
-        {blocks.map(renderBlock)}
+        {blocks.map((block) => renderBlock(block, false))}
       </div>
     );
   }
 
-  // Heading selected - group the section with a border
+  // Section mode - group the section with a border
   const { startIndex, endIndex } = sectionRange;
   const beforeSection = blocks.slice(0, startIndex);
   const sectionBlocks = blocks.slice(startIndex, endIndex + 1);
@@ -94,11 +96,11 @@ export function BlockStack({
 
   return (
     <div className="block-stack">
-      {beforeSection.map(renderBlock)}
+      {beforeSection.map((block) => renderBlock(block, false))}
       <div className="block-section">
-        {sectionBlocks.map(renderBlock)}
+        {sectionBlocks.map((block) => renderBlock(block, true))}
       </div>
-      {afterSection.map(renderBlock)}
+      {afterSection.map((block) => renderBlock(block, false))}
     </div>
   );
 }

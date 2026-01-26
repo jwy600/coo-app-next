@@ -16,7 +16,9 @@ import { SelectionChips } from './SelectionChips';
 interface DocBlockProps {
   block: Block;
   isSelected: boolean;
+  isInSection?: boolean; // Block is inside a section border (but not necessarily selected)
   onSelect?: (blockId: string) => void;
+  onEnterSectionMode?: (headingId: string) => void; // Double-click gutter on heading
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -25,26 +27,42 @@ interface DocBlockProps {
 function DocBlockComponent({
   block,
   isSelected,
+  isInSection = false,
   onSelect,
+  onEnterSectionMode,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
 }: DocBlockProps) {
-  const handleSelect = () => {
+  // Single-click: select block (all blocks including headings)
+  const handleClick = () => {
     onSelect?.(block.id);
+  };
+
+  // Double-click gutter: enter section mode (headings only)
+  const handleGutterDoubleClick = () => {
+    if (block.type === 'heading' && onEnterSectionMode) {
+      onEnterSectionMode(block.id);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleSelect();
+      handleClick();
     }
   };
 
+  // Determine visual state
+  // isSelected = explicitly selected (in selectedBlockIds)
+  // isInSection = inside section border (may or may not be selected)
+  const showSelectedBackground = isSelected;
+  const showMuted = !isSelected && !isInSection && onSelect;
+
   return (
     <div
-      className={`doc-block ${isSelected ? 'is-selected' : ''} ${
-        !isSelected && onSelect ? 'is-muted' : ''
+      className={`doc-block ${showSelectedBackground ? 'is-selected' : ''} ${
+        showMuted ? 'is-muted' : ''
       }`}
       data-block-id={block.id}
     >
@@ -52,10 +70,11 @@ function DocBlockComponent({
       <button
         type="button"
         className="gutter-handle"
-        onClick={handleSelect}
+        onClick={handleClick}
+        onDoubleClick={handleGutterDoubleClick}
         onKeyDown={handleKeyDown}
-        aria-label="Select paragraph"
-        title="Select paragraph"
+        aria-label={block.type === 'heading' ? 'Select heading' : 'Select paragraph'}
+        title={block.type === 'heading' ? 'Click to select, double-click for section mode' : 'Select paragraph'}
       >
       </button>
 
@@ -84,6 +103,7 @@ function DocBlockComponent({
 export const DocBlock = memo(DocBlockComponent, (prevProps, nextProps) => {
   // Re-render if selection state changed
   if (prevProps.isSelected !== nextProps.isSelected) return false;
+  if (prevProps.isInSection !== nextProps.isInSection) return false;
 
   // Re-render if block data changed
   const prevBlock = prevProps.block;

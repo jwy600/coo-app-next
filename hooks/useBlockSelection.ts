@@ -15,21 +15,27 @@ import { useStore } from '@/lib/store/useStore';
 export interface UseBlockSelectionReturn {
   selectedBlockIds: string[];
   selectedBlockCount: number;
+  sectionHeadingId: string | null;
   isBlockSelected: (blockId: string) => boolean;
   toggleBlockSelection: (blockId: string) => void;
+  enterSectionMode: (headingId: string) => void;
   clearSelection: () => void;
   /** Exactly one block selected - enables block mode features (rewrite, expand, etc.) */
   isSingleBlockMode: boolean;
   /** Two or more blocks selected - disables composer */
   isMultiSelectMode: boolean;
-  /** Any blocks selected (1+) */
+  /** Any blocks selected (1+) or in section mode */
   hasSelection: boolean;
+  /** In section mode (heading gutter double-clicked) */
+  isInSectionMode: boolean;
 }
 
 export function useBlockSelection(): UseBlockSelectionReturn {
   // Store state
   const selectedBlockIds = useStore((state) => state.selectedBlockIds);
+  const sectionHeadingId = useStore((state) => state.sectionHeadingId);
   const toggleBlockInSelection = useStore((state) => state.toggleBlockInSelection);
+  const enterSectionModeAction = useStore((state) => state.enterSectionMode);
   const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
 
   /**
@@ -51,6 +57,16 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   );
 
   /**
+   * Enter section mode (double-click heading gutter)
+   */
+  const enterSectionMode = useCallback(
+    (headingId: string) => {
+      enterSectionModeAction(headingId);
+    },
+    [enterSectionModeAction]
+  );
+
+  /**
    * Clear all selections
    */
   const clearSelection = useCallback(() => {
@@ -61,16 +77,20 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   const selectedBlockCount = selectedBlockIds.length;
   const isSingleBlockMode = selectedBlockCount === 1;
   const isMultiSelectMode = selectedBlockCount >= 2;
-  const hasSelection = selectedBlockCount > 0;
+  const isInSectionMode = sectionHeadingId !== null;
+  const hasSelection = selectedBlockCount > 0 || isInSectionMode;
 
   return {
     selectedBlockIds,
     selectedBlockCount,
+    sectionHeadingId,
     isBlockSelected,
     toggleBlockSelection,
+    enterSectionMode,
     clearSelection,
     isSingleBlockMode,
     isMultiSelectMode,
     hasSelection,
+    isInSectionMode,
   };
 }

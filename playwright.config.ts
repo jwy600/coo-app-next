@@ -66,9 +66,6 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_TEST_MODE: 'true',
       OPENAI_API_KEY: 'test_mock_key',
-      // Provide test values to prevent "Supabase configuration missing" warnings
-      NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
     },
   },
 });

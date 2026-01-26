@@ -9,19 +9,23 @@ import {
   SheetDescription,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SettingsForm } from './SettingsForm';
 
 export function SettingsSheet() {
   return (
     <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9">
-          <Settings className="h-4 w-4" />
-          <span className="sr-only">Settings</span>
-        </Button>
-      </SheetTrigger>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SheetTrigger asChild>
+            <SidebarMenuButton tooltip="Settings">
+              <Settings className="h-4 w-4" />
+              <span>Settings</span>
+            </SidebarMenuButton>
+          </SheetTrigger>
+        </SidebarMenuItem>
+      </SidebarMenu>
       <SheetContent side="right" className="w-[320px] sm:w-[400px]">
         <SheetHeader>
           <SheetTitle>Settings</SheetTitle>

@@ -56,7 +56,7 @@ export function AppSidebar({ threads }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
+      <SidebarFooter>
         <SettingsSheet />
       </SidebarFooter>
     </Sidebar>

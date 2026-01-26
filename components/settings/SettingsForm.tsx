@@ -13,11 +13,11 @@ const MODEL_OPTIONS: { value: ModelType; label: string; description: string }[] 
   { value: 'gpt-5.2', label: 'GPT-5.2', description: 'Most capable' },
 ];
 
-const REASONING_OPTIONS: { value: ReasoningEffort; label: string; description: string }[] = [
-  { value: 'none', label: 'None', description: 'Standard responses' },
-  { value: 'low', label: 'Low', description: 'Light reasoning' },
-  { value: 'medium', label: 'Medium', description: 'Balanced reasoning' },
-  { value: 'high', label: 'High', description: 'Deep reasoning' },
+const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
 ];
 
 const LANGUAGE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
@@ -68,40 +68,20 @@ export function SettingsForm() {
         <RadioGroup
           value={settings.reasoningEffort}
           onValueChange={(value) => updateReasoningEffort(value as ReasoningEffort)}
-          className="grid gap-2"
+          className="grid grid-cols-2 gap-2"
         >
           {REASONING_OPTIONS.map((option) => (
-            <div key={option.value} className="flex items-center space-x-3">
+            <div key={option.value} className="flex items-center space-x-2">
               <RadioGroupItem value={option.value} id={`reasoning-${option.value}`} />
               <Label
                 htmlFor={`reasoning-${option.value}`}
-                className="flex flex-col cursor-pointer font-normal"
+                className="cursor-pointer font-normal"
               >
-                <span>{option.label}</span>
-                <span className="text-xs text-muted-foreground">{option.description}</span>
+                {option.label}
               </Label>
             </div>
           ))}
         </RadioGroup>
-      </div>
-
-      <Separator />
-
-      {/* Web Search Toggle */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label htmlFor="web-search" className="text-sm font-semibold">
-            Web Search
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            Allow AI to search the web
-          </p>
-        </div>
-        <Switch
-          id="web-search"
-          checked={settings.webSearchEnabled}
-          onCheckedChange={updateWebSearchEnabled}
-        />
       </div>
 
       <Separator />
@@ -126,6 +106,25 @@ export function SettingsForm() {
             </div>
           ))}
         </RadioGroup>
+      </div>
+
+      <Separator />
+
+      {/* Web Search Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label htmlFor="web-search" className="text-sm font-semibold">
+            Web Search
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Allow AI to search the web
+          </p>
+        </div>
+        <Switch
+          id="web-search"
+          checked={settings.webSearchEnabled}
+          onCheckedChange={updateWebSearchEnabled}
+        />
       </div>
 
       <Separator />

@@ -55,12 +55,10 @@ export function MessageList({
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
-  // Skip auto-scroll in block mode (when any block is selected) so user can see the selected block
-  // Note: Auto-scroll is disabled during streaming to prevent jumping
+  // Auto-scroll to bottom when streaming starts for a new chat message
+  // Block transformations and rewrite don't use streaming, so they won't trigger this
   useEffect(() => {
-    // Don't scroll if in block mode
-    if (selectedBlockIds.length > 0) return;
+    if (!streamingMessage) return;
 
     if (containerRef.current) {
       const lastChild = containerRef.current.lastElementChild;
@@ -70,8 +68,7 @@ export function MessageList({
         });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, isPending, error]);
+  }, [streamingMessage?.messageId]);
 
   // Memoize block lookup map to avoid recreation on every render
   const blockLookup = useMemo(

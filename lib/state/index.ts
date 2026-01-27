@@ -28,7 +28,6 @@ export const createInitialState = (
     selectedBlockIds: [],
     sectionHeadingId: null,
     isSelectionOutsideSection: false,
-    hasInitialResponse: false,
     activeThreadId: threadId,
     threads: [
       {
@@ -89,14 +88,6 @@ export const clearSelectedBlocks = (state: AppState): AppState => {
     blocks,
   };
 };
-
-/**
- * Set hasInitialResponse flag
- */
-export const setHasInitialResponse = (state: AppState, value: boolean): AppState => ({
-  ...state,
-  hasInitialResponse: value,
-});
 
 /**
  * Toggle a block in the selection set (add if not present, remove if present)

@@ -26,7 +26,6 @@ describe('useStore', () => {
       activeThreadId: '',
       mode: 'landing',
       selectedBlockIds: [],
-      hasInitialResponse: false,
       isAwaitingResponse: false,
     });
 
@@ -276,16 +275,6 @@ describe('useStore', () => {
 
       clearSelectedBlocks();
       expect(useStore.getState().selectedBlockIds).toEqual([]);
-    });
-
-    it('should set hasInitialResponse', () => {
-      const { setHasInitialResponse } = useStore.getState();
-
-      setHasInitialResponse(true);
-      expect(useStore.getState().hasInitialResponse).toBe(true);
-
-      setHasInitialResponse(false);
-      expect(useStore.getState().hasInitialResponse).toBe(false);
     });
 
     it('should set isAwaitingResponse', () => {

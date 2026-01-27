@@ -11,7 +11,6 @@ export interface UISlice {
   selectedBlockIds: string[];
   sectionHeadingId: string | null;
   isSelectionOutsideSection: boolean;
-  hasInitialResponse: boolean;
   isAwaitingResponse: boolean;
   error: string | null;
 
@@ -21,7 +20,6 @@ export interface UISlice {
   enterSectionMode: (headingId: string) => void;
   selectHeadingDirectly: (headingId: string) => void;
   clearSelectedBlocks: () => void;
-  setHasInitialResponse: (value: boolean) => void;
   setAwaitingResponse: (value: boolean) => void;
   setError: (error: string | null) => void;
 }
@@ -36,7 +34,6 @@ export const uiSlice: StateCreator<
   selectedBlockIds: [],
   sectionHeadingId: null,
   isSelectionOutsideSection: false,
-  hasInitialResponse: false,
   isAwaitingResponse: false,
   error: null,
 
@@ -156,11 +153,6 @@ export const uiSlice: StateCreator<
       isSelectionOutsideSection: false,
       blocks: result.blocks,  // Update blocks to clear session state
     });
-  },
-
-  setHasInitialResponse: (value) => {
-    const result = stateFns.setHasInitialResponse(get(), value);
-    set({ hasInitialResponse: result.hasInitialResponse });
   },
 
   setAwaitingResponse: (value) => {

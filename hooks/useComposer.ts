@@ -47,7 +47,6 @@ export function useComposer(): UseComposerReturn {
   const setMode = useStore((state) => state.setMode);
   const createThread = useStore((state) => state.createThread);
   const activeThreadId = useStore((state) => state.activeThreadId);
-  const setHasInitialResponse = useStore((state) => state.setHasInitialResponse);
   const updateThreadTitle = useStore((state) => state.updateThreadTitle);
   const isSubmitting = useStore((state) => state.isAwaitingResponse);
   const setAwaitingResponse = useStore((state) => state.setAwaitingResponse);
@@ -224,9 +223,6 @@ export function useComposer(): UseComposerReturn {
                 clearStream();
               }
 
-              // Mark that we have initial response
-              setHasInitialResponse(true);
-
               // Clear any selected blocks
               clearSelectedBlocks();
 
@@ -267,7 +263,6 @@ export function useComposer(): UseComposerReturn {
       addUserMessage,
       addAssistantMessage,
       clearSelectedBlocks,
-      setHasInitialResponse,
       updateThreadTitle,
       setAwaitingResponse,
       startStreaming,

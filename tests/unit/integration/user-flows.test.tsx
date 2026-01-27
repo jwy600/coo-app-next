@@ -15,7 +15,6 @@ function resetStore() {
   // Set initial state values
   state.mode = 'landing';
   state.selectedBlockIds = [];
-  state.hasInitialResponse = false;
   state.activeThreadId = '';
   state.threads = [];
   state.blocks = [];

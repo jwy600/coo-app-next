@@ -220,17 +220,6 @@ describe('useStore', () => {
       expect(block?.isRewritten).toBe(false);
     });
 
-    it('should update block text', () => {
-      const state = useStore.getState();
-      const blockId = state.blocks[0].id;
-
-      state.updateBlockText(blockId, 'Updated text', true);
-
-      const updatedState = useStore.getState();
-      const block = updatedState.blocks.find((b) => b.id === blockId);
-      expect(block?.text).toBe('Updated text');
-      expect(block?.edited).toBe(true);
-    });
   });
 
   describe('UI Actions', () => {
@@ -383,22 +372,5 @@ describe('useStore', () => {
       expect(stateAfter.blocks).not.toBe(blocksBefore);
     });
 
-    it('should not mutate state when updating block', () => {
-      const { createThread, addUserMessage, updateBlockText } = useStore.getState();
-
-      createThread('thread-1');
-      addUserMessage('Test message');
-
-      const stateBefore = useStore.getState();
-      const blocksBefore = stateBefore.blocks;
-      const blockId = blocksBefore[0].id;
-
-      updateBlockText(blockId, 'Updated text');
-
-      const stateAfter = useStore.getState();
-
-      // Blocks array should be different
-      expect(stateAfter.blocks).not.toBe(blocksBefore);
-    });
   });
 });

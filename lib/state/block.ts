@@ -104,14 +104,3 @@ export const toggleRewrite = (
     };
   });
 
-export const updateBlockText = (
-  state: AppState,
-  blockId: string,
-  text: string,
-  edited: boolean = false
-): UpdateBlockResult =>
-  updateBlock(state, blockId, (block) => ({
-    ...block,
-    text,
-    edited: edited ? true : block.edited,
-  }));

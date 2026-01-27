@@ -56,6 +56,7 @@ export function useComposer(): UseComposerReturn {
   // Streaming state
   const startStreaming = useStore((state) => state.startStreaming);
   const appendStreamToken = useStore((state) => state.appendStreamToken);
+  const flushStreamParse = useStore((state) => state.flushStreamParse);
   const setStreamResponseId = useStore((state) => state.setStreamResponseId);
   const clearStream = useStore((state) => state.clearStream);
 
@@ -203,6 +204,9 @@ export function useComposer(): UseComposerReturn {
               setStreamResponseId(responseId);
             },
             onComplete: () => {
+              // Flush any pending debounced parse to ensure blocks are up-to-date
+              flushStreamParse();
+
               // Get final streaming state and convert to message
               const finalState = useStore.getState();
               const streamingMessage = finalState.streamingMessage;
@@ -267,6 +271,7 @@ export function useComposer(): UseComposerReturn {
       setAwaitingResponse,
       startStreaming,
       appendStreamToken,
+      flushStreamParse,
       setStreamResponseId,
       clearStream,
     ]

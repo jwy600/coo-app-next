@@ -1,10 +1,17 @@
 /**
  * useBlockSelection Hook
  *
- * Manages multi-block selection state and interactions.
- * Supports selecting multiple blocks for card export.
+ * Manages block selection state with two modes:
  *
- * Reference: legacy/app.js lines 1147-1158 (Escape key handler)
+ * Block mode (no section active):
+ * - Multi-select toggle behavior
+ * - 1 block → composer enabled, 2+ → disabled
+ *
+ * Section mode (double-click heading):
+ * - Section implicitly selected for export
+ * - Inside selection is for editing only (doesn't affect export)
+ * - Outside selection adds to export
+ * - Composer: 1 inside + 0 outside → enabled, otherwise disabled
  */
 
 'use client';
@@ -21,7 +28,7 @@ export interface UseBlockSelectionReturn {
   toggleBlockSelection: (blockId: string) => void;
   enterSectionMode: (headingId: string) => void;
   clearSelection: () => void;
-  /** Exactly one block selected - enables block mode features (rewrite, expand, etc.) */
+  /** Exactly one block selected (block mode) or one inside block (section mode) - enables composer */
   isSingleBlockMode: boolean;
   /** Two or more blocks selected - disables composer */
   isMultiSelectMode: boolean;
@@ -31,6 +38,8 @@ export interface UseBlockSelectionReturn {
   isInSectionMode: boolean;
   /** In section mode with a block selected outside the current section */
   hasSelectionOutsideSection: boolean;
+  /** Whether composer should be disabled based on selection state */
+  isComposerDisabled: boolean;
 }
 
 export function useBlockSelection(): UseBlockSelectionReturn {
@@ -42,12 +51,23 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   const enterSectionModeAction = useStore((state) => state.enterSectionMode);
   const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
 
+  // Derived: section block IDs (memoized for reuse)
+  const sectionBlockIds = useMemo(() => {
+    if (!sectionHeadingId) return [];
+    return getSectionBlockIds(blocks, sectionHeadingId);
+  }, [sectionHeadingId, blocks]);
+
   // Derived: whether any selected blocks are outside the current section
   const isSelectionOutsideSection = useMemo(() => {
     if (!sectionHeadingId || selectedBlockIds.length === 0) return false;
-    const sectionBlockIds = getSectionBlockIds(blocks, sectionHeadingId);
     return selectedBlockIds.some((id) => !sectionBlockIds.includes(id));
-  }, [sectionHeadingId, selectedBlockIds, blocks]);
+  }, [sectionHeadingId, selectedBlockIds, sectionBlockIds]);
+
+  // Derived: count of selected blocks inside the section
+  const insideSelectionCount = useMemo(() => {
+    if (!sectionHeadingId) return 0;
+    return selectedBlockIds.filter((id) => sectionBlockIds.includes(id)).length;
+  }, [sectionHeadingId, selectedBlockIds, sectionBlockIds]);
 
   /**
    * Check if a block is selected
@@ -86,10 +106,25 @@ export function useBlockSelection(): UseBlockSelectionReturn {
 
   // Computed values
   const selectedBlockCount = selectedBlockIds.length;
-  const isSingleBlockMode = selectedBlockCount === 1;
-  const isMultiSelectMode = selectedBlockCount >= 2;
   const isInSectionMode = sectionHeadingId !== null;
   const hasSelection = selectedBlockCount > 0 || isInSectionMode;
+
+  // Single block mode: enables composer for editing
+  // - Block mode: exactly 1 block selected
+  // - Section mode: exactly 1 block inside section, 0 outside
+  const isSingleBlockMode = isInSectionMode
+    ? insideSelectionCount === 1 && !isSelectionOutsideSection
+    : selectedBlockCount === 1;
+
+  // Multi-select mode (for backward compatibility)
+  const isMultiSelectMode = selectedBlockCount >= 2;
+
+  // Composer disabled when:
+  // - Block mode: 2+ blocks selected
+  // - Section mode: 2+ inside OR any outside
+  const isComposerDisabled = isInSectionMode
+    ? insideSelectionCount >= 2 || isSelectionOutsideSection
+    : selectedBlockCount >= 2;
 
   return {
     selectedBlockIds,
@@ -104,5 +139,6 @@ export function useBlockSelection(): UseBlockSelectionReturn {
     hasSelection,
     isInSectionMode,
     hasSelectionOutsideSection: isSelectionOutsideSection,
+    isComposerDisabled,
   };
 }

@@ -87,15 +87,13 @@ export function ChatContainer({
   const {
     selectedBlockIds,
     sectionHeadingId,
-    isBlockSelected,
     toggleBlockSelection,
     enterSectionMode,
     clearSelection,
     isSingleBlockMode,
-    isMultiSelectMode,
     hasSelection,
     isInSectionMode,
-    hasSelectionOutsideSection,
+    isComposerDisabled,
   } = useBlockSelection();
 
   // Text selection hook (for prompt input) - only active in single block mode
@@ -246,7 +244,7 @@ export function ChatContainer({
             onSubmit={handleSubmit}
             onSelectionCapture={captureSelection}
             onBlockAction={handleBlockAction}
-            disabled={isSubmitting || isLoadingThread || isMultiSelectMode || hasSelectionOutsideSection}
+            disabled={isSubmitting || isLoadingThread || isComposerDisabled}
           />
         </div>
       </div>

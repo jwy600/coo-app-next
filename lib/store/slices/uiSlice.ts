@@ -1,10 +1,15 @@
 /**
  * UI slice - Wraps pure UI state functions
  *
- * Block selection has three modes:
- * 1. Normal mode: Multi-select blocks freely
- * 2. Section mode: Section content is implicitly selected, can single-select within
- * 3. Section + outside: Can multi-select blocks outside the section
+ * Block selection has two modes:
+ * 1. Block mode: Multi-select blocks freely
+ * 2. Section mode: Section is implicitly selected for export, can multi-select within
+ *    - Inside selection is for editing only (doesn't affect export)
+ *    - Outside selection adds to export (section + outside blocks)
+ *
+ * Composer enabled when:
+ * - Block mode: exactly 1 block selected
+ * - Section mode: exactly 1 block inside, 0 outside
  */
 
 import { StateCreator } from 'zustand';
@@ -76,7 +81,8 @@ const handleSectionHeadingClick = (blockId: string): SelectionUpdate => ({
 
 /**
  * Handle clicking a block inside the current section
- * Single-select only: clicking selected block deselects, clicking unselected replaces
+ * Multi-select toggle: same as normal mode
+ * Inside selection is for editing only, doesn't affect export
  */
 const handleBlockInsideSectionClick = (
   state: SelectionState,
@@ -85,18 +91,17 @@ const handleBlockInsideSectionClick = (
   const isAlreadySelected = state.selectedBlockIds.includes(blockId);
 
   if (isAlreadySelected) {
-    // Deselect → return to section mode (implicit selection)
+    // Deselect this block
     return {
-      selectedBlockIds: [],
+      selectedBlockIds: state.selectedBlockIds.filter((id) => id !== blockId),
       blocks: clearBlockSessionState(state.blocks, [blockId]),
     };
   }
 
-  // Select this block (single-select: clear previous + new block)
-  const blocksToClear = [...state.selectedBlockIds, blockId];
+  // Add to selection (multi-select)
   return {
-    selectedBlockIds: [blockId],
-    blocks: clearBlockSessionState(state.blocks, blocksToClear),
+    selectedBlockIds: [...state.selectedBlockIds, blockId],
+    blocks: clearBlockSessionState(state.blocks, [blockId]),
   };
 };
 

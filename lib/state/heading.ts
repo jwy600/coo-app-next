@@ -159,3 +159,57 @@ export const getSectionContentIds = (
     .slice(range.startIndex + 1, range.endIndex + 1)
     .map((b) => b.id);
 };
+
+// ============================================================================
+// Section Mode (Mutual Exclusivity)
+// ============================================================================
+
+export interface SectionModeState {
+  sectionHeadingId: string | null;
+  selectedBlockIds: string[];
+  isSelectionOutsideSection: boolean;
+}
+
+/**
+ * Determine new section mode state when entering/exiting section mode
+ * Handles mutual exclusivity: only one heading can be in section mode at a time
+ *
+ * @param currentSectionHeadingId - Current section heading ID (null if not in section mode)
+ * @param headingId - Heading being double-clicked
+ * @returns New state, or null if action should be ignored (different heading already in section mode)
+ *
+ * @example
+ * // Not in section mode → enter
+ * enterSectionMode(null, 'h1')  → { sectionHeadingId: 'h1', ... }
+ *
+ * // Same heading → exit
+ * enterSectionMode('h1', 'h1')  → { sectionHeadingId: null, ... }
+ *
+ * // Different heading → ignore (mutual exclusivity)
+ * enterSectionMode('h1', 'h2')  → null
+ */
+export const enterSectionMode = (
+  currentSectionHeadingId: string | null,
+  headingId: string
+): SectionModeState | null => {
+  // Case 1: Double-clicking SAME heading → exit section mode
+  if (currentSectionHeadingId === headingId) {
+    return {
+      sectionHeadingId: null,
+      selectedBlockIds: [],
+      isSelectionOutsideSection: false,
+    };
+  }
+
+  // Case 2: Already in section mode for DIFFERENT heading → IGNORE (mutual exclusivity)
+  if (currentSectionHeadingId !== null) {
+    return null;
+  }
+
+  // Case 3: Not in section mode → enter section mode for this heading
+  return {
+    sectionHeadingId: headingId,
+    selectedBlockIds: [],
+    isSelectionOutsideSection: false,
+  };
+};

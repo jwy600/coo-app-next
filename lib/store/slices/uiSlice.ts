@@ -124,19 +124,12 @@ export const uiSlice: StateCreator<
   },
 
   enterSectionMode: (headingId) => {
-    // Double-click heading gutter - enter section mode
-    const state = get();
-    if (state.sectionHeadingId === headingId) {
-      // Double-clicking same heading - exit section mode
-      set({ sectionHeadingId: null, selectedBlockIds: [], isSelectionOutsideSection: false });
-    } else if (state.sectionHeadingId) {
-      // Already in section mode for a different heading - ignore double-click
-      // (can't have two section modes; user must single-click to enter block mode instead)
-      return;
-    } else {
-      // Not in section mode - enter section mode for this heading
-      set({ sectionHeadingId: headingId, selectedBlockIds: [], isSelectionOutsideSection: false });
+    // Double-click heading gutter - enter/exit section mode (mutual exclusivity enforced)
+    const result = stateFns.enterSectionMode(get().sectionHeadingId, headingId);
+    if (result) {
+      set(result);
     }
+    // null result = already in section mode for different heading, ignore
   },
 
   selectHeadingDirectly: (headingId) => {

@@ -7,7 +7,7 @@ export type ComposerMode = 'chat' | 'block';
 export interface AppState {
   mode: AppMode;
   selectedBlockIds: string[];
-  hasInitialResponse: boolean;
+  sectionHeadingId: string | null; // Heading ID when in section mode (double-click heading)
   activeThreadId: string;
   threads: Thread[];
   blocks: Block[];

@@ -17,7 +17,6 @@ describe('useBlockSelection', () => {
       threads: [],
       blocks: [],
       activeThreadId: '',
-      hasInitialResponse: false,
       isAwaitingResponse: false,
     });
   });

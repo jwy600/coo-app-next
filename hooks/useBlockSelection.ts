@@ -9,28 +9,45 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useStore } from '@/lib/store/useStore';
+import { getSectionBlockIds } from '@/lib/state';
 
 export interface UseBlockSelectionReturn {
   selectedBlockIds: string[];
   selectedBlockCount: number;
+  sectionHeadingId: string | null;
   isBlockSelected: (blockId: string) => boolean;
   toggleBlockSelection: (blockId: string) => void;
+  enterSectionMode: (headingId: string) => void;
   clearSelection: () => void;
   /** Exactly one block selected - enables block mode features (rewrite, expand, etc.) */
   isSingleBlockMode: boolean;
   /** Two or more blocks selected - disables composer */
   isMultiSelectMode: boolean;
-  /** Any blocks selected (1+) */
+  /** Any blocks selected (1+) or in section mode */
   hasSelection: boolean;
+  /** In section mode (heading gutter double-clicked) */
+  isInSectionMode: boolean;
+  /** In section mode with a block selected outside the current section */
+  hasSelectionOutsideSection: boolean;
 }
 
 export function useBlockSelection(): UseBlockSelectionReturn {
   // Store state
   const selectedBlockIds = useStore((state) => state.selectedBlockIds);
+  const sectionHeadingId = useStore((state) => state.sectionHeadingId);
+  const blocks = useStore((state) => state.blocks);
   const toggleBlockInSelection = useStore((state) => state.toggleBlockInSelection);
+  const enterSectionModeAction = useStore((state) => state.enterSectionMode);
   const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
+
+  // Derived: whether any selected blocks are outside the current section
+  const isSelectionOutsideSection = useMemo(() => {
+    if (!sectionHeadingId || selectedBlockIds.length === 0) return false;
+    const sectionBlockIds = getSectionBlockIds(blocks, sectionHeadingId);
+    return selectedBlockIds.some((id) => !sectionBlockIds.includes(id));
+  }, [sectionHeadingId, selectedBlockIds, blocks]);
 
   /**
    * Check if a block is selected
@@ -51,6 +68,16 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   );
 
   /**
+   * Enter section mode (double-click heading gutter)
+   */
+  const enterSectionMode = useCallback(
+    (headingId: string) => {
+      enterSectionModeAction(headingId);
+    },
+    [enterSectionModeAction]
+  );
+
+  /**
    * Clear all selections
    */
   const clearSelection = useCallback(() => {
@@ -61,16 +88,21 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   const selectedBlockCount = selectedBlockIds.length;
   const isSingleBlockMode = selectedBlockCount === 1;
   const isMultiSelectMode = selectedBlockCount >= 2;
-  const hasSelection = selectedBlockCount > 0;
+  const isInSectionMode = sectionHeadingId !== null;
+  const hasSelection = selectedBlockCount > 0 || isInSectionMode;
 
   return {
     selectedBlockIds,
     selectedBlockCount,
+    sectionHeadingId,
     isBlockSelected,
     toggleBlockSelection,
+    enterSectionMode,
     clearSelection,
     isSingleBlockMode,
     isMultiSelectMode,
     hasSelection,
+    isInSectionMode,
+    hasSelectionOutsideSection: isSelectionOutsideSection,
   };
 }

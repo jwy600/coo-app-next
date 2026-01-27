@@ -4,6 +4,10 @@
  */
 
 import { BlockType } from '@/types/block';
+import { hasHeading } from '@/lib/state/heading';
+
+// Re-export for backwards compatibility
+export { hasHeading };
 
 export interface ListItem {
   marker: string;
@@ -32,13 +36,6 @@ export function isCodeBlock(text: string): boolean {
   return /^\s*(```|~~~)/.test(text);
 }
 
-/**
- * Detect if text contains a heading
- */
-export function hasHeading(text: string): boolean {
-  if (!text) return false;
-  return /^#{1,6}\s+/.test(text.trim());
-}
 
 /**
  * Extract code language from fence (e.g., ```typescript -> "typescript")

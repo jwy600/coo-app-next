@@ -22,12 +22,20 @@ export function BlockControls({ onAction, disabled = false }: BlockControlsProps
     { action: 'expand', label: 'Expand' },
   ];
 
+  const handleClick = (e: React.MouseEvent, action: BlockAction) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled) {
+      onAction?.(action);
+    }
+  };
+
   return (
     <div className="flex gap-2 flex-wrap">
       {actions.map(({ action, label }) => (
         <Badge
           key={action}
-          onClick={() => !disabled && onAction?.(action)}
+          onClick={(e) => handleClick(e, action)}
           className={
             disabled
               ? 'opacity-50 cursor-not-allowed'

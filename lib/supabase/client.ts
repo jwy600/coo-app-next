@@ -75,7 +75,12 @@ export const withSupabaseClient = async <T>(
   try {
     return await operation(supabase);
   } catch (error) {
-    console.error(`Error ${errorContext}:`, error);
+    const errorMessage = error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error !== null
+        ? JSON.stringify(error)
+        : String(error);
+    console.error(`Error ${errorContext}: ${errorMessage}`);
     return fallbackValue;
   }
 };

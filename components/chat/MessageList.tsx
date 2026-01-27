@@ -26,10 +26,12 @@ interface MessageListProps {
   messages: Message[];
   blocks: Block[];
   selectedBlockIds?: string[];
+  sectionHeadingId?: string | null;
   isPending?: boolean;
   error?: string | null;
   streamingMessage?: StreamingMessageData | null;
   onBlockSelect?: (blockId: string) => void;
+  onEnterSectionMode?: (headingId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -40,10 +42,12 @@ export function MessageList({
   messages,
   blocks,
   selectedBlockIds = [],
+  sectionHeadingId = null,
   isPending = false,
   error = null,
   streamingMessage = null,
   onBlockSelect,
+  onEnterSectionMode,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
@@ -51,12 +55,10 @@ export function MessageList({
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
-  // Skip auto-scroll in block mode (when any block is selected) so user can see the selected block
-  // Note: Auto-scroll is disabled during streaming to prevent jumping
+  // Auto-scroll to bottom when streaming starts for a new chat message
+  // Block transformations and rewrite don't use streaming, so they won't trigger this
   useEffect(() => {
-    // Don't scroll if in block mode
-    if (selectedBlockIds.length > 0) return;
+    if (!streamingMessage) return;
 
     if (containerRef.current) {
       const lastChild = containerRef.current.lastElementChild;
@@ -66,8 +68,7 @@ export function MessageList({
         });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, isPending, error]);
+  }, [streamingMessage?.messageId]);
 
   // Memoize block lookup map to avoid recreation on every render
   const blockLookup = useMemo(
@@ -99,7 +100,9 @@ export function MessageList({
             message={message}
             blocks={messageBlocks}
             selectedBlockIds={selectedBlockIds}
+            sectionHeadingId={sectionHeadingId}
             onBlockSelect={onBlockSelect}
+            onEnterSectionMode={onEnterSectionMode}
             onRemoveSelection={onRemoveSelection}
             onClearSelections={onClearSelections}
             onRewrite={onRewrite}
@@ -133,7 +136,7 @@ export function MessageList({
         />
       )}
 
-      {isPending && selectedBlockIds.length === 0 && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
+      {isPending && selectedBlockIds.length === 0 && !sectionHeadingId && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
       {error && <ErrorMessage error={error} onRetry={onRetry} />}
     </div>
   );

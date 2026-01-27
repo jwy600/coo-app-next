@@ -19,7 +19,7 @@ export function SettingsSheet() {
       <SidebarMenu>
         <SidebarMenuItem>
           <SheetTrigger asChild>
-            <SidebarMenuButton tooltip="Settings">
+            <SidebarMenuButton>
               <Settings className="h-4 w-4" />
               <span>Settings</span>
             </SidebarMenuButton>

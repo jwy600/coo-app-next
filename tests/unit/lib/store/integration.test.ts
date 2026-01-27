@@ -28,7 +28,6 @@ describe('Store Integration Tests', () => {
       activeThreadId: '',
       mode: 'landing',
       selectedBlockIds: [],
-      hasInitialResponse: false,
       isAwaitingResponse: false,
     });
 
@@ -75,7 +74,6 @@ describe('Store Integration Tests', () => {
       const finalState = useStore.getState();
       expect(finalState.threads[0].messages).toHaveLength(2);
       expect(finalState.blocks).toHaveLength(4); // 1 user + 3 assistant
-      expect(finalState.hasInitialResponse).toBe(false); // UI slice controls this
 
       // Wait for Supabase persistence
       await new Promise((resolve) => setTimeout(resolve, 10));

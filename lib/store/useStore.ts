@@ -15,6 +15,7 @@ import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { isTestMode } from '@/lib/utils/testMode';
+import { getSectionRange } from '@/lib/state/heading';
 
 export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice & SettingsSlice;
 
@@ -83,6 +84,93 @@ export const selectSelectedBlocks = (state: StoreState): Block[] =>
   state.selectedBlockIds
     .map((id) => state.blocks.find((b) => b.id === id))
     .filter((b): b is Block => b !== undefined);
+
+
+/**
+ * Select blocks for export - expands heading selections to include their sections
+ * Non-heading blocks are included as-is, heading blocks include all content until next heading
+ */
+export const selectBlocksForExport = (state: StoreState): Block[] => {
+  const { blocks, selectedBlockIds } = state;
+  const includeIndices = new Set<number>();
+
+  for (const blockId of selectedBlockIds) {
+    const index = blocks.findIndex((b) => b.id === blockId);
+    if (index === -1) continue;
+
+    const block = blocks[index];
+
+    if (block.type === 'heading') {
+      const range = getSectionRange(blocks, blockId);
+      if (range) {
+        for (let i = range.startIndex; i <= range.endIndex; i++) {
+          includeIndices.add(i);
+        }
+      }
+    } else {
+      includeIndices.add(index);
+    }
+  }
+
+  return [...includeIndices]
+    .sort((a, b) => a - b)
+    .map((i) => blocks[i]);
+};
+
+/**
+ * Get section content blocks for a heading (excludes the heading itself)
+ */
+const getSectionContentBlocks = (state: StoreState, headingId: string): Block[] => {
+  const { blocks } = state;
+  const range = getSectionRange(blocks, headingId);
+  if (!range) return [];
+
+  // Return content blocks only (startIndex + 1 to skip heading)
+  return blocks.slice(range.startIndex + 1, range.endIndex + 1);
+};
+
+/**
+ * Select content blocks for transformation (used by API)
+ * - Section mode: all content blocks in section (or narrowed selection)
+ * - Direct heading selection: heading text
+ * - Normal selection: selected blocks
+ */
+export const selectContentForTransform = (state: StoreState): Block[] => {
+  const { sectionHeadingId, selectedBlockIds, blocks } = state;
+
+  // Section mode
+  if (sectionHeadingId) {
+    if (selectedBlockIds.length > 0) {
+      // Narrowed selection - return only explicitly selected paragraph(s)
+      return selectedBlockIds
+        .map((id) => blocks.find((b) => b.id === id))
+        .filter((b): b is Block => b !== undefined);
+    }
+    // No narrowed selection - return all section content blocks
+    return getSectionContentBlocks(state, sectionHeadingId);
+  }
+
+  // Normal mode - return selected blocks
+  return selectedBlockIds
+    .map((id) => blocks.find((b) => b.id === id))
+    .filter((b): b is Block => b !== undefined);
+};
+
+/**
+ * Check if in section mode (double-click heading)
+ */
+export const selectIsInSectionMode = (state: StoreState): boolean =>
+  state.sectionHeadingId !== null;
+
+/**
+ * Get section range when in section mode (for visual rendering)
+ */
+export const selectSectionRange = (state: StoreState): { startIndex: number; endIndex: number } | null => {
+  const { sectionHeadingId, blocks } = state;
+  if (!sectionHeadingId) return null;
+
+  return getSectionRange(blocks, sectionHeadingId);
+};
 
 /**
  * Select the single selected block (only when exactly one is selected)

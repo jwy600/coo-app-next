@@ -13,6 +13,7 @@ export * from './message';
 export * from './block';
 export * from './parser';
 export * from './settings';
+export * from './heading';
 
 /**
  * Create initial application state
@@ -26,7 +27,7 @@ export const createInitialState = (
   return {
     mode: 'landing',
     selectedBlockIds: [],
-    hasInitialResponse: false,
+    sectionHeadingId: null,
     activeThreadId: threadId,
     threads: [
       {
@@ -89,18 +90,14 @@ export const clearSelectedBlocks = (state: AppState): AppState => {
 };
 
 /**
- * Set hasInitialResponse flag
- */
-export const setHasInitialResponse = (state: AppState, value: boolean): AppState => ({
-  ...state,
-  hasInitialResponse: value,
-});
-
-/**
  * Toggle a block in the selection set (add if not present, remove if present)
  *
  * Selection is additive - clicking a block adds/removes it from the set.
  * The array maintains selection order (useful for export).
+ *
+ * Special case: Headings are mutually exclusive - selecting a heading
+ * deselects any previously selected heading (only one heading section
+ * can be displayed at a time).
  */
 export const toggleBlockInSelection = (state: AppState, blockId: string): AppState => {
   if (state.mode !== 'thread') {
@@ -117,9 +114,10 @@ export const toggleBlockInSelection = (state: AppState, blockId: string): AppSta
     };
   }
 
-  // Add to selection
+  // Add to selection (headings and paragraphs can all be multi-selected)
   return {
     ...state,
     selectedBlockIds: [...state.selectedBlockIds, blockId],
   };
 };
+

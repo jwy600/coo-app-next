@@ -86,12 +86,16 @@ export function ChatContainer({
   // Block selection hook
   const {
     selectedBlockIds,
+    sectionHeadingId,
     isBlockSelected,
     toggleBlockSelection,
+    enterSectionMode,
     clearSelection,
     isSingleBlockMode,
     isMultiSelectMode,
     hasSelection,
+    isInSectionMode,
+    hasSelectionOutsideSection,
   } = useBlockSelection();
 
   // Text selection hook (for prompt input) - only active in single block mode
@@ -218,10 +222,12 @@ export function ChatContainer({
             messages={messages}
             blocks={blocks}
             selectedBlockIds={selectedBlockIds}
+            sectionHeadingId={sectionHeadingId}
             isPending={isSubmitting}
             error={error}
             streamingMessage={streamingMessage}
             onBlockSelect={toggleBlockSelection}
+            onEnterSectionMode={enterSectionMode}
             onRemoveSelection={handleRemoveSelection}
             onClearSelections={handleClearSelections}
             onRewrite={handleRewrite}
@@ -234,12 +240,13 @@ export function ChatContainer({
         <div className="max-w-chat mx-auto">
           <Composer
             selectedBlockId={singleSelectedBlockId}
+            isInSectionMode={isInSectionMode}
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleSubmit}
             onSelectionCapture={captureSelection}
             onBlockAction={handleBlockAction}
-            disabled={isSubmitting || isLoadingThread || isMultiSelectMode}
+            disabled={isSubmitting || isLoadingThread || isMultiSelectMode || hasSelectionOutsideSection}
           />
         </div>
       </div>

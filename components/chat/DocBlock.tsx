@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useRef, useCallback } from 'react';
 import { Block } from '@/types/block';
 import { BlockContent } from '@/components/content/BlockContent';
 import { SelectionChips } from './SelectionChips';
@@ -16,35 +16,76 @@ import { SelectionChips } from './SelectionChips';
 interface DocBlockProps {
   block: Block;
   isSelected: boolean;
+  isInSection?: boolean; // Block is inside a section border (but not necessarily selected)
   onSelect?: (blockId: string) => void;
+  onEnterSectionMode?: (headingId: string) => void; // Double-click gutter on heading
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
 }
 
+// Delay to distinguish single-click from double-click (in ms)
+const CLICK_DELAY = 200;
+
 function DocBlockComponent({
   block,
   isSelected,
+  isInSection = false,
   onSelect,
+  onEnterSectionMode,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
 }: DocBlockProps) {
-  const handleSelect = () => {
-    onSelect?.(block.id);
-  };
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  // Handle gutter click with delay for headings to distinguish from double-click
+  const handleClick = useCallback(() => {
+    if (block.type === 'heading') {
+      // For headings, delay single-click to check for double-click
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+      clickTimeoutRef.current = setTimeout(() => {
+        onSelect?.(block.id);
+        clickTimeoutRef.current = null;
+      }, CLICK_DELAY);
+    } else {
+      // For non-headings, execute immediately
+      onSelect?.(block.id);
+    }
+  }, [block.id, block.type, onSelect]);
+
+  // Double-click gutter: enter section mode (headings only)
+  const handleGutterDoubleClick = useCallback(() => {
+    if (block.type === 'heading' && onEnterSectionMode) {
+      // Cancel pending single-click
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
+      onEnterSectionMode(block.id);
+    }
+  }, [block.id, block.type, onEnterSectionMode]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleSelect();
+      // For keyboard, always execute single-click immediately
+      onSelect?.(block.id);
     }
-  };
+  }, [block.id, onSelect]);
+
+  // Determine visual state
+  // isSelected = explicitly selected (in selectedBlockIds)
+  // isInSection = inside section border (may or may not be selected)
+  const showSelectedBackground = isSelected;
+  const showMuted = !isSelected && !isInSection && onSelect;
 
   return (
     <div
-      className={`doc-block ${isSelected ? 'is-selected' : ''} ${
-        !isSelected && onSelect ? 'is-muted' : ''
+      className={`doc-block ${showSelectedBackground ? 'is-selected' : ''} ${
+        showMuted ? 'is-muted' : ''
       }`}
       data-block-id={block.id}
     >
@@ -52,10 +93,11 @@ function DocBlockComponent({
       <button
         type="button"
         className="gutter-handle"
-        onClick={handleSelect}
+        onClick={handleClick}
+        onDoubleClick={handleGutterDoubleClick}
         onKeyDown={handleKeyDown}
-        aria-label="Select paragraph"
-        title="Select paragraph"
+        aria-label={block.type === 'heading' ? 'Select heading' : 'Select paragraph'}
+        title={block.type === 'heading' ? 'Click to select, double-click for section mode' : 'Select paragraph'}
       >
       </button>
 
@@ -84,6 +126,7 @@ function DocBlockComponent({
 export const DocBlock = memo(DocBlockComponent, (prevProps, nextProps) => {
   // Re-render if selection state changed
   if (prevProps.isSelected !== nextProps.isSelected) return false;
+  if (prevProps.isInSection !== nextProps.isInSection) return false;
 
   // Re-render if block data changed
   const prevBlock = prevProps.block;

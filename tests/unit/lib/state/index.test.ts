@@ -7,7 +7,6 @@ import {
   getThreadById,
   createThread,
   clearSelectedBlocks,
-  setHasInitialResponse,
   toggleBlockInSelection,
   getBlockById,
   addUserMessage,
@@ -40,7 +39,6 @@ describe('State Management - Core Functions', () => {
       expect(state).toHaveProperty('mode', 'landing');
       expect(state).toHaveProperty('selectedBlockIds');
       expect(state.selectedBlockIds).toEqual([]);
-      expect(state).toHaveProperty('hasInitialResponse', false);
       expect(state).toHaveProperty('activeThreadId');
       expect(state.threads).toHaveLength(1);
       expect(state.blocks).toHaveLength(0);
@@ -113,13 +111,6 @@ describe('State Management - Core Functions', () => {
       state = { ...state, selectedBlockIds: ['block-123', 'block-456'] };
       const nextState = clearSelectedBlocks(state);
       expect(nextState.selectedBlockIds).toEqual([]);
-    });
-  });
-
-  describe('setHasInitialResponse', () => {
-    it('should set hasInitialResponse to true', () => {
-      const nextState = setHasInitialResponse(state, true);
-      expect(nextState.hasInitialResponse).toBe(true);
     });
   });
 

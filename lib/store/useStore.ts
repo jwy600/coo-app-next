@@ -187,7 +187,7 @@ export const selectContentForTransform = (state: StoreState): Block[] => {
 };
 
 /**
- * Check if in section mode (single-click heading)
+ * Check if in section mode (double-click heading)
  */
 export const selectIsInSectionMode = (state: StoreState): boolean =>
   state.sectionHeadingId !== null;

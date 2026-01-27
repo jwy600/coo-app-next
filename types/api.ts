@@ -41,8 +41,3 @@ export interface ApiError {
   error: string;
   details?: string;
 }
-
-// Type guards
-export function isApiError(response: any): response is ApiError {
-  return 'error' in response;
-}

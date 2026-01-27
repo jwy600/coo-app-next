@@ -189,7 +189,6 @@ function processStreamBuffer(
     } catch (e) {
       // Track parse errors for threshold detection
       hadParseError = true;
-      console.warn('Failed to parse stream event:', jsonStr);
     }
   }
 

@@ -12,12 +12,13 @@
 
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore, selectSingleSelectedBlock, selectContentForTransform } from '@/lib/store/useStore';
-import { fetchChatCompletionStream, fetchBlockAction } from '@/lib/api';
+import { fetchBlockAction } from '@/lib/api';
 import { getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { useStreaming } from './useStreaming';
 import type { BlockAction } from '@/types/api';
 import { idFactory } from '@/lib/utils/idFactory';
 
@@ -53,15 +54,8 @@ export function useComposer(): UseComposerReturn {
   const error = useStore((state) => state.error);
   const setError = useStore((state) => state.setError);
 
-  // Streaming state
-  const startStreaming = useStore((state) => state.startStreaming);
-  const appendStreamToken = useStore((state) => state.appendStreamToken);
-  const flushStreamParse = useStore((state) => state.flushStreamParse);
-  const setStreamResponseId = useStore((state) => state.setStreamResponseId);
-  const clearStream = useStore((state) => state.clearStream);
-
-  // Track response ID during streaming
-  const streamResponseIdRef = useRef<string | undefined>(undefined);
+  // Streaming hook
+  const { streamChat } = useStreaming();
 
   /**
    * Clear prompt and error
@@ -155,112 +149,71 @@ export function useComposer(): UseComposerReturn {
       setAwaitingResponse(true);
       setError(null);
 
-      try {
-        // Create thread if in landing mode
-        const isNewThread = mode === 'landing';
-        if (isNewThread) {
-          createThread();
-          setMode('thread');
-        }
-
-        // Add user message
-        const { message: userMessage, blocks: userBlocks } = addUserMessage(trimmedPrompt);
-
-        // IMPORTANT: Get fresh activeThreadId from store (after potential createThread())
-        const currentThreadId = useStore.getState().activeThreadId;
-
-        // Update thread title ONLY for the first message (when creating new thread)
-        if (isNewThread) {
-          const threadTitle = trimmedPrompt.length > 50
-            ? trimmedPrompt.substring(0, 50) + '...'
-            : trimmedPrompt;
-          updateThreadTitle(currentThreadId, threadTitle);
-        }
-
-        // Get previous response ID for contextual chat (chains conversation)
-        const currentState = useStore.getState();
-        const previousResponseId = getLastAssistantResponseId(currentState, currentThreadId);
-
-        // Clear prompt immediately (optimistic)
-        setPrompt('');
-
-        // Start streaming state
-        const streamingMessageId = idFactory();
-        startStreaming(streamingMessageId, currentThreadId);
-        streamResponseIdRef.current = undefined;
-
-        // Get settings from store
-        const settings = useStore.getState().settings;
-
-        // Fetch AI response with streaming
-        await fetchChatCompletionStream(
-          trimmedPrompt,
-          {
-            onToken: (token: string) => {
-              appendStreamToken(token);
-            },
-            onResponseId: (responseId: string) => {
-              streamResponseIdRef.current = responseId;
-              setStreamResponseId(responseId);
-            },
-            onComplete: () => {
-              // Flush any pending debounced parse to ensure blocks are up-to-date
-              flushStreamParse();
-
-              // Get final streaming state and convert to message
-              const finalState = useStore.getState();
-              const streamingMessage = finalState.streamingMessage;
-
-              if (streamingMessage && streamingMessage.blocks.length > 0) {
-                // Store blocks locally before clearing streaming state
-                // This prevents both streaming and final message from rendering simultaneously
-                const finalBlocks = [...streamingMessage.blocks];
-                const finalResponseId = streamResponseIdRef.current;
-
-                // Clear streaming state FIRST to prevent double-rendering
-                clearStream();
-
-                // Then add assistant message with accumulated blocks
-                addAssistantMessage(finalBlocks, finalResponseId);
-              } else {
-                // No blocks to add, just clear
-                clearStream();
-              }
-
-              // Clear any selected blocks
-              clearSelectedBlocks();
-
-              // Clear error on success
-              setError(null);
-
-              // Done submitting
-              setAwaitingResponse(false);
-            },
-            onError: (error: Error) => {
-              clearStream();
-              const errorMessage = getErrorMessage(error, 'We hit a snag getting that response. Try again.');
-              setError(errorMessage);
-              setAwaitingResponse(false);
-            },
-          },
-          currentThreadId,
-          previousResponseId,
-          settings
-        );
-      } catch (err) {
-        clearStream();
-        const errorMessage = getErrorMessage(err, 'We hit a snag getting that response. Try again.');
-        setError(errorMessage);
-        setAwaitingResponse(false);
+      // Create thread if in landing mode
+      const isNewThread = mode === 'landing';
+      if (isNewThread) {
+        createThread();
+        setMode('thread');
       }
+
+      // Add user message
+      addUserMessage(trimmedPrompt);
+
+      // IMPORTANT: Get fresh activeThreadId from store (after potential createThread())
+      const currentThreadId = useStore.getState().activeThreadId;
+
+      // Update thread title ONLY for the first message (when creating new thread)
+      if (isNewThread) {
+        const threadTitle =
+          trimmedPrompt.length > 50 ? trimmedPrompt.substring(0, 50) + '...' : trimmedPrompt;
+        updateThreadTitle(currentThreadId, threadTitle);
+      }
+
+      // Get previous response ID for contextual chat (chains conversation)
+      const currentState = useStore.getState();
+      const previousResponseId = getLastAssistantResponseId(currentState, currentThreadId);
+
+      // Clear prompt immediately (optimistic)
+      setPrompt('');
+
+      // Generate message ID for streaming
+      const streamingMessageId = idFactory();
+
+      // Get settings from store
+      const currentSettings = useStore.getState().settings;
+
+      // Stream the chat completion
+      await streamChat(
+        {
+          prompt: trimmedPrompt,
+          threadId: currentThreadId,
+          messageId: streamingMessageId,
+          previousResponseId,
+          settings: currentSettings,
+        },
+        {
+          onComplete: (blocks, responseId) => {
+            if (blocks.length > 0) {
+              addAssistantMessage(blocks, responseId);
+            }
+            clearSelectedBlocks();
+            setError(null);
+            setAwaitingResponse(false);
+          },
+          onError: (errorMessage) => {
+            setError(errorMessage);
+            setAwaitingResponse(false);
+          },
+        }
+      );
     },
     [
       prompt,
       isSubmitting,
       selectedBlockIds,
-      selectedBlock,
+      sectionHeadingId,
+      contentForTransform,
       mode,
-      activeThreadId,
       handleBlockAction,
       createThread,
       setMode,
@@ -269,11 +222,7 @@ export function useComposer(): UseComposerReturn {
       clearSelectedBlocks,
       updateThreadTitle,
       setAwaitingResponse,
-      startStreaming,
-      appendStreamToken,
-      flushStreamParse,
-      setStreamResponseId,
-      clearStream,
+      streamChat,
     ]
   );
 

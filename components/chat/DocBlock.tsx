@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useRef, useCallback } from 'react';
+import { memo, useRef, useCallback, useEffect } from 'react';
 import { Block } from '@/types/block';
 import { BlockContent } from '@/components/content/BlockContent';
 import { SelectionChips } from './SelectionChips';
@@ -38,6 +38,15 @@ function DocBlockComponent({
   onRewrite,
 }: DocBlockProps) {
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle gutter click with delay for headings to distinguish from double-click
   const handleClick = useCallback(() => {

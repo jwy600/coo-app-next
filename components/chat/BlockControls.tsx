@@ -1,28 +1,31 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import type { BlockAction } from '@/types/api';
 
 /**
  * Client Component - Block transformation action badges
  * Reference: legacy/index.html lines 63-68
  * Needs 'use client' for click handlers
  */
-export type BlockAction = 'translate' | 'example' | 'eli5' | 'expand';
+
+/** UI-visible block actions (subset of all BlockAction types) */
+export type UIBlockAction = Extract<BlockAction, 'translate' | 'example' | 'eli5' | 'expand'>;
 
 interface BlockControlsProps {
-  onAction?: (action: BlockAction) => void;
+  onAction?: (action: UIBlockAction) => void;
   disabled?: boolean;
 }
 
 export function BlockControls({ onAction, disabled = false }: BlockControlsProps) {
-  const actions: { action: BlockAction; label: string }[] = [
+  const actions: { action: UIBlockAction; label: string }[] = [
     { action: 'translate', label: 'Translate' },
     { action: 'example', label: 'Example' },
     { action: 'eli5', label: 'ELI5' },
     { action: 'expand', label: 'Expand' },
   ];
 
-  const handleClick = (e: React.MouseEvent, action: BlockAction) => {
+  const handleClick = (e: React.MouseEvent, action: UIBlockAction) => {
     e.preventDefault();
     e.stopPropagation();
     if (!disabled) {

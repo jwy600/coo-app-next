@@ -3,7 +3,7 @@
 import { FormEvent } from 'react';
 import { PromptInput } from './PromptInput';
 import { ComposerHint } from './ComposerHint';
-import { BlockControls, BlockAction } from '@/components/chat/BlockControls';
+import { BlockControls, UIBlockAction } from '@/components/chat/BlockControls';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -17,7 +17,7 @@ interface ComposerProps {
   onPromptChange: (value: string) => void;
   onSubmit: (e: FormEvent) => void;
   onSelectionCapture?: (element: HTMLElement | null) => void;
-  onBlockAction?: (action: BlockAction) => void;
+  onBlockAction?: (action: UIBlockAction) => void;
   disabled?: boolean;
 }
 

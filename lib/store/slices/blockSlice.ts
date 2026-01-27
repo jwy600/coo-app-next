@@ -4,7 +4,7 @@
 
 import { StateCreator } from 'zustand';
 import * as stateFns from '@/lib/state';
-import { isTestMode } from '@/lib/utils/testMode';
+import { persistAsync } from '@/lib/utils/persistence';
 import { persistBlockUpdate } from '@/lib/supabase/blocks';
 import { Block } from '@/types/block';
 import { AppState } from '@/types/state';
@@ -32,10 +32,8 @@ export const blockSlice: StateCreator<
       const result = stateFns.addSelection(get(), blockId, text);
       set({ blocks: result.state.blocks });
 
-      if (result.block && !isTestMode()) {
-        persistBlockUpdate(result.block).catch((error) =>
-          console.error('Failed to persist selection:', error)
-        );
+      if (result.block) {
+        persistAsync(() => persistBlockUpdate(result.block!), 'persist selection');
       }
     },
 
@@ -43,10 +41,8 @@ export const blockSlice: StateCreator<
       const result = stateFns.removeSelection(get(), blockId, index);
       set({ blocks: result.state.blocks });
 
-      if (result.block && !isTestMode()) {
-        persistBlockUpdate(result.block).catch((error) =>
-          console.error('Failed to persist selection removal:', error)
-        );
+      if (result.block) {
+        persistAsync(() => persistBlockUpdate(result.block!), 'persist selection removal');
       }
     },
 
@@ -54,10 +50,8 @@ export const blockSlice: StateCreator<
       const result = stateFns.clearSelections(get(), blockId);
       set({ blocks: result.state.blocks });
 
-      if (result.block && !isTestMode()) {
-        persistBlockUpdate(result.block).catch((error) =>
-          console.error('Failed to clear selections:', error)
-        );
+      if (result.block) {
+        persistAsync(() => persistBlockUpdate(result.block!), 'clear selections');
       }
     },
 
@@ -65,10 +59,8 @@ export const blockSlice: StateCreator<
       const result = stateFns.toggleRewrite(get(), blockId, rewriteText);
       set({ blocks: result.state.blocks });
 
-      if (result.block && !isTestMode()) {
-        persistBlockUpdate(result.block).catch((error) =>
-          console.error('Failed to persist rewrite toggle:', error)
-        );
+      if (result.block) {
+        persistAsync(() => persistBlockUpdate(result.block!), 'persist rewrite toggle');
       }
     },
   };

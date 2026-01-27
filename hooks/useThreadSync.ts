@@ -94,9 +94,6 @@ export function useThreadSync(
             if (attempt < maxRetries - 1 && isTransientError(notFoundError)) {
               // Exponential backoff: 500ms, 1000ms, 2000ms, 4000ms
               const delay = baseDelay * Math.pow(2, attempt);
-              console.log(
-                `Thread not found, retrying in ${delay}ms... (${attempt + 1}/${maxRetries})`
-              );
               await new Promise((resolve) => setTimeout(resolve, delay));
               continue;
             }
@@ -148,9 +145,6 @@ export function useThreadSync(
           } else {
             // Exponential backoff before retry
             const delay = baseDelay * Math.pow(2, attempt);
-            console.log(
-              `Load failed, retrying in ${delay}ms... (${attempt + 1}/${maxRetries})`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
           }
         }

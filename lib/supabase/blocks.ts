@@ -54,40 +54,6 @@ export const persistBlockUpdate = async (block: Block): Promise<void> => {
 };
 
 /**
- * Persist multiple blocks at once (used by persistThreadSnapshot)
- * This is a lower-level function not typically called directly
- */
-export const persistBlocks = async (
-  blocks: Block[],
-  threadId: string
-): Promise<void> => {
-  return withSupabaseClient(
-    async (supabase) => {
-      const blocksToInsert = blocks.map((block, index) => ({
-        id: block.id,
-        thread_id: threadId,
-        message_id: block.messageId,
-        position: index,
-        type: block.type,
-        text: block.text,
-        edited: block.edited,
-        selections: block.selections,
-        prev_text: block.prevText,
-        is_rewritten: block.isRewritten,
-      }));
-
-      const { error } = await supabase
-        .from('blocks')
-        .insert(blocksToInsert);
-
-      if (error) throw error;
-    },
-    undefined,
-    `persisting ${blocks.length} blocks for thread ${threadId}`
-  );
-};
-
-/**
  * Convert DB block to app block
  */
 const dbBlockToBlock = (dbBlock: DbBlock): Block => ({

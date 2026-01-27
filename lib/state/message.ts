@@ -70,30 +70,14 @@ export const addAssistantMessage = (
   nowFactory: () => number,
   responseId?: string
 ): AddMessageResult => {
-  const threadId = state.activeThreadId;
-  const messageId = idFactory();
-  const newBlocks = blocksData.map((block) =>
-    createBlock(idFactory(), messageId, block.text, block.type)
-  );
-  const message: Message = {
-    id: messageId,
-    threadId,
-    role: 'assistant',
-    createdAt: nowFactory(),
-    content: newBlocks.map((block) => ({ blockId: block.id })),
-    meta: responseId ? { openaiResponseId: responseId } : {},
-  };
-  const nextState = updateThreadMessages(
+  return addAssistantMessageToThread(
     state,
-    threadId,
-    (messages) => [...messages, message],
-    nowFactory
+    state.activeThreadId,
+    blocksData,
+    idFactory,
+    nowFactory,
+    responseId
   );
-  return {
-    state: { ...nextState, blocks: [...nextState.blocks, ...newBlocks] },
-    message,
-    blocks: newBlocks,
-  };
 };
 
 export const addAssistantMessageToThread = (

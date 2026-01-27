@@ -182,6 +182,11 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+      setMounted(true)
+    }, [])
 
     if (collapsible === "none") {
       return (
@@ -198,7 +203,10 @@ const Sidebar = React.forwardRef<
       )
     }
 
-    if (isMobile) {
+    // During SSR and initial hydration, always render desktop layout
+    // to ensure consistent component tree for Radix ID generation.
+    // After mount, render based on actual isMobile state.
+    if (mounted && isMobile) {
       return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
           <SheetContent

@@ -1,24 +1,81 @@
 import { Block } from '@/types/block';
 
 /**
- * Section-related pure functions
+ * Heading-related pure functions
  *
+ * Handles heading parsing, detection, and section scope.
  * A "section" is a heading plus all content blocks until the next heading
  * of the same or higher level (hierarchy-aware).
  */
 
+// ============================================================================
+// Parsing
+// ============================================================================
+
+export interface HeadingInfo {
+  level: number;   // 1-6
+  prefix: string;  // "## " (includes trailing space)
+}
+
 /**
- * Get heading level from block text (counts # characters)
- * Returns 0 if not a valid heading
+ * Parse heading info from text
+ * Returns null if not a valid heading
+ *
+ * @example
+ * getHeadingInfo("## Title")  → { level: 2, prefix: "## " }
+ * getHeadingInfo("Hello")     → null
  */
-export const getHeadingLevel = (text: string): number => {
-  const match = text.match(/^(#{1,6})\s/);
-  return match ? match[1].length : 0;
+export const getHeadingInfo = (text: string): HeadingInfo | null => {
+  const match = text.match(/^(#{1,6})\s+/);
+  if (!match) return null;
+  return {
+    level: match[1].length,
+    prefix: match[0],
+  };
 };
 
 /**
+ * Get heading level from text (counts # characters)
+ * Returns 0 if not a valid heading
+ *
+ * @example
+ * getHeadingLevel("## Title")  → 2
+ * getHeadingLevel("Hello")     → 0
+ */
+export const getHeadingLevel = (text: string): number => {
+  return getHeadingInfo(text)?.level ?? 0;
+};
+
+/**
+ * Check if text is a heading
+ *
+ * @example
+ * hasHeading("## Title")  → true
+ * hasHeading("Hello")     → false
+ */
+export const hasHeading = (text: string): boolean => {
+  return getHeadingInfo(text) !== null;
+};
+
+/**
+ * Get heading prefix from text (e.g., "## ")
+ * Returns empty string if not a heading
+ *
+ * @example
+ * getHeadingPrefix("## Title")  → "## "
+ * getHeadingPrefix("Hello")     → ""
+ */
+export const getHeadingPrefix = (text: string): string => {
+  return getHeadingInfo(text)?.prefix ?? '';
+};
+
+// ============================================================================
+// Section Range (Hierarchy-Aware)
+// ============================================================================
+
+/**
  * Internal helper: find section end index given a starting index
- * Section ends at next heading of same or higher level (hierarchy-aware)
+ * Section ends at next heading of same or higher level
  */
 const findSectionEndIndex = (
   blocks: Block[],
@@ -46,6 +103,10 @@ const findSectionEndIndex = (
  * @param blocks - Array of blocks
  * @param headingId - ID of the heading block
  * @returns Start and end indices (inclusive), or null if heading not found
+ *
+ * @example
+ * // blocks: [H1, p, H2, p, H1]
+ * getSectionRange(blocks, 'h1-id')  → { startIndex: 0, endIndex: 3 }
  */
 export const getSectionRange = (
   blocks: Block[],
@@ -61,7 +122,7 @@ export const getSectionRange = (
 };
 
 /**
- * Get block IDs that belong to a section (heading + all content until next same/higher-level heading)
+ * Get block IDs that belong to a section (heading + all content)
  * This is hierarchy-aware: an H2 section includes nested H3s.
  *
  * @param blocks - Array of blocks

@@ -15,7 +15,7 @@ import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { isTestMode } from '@/lib/utils/testMode';
-import { getSectionRange } from '@/lib/state/section';
+import { getSectionRange } from '@/lib/state/heading';
 
 export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice & SettingsSlice;
 

@@ -1,5 +1,6 @@
 import { AppState } from '@/types/state';
 import { Block } from '@/types/block';
+import { getHeadingPrefix, hasHeading } from './heading';
 
 /**
  * Block-related state transformations
@@ -79,9 +80,8 @@ export const toggleRewrite = (
 
     // Preserve heading prefix if original was a heading but rewrite lacks one
     if (block.type === 'heading') {
-      const originalPrefix = block.text.match(/^#{1,6}\s+/)?.[0] ?? '';
-      const hasHeadingPrefix = /^#{1,6}\s+/.test(newText);
-      if (originalPrefix && !hasHeadingPrefix) {
+      const originalPrefix = getHeadingPrefix(block.text);
+      if (originalPrefix && !hasHeading(newText)) {
         newText = originalPrefix + newText;
       }
     }

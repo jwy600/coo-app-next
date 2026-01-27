@@ -2,7 +2,7 @@
 
 import { Block } from '@/types/block';
 import { DocBlock } from './DocBlock';
-import { getSectionRange } from '@/lib/state/section';
+import { getSectionRange } from '@/lib/state/heading';
 
 /**
  * Client Component - Container for multiple blocks

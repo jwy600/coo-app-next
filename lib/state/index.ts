@@ -13,7 +13,7 @@ export * from './message';
 export * from './block';
 export * from './parser';
 export * from './settings';
-export * from './section';
+export * from './heading';
 
 /**
  * Create initial application state

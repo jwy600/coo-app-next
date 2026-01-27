@@ -46,7 +46,6 @@ export const uiSlice: StateCreator<
 
   toggleBlockInSelection: (blockId) => {
     const state = get();
-    const block = state.blocks.find((b) => b.id === blockId);
 
     // If clicking the section's own heading - exit section mode, select heading
     if (state.sectionHeadingId && blockId === state.sectionHeadingId) {
@@ -75,15 +74,14 @@ export const uiSlice: StateCreator<
           );
           set({ selectedBlockIds: [], blocks: updatedBlocks });
         } else {
-          // Clear selections from previously selected block(s) before switching
+          // Clear selections from previously selected block(s) AND the newly selected block
           const previousSelectedIds = state.selectedBlockIds;
-          const updatedBlocks = previousSelectedIds.length > 0
-            ? state.blocks.map((b) =>
-                previousSelectedIds.includes(b.id)
-                  ? { ...b, selections: [], isRewritten: false, prevText: null }
-                  : b
-              )
-            : state.blocks;
+          // Clear selections from both previous blocks AND the newly selected block
+          const updatedBlocks = state.blocks.map((b) =>
+            b.id === blockId || previousSelectedIds.includes(b.id)
+              ? { ...b, selections: [], isRewritten: false, prevText: null }
+              : b
+          );
 
           set({
             selectedBlockIds: [blockId],
@@ -106,7 +104,19 @@ export const uiSlice: StateCreator<
 
     // Outside section mode - use normal toggle logic
     const result = stateFns.toggleBlockInSelection(get(), blockId);
-    set({ selectedBlockIds: result.selectedBlockIds });
+    const isNowSelected = result.selectedBlockIds.includes(blockId);
+
+    // If selecting a block, clear its pre-existing selections to start fresh
+    if (isNowSelected) {
+      const updatedBlocks = state.blocks.map((b) =>
+        b.id === blockId
+          ? { ...b, selections: [], isRewritten: false, prevText: null }
+          : b
+      );
+      set({ selectedBlockIds: result.selectedBlockIds, blocks: updatedBlocks });
+    } else {
+      set({ selectedBlockIds: result.selectedBlockIds });
+    }
   },
 
   enterSectionMode: (headingId) => {

@@ -124,17 +124,43 @@ export const uiSlice: StateCreator<
   },
 
   enterSectionMode: (headingId) => {
-    // Double-click heading gutter - enter/exit section mode (mutual exclusivity enforced)
+    // Double-click heading gutter - enter/switch section mode
     const result = stateFns.enterSectionMode(get().sectionHeadingId, headingId);
     if (result) {
       set(result);
     }
-    // null result = already in section mode for different heading, ignore
+    // null = same heading double-clicked, no change
   },
 
   selectHeadingDirectly: (headingId) => {
-    // Select heading itself directly (block mode, not section mode)
-    // Called when single-clicking a heading gutter
+    // Single-click heading gutter - select heading as block
+    const state = get();
+
+    // If in section mode
+    if (state.sectionHeadingId) {
+      if (headingId === state.sectionHeadingId) {
+        // Same heading - exit section mode, select it as block
+        set({ sectionHeadingId: null, selectedBlockIds: [headingId], isSelectionOutsideSection: false });
+      } else {
+        // Different heading - keep section mode, toggle heading in selection (card + separate block)
+        const isAlreadySelected = state.selectedBlockIds.includes(headingId);
+        if (isAlreadySelected) {
+          const newSelectedIds = state.selectedBlockIds.filter((id) => id !== headingId);
+          set({
+            selectedBlockIds: newSelectedIds,
+            isSelectionOutsideSection: newSelectedIds.length > 0,
+          });
+        } else {
+          set({
+            selectedBlockIds: [...state.selectedBlockIds, headingId],
+            isSelectionOutsideSection: true,
+          });
+        }
+      }
+      return;
+    }
+
+    // Not in section mode - select heading directly
     set({ sectionHeadingId: null, selectedBlockIds: [headingId], isSelectionOutsideSection: false });
   },
 

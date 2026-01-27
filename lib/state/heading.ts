@@ -141,25 +141,6 @@ export const getSectionBlockIds = (
     .map((b) => b.id);
 };
 
-/**
- * Get section content block IDs (excludes the heading itself)
- *
- * @param blocks - Array of blocks
- * @param headingId - ID of the heading block
- * @returns Array of content block IDs (heading excluded)
- */
-export const getSectionContentIds = (
-  blocks: Block[],
-  headingId: string
-): string[] => {
-  const range = getSectionRange(blocks, headingId);
-  if (!range) return [];
-
-  return blocks
-    .slice(range.startIndex + 1, range.endIndex + 1)
-    .map((b) => b.id);
-};
-
 // ============================================================================
 // Section Mode (Mutual Exclusivity)
 // ============================================================================

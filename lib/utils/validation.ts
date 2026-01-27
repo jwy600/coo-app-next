@@ -46,22 +46,3 @@ export const validatePrompt = (
   return { valid: true };
 };
 
-/**
- * Validate required string field
- * @param value - The value to validate
- * @param fieldName - Name of the field for error message
- * @returns Validation result
- */
-export const validateRequired = (
-  value: string,
-  fieldName: string = 'field'
-): ValidationResult => {
-  if (!value.trim()) {
-    return {
-      valid: false,
-      error: `Missing ${fieldName}.`,
-    };
-  }
-
-  return { valid: true };
-};

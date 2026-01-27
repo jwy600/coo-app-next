@@ -2,6 +2,7 @@
 
 import { Block } from '@/types/block';
 import { DocBlock } from './DocBlock';
+import { getSectionRange } from '@/lib/state/section';
 
 /**
  * Client Component - Container for multiple blocks
@@ -16,35 +17,6 @@ interface BlockStackProps {
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
-}
-
-function getHeadingLevel(text: string): number {
-  const match = text.match(/^(#{1,6})\s/);
-  return match ? match[1].length : 0;
-}
-
-function getSectionRange(
-  blocks: Block[],
-  headingId: string
-): { startIndex: number; endIndex: number } | null {
-  const headingIndex = blocks.findIndex((b) => b.id === headingId);
-  if (headingIndex === -1) return null;
-
-  const headingLevel = getHeadingLevel(blocks[headingIndex].text);
-
-  let endIndex = blocks.length - 1;
-  for (let i = headingIndex + 1; i < blocks.length; i++) {
-    const block = blocks[i];
-    if (block.type === 'heading') {
-      const level = getHeadingLevel(block.text);
-      if (level <= headingLevel) {
-        endIndex = i - 1;
-        break;
-      }
-    }
-  }
-
-  return { startIndex: headingIndex, endIndex };
 }
 
 export function BlockStack({

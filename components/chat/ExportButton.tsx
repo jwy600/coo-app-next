@@ -46,7 +46,7 @@ export function ExportButton() {
   // Get all section blocks (including heading) when in section mode
   const sectionBlockIds = useMemo(() => {
     if (!sectionHeadingId) return [];
-    return getSectionBlockIds({ blocks } as any, sectionHeadingId);
+    return getSectionBlockIds(blocks, sectionHeadingId);
   }, [sectionHeadingId, blocks]);
 
   // Compute blocks to export based on mode

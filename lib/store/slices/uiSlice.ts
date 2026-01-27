@@ -63,7 +63,7 @@ export const uiSlice: StateCreator<
 
     // If clicking any block while in section mode (headings outside section treated same as paragraphs)
     if (state.sectionHeadingId) {
-      const sectionBlockIds = stateFns.getSectionBlockIds(state, state.sectionHeadingId);
+      const sectionBlockIds = stateFns.getSectionBlockIds(state.blocks, state.sectionHeadingId);
       const isInsideSection = sectionBlockIds.includes(blockId);
       const isAlreadySelected = state.selectedBlockIds.includes(blockId);
 

@@ -15,6 +15,7 @@ import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { isTestMode } from '@/lib/utils/testMode';
+import { getSectionRange } from '@/lib/state/section';
 
 export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice & SettingsSlice;
 
@@ -84,38 +85,6 @@ export const selectSelectedBlocks = (state: StoreState): Block[] =>
     .map((id) => state.blocks.find((b) => b.id === id))
     .filter((b): b is Block => b !== undefined);
 
-/**
- * Get heading level from block text (counts # characters)
- */
-const getHeadingLevel = (text: string): number => {
-  const match = text.match(/^(#{1,6})\s/);
-  return match ? match[1].length : 0;
-};
-
-/**
- * Get section range for a heading block (start to end index)
- * Section ends at next heading of same or higher level
- */
-const getSectionRange = (
-  blocks: Block[],
-  headingIndex: number
-): { start: number; end: number } => {
-  const headingLevel = getHeadingLevel(blocks[headingIndex].text);
-  let endIndex = blocks.length - 1;
-
-  for (let i = headingIndex + 1; i < blocks.length; i++) {
-    const block = blocks[i];
-    if (block.type === 'heading') {
-      const level = getHeadingLevel(block.text);
-      if (level <= headingLevel) {
-        endIndex = i - 1;
-        break;
-      }
-    }
-  }
-
-  return { start: headingIndex, end: endIndex };
-};
 
 /**
  * Select blocks for export - expands heading selections to include their sections
@@ -132,9 +101,11 @@ export const selectBlocksForExport = (state: StoreState): Block[] => {
     const block = blocks[index];
 
     if (block.type === 'heading') {
-      const range = getSectionRange(blocks, index);
-      for (let i = range.start; i <= range.end; i++) {
-        includeIndices.add(i);
+      const range = getSectionRange(blocks, blockId);
+      if (range) {
+        for (let i = range.startIndex; i <= range.endIndex; i++) {
+          includeIndices.add(i);
+        }
       }
     } else {
       includeIndices.add(index);
@@ -151,12 +122,11 @@ export const selectBlocksForExport = (state: StoreState): Block[] => {
  */
 const getSectionContentBlocks = (state: StoreState, headingId: string): Block[] => {
   const { blocks } = state;
-  const headingIndex = blocks.findIndex((b) => b.id === headingId);
-  if (headingIndex === -1) return [];
+  const range = getSectionRange(blocks, headingId);
+  if (!range) return [];
 
-  const range = getSectionRange(blocks, headingIndex);
-  // Return content blocks only (start + 1 to skip heading)
-  return blocks.slice(range.start + 1, range.end + 1);
+  // Return content blocks only (startIndex + 1 to skip heading)
+  return blocks.slice(range.startIndex + 1, range.endIndex + 1);
 };
 
 /**
@@ -199,11 +169,7 @@ export const selectSectionRange = (state: StoreState): { startIndex: number; end
   const { sectionHeadingId, blocks } = state;
   if (!sectionHeadingId) return null;
 
-  const headingIndex = blocks.findIndex((b) => b.id === sectionHeadingId);
-  if (headingIndex === -1) return null;
-
-  const range = getSectionRange(blocks, headingIndex);
-  return { startIndex: range.start, endIndex: range.end };
+  return getSectionRange(blocks, sectionHeadingId);
 };
 
 /**

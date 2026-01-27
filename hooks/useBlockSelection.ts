@@ -9,8 +9,9 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useStore } from '@/lib/store/useStore';
+import { getSectionBlockIds } from '@/lib/state';
 
 export interface UseBlockSelectionReturn {
   selectedBlockIds: string[];
@@ -36,10 +37,17 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   // Store state
   const selectedBlockIds = useStore((state) => state.selectedBlockIds);
   const sectionHeadingId = useStore((state) => state.sectionHeadingId);
-  const isSelectionOutsideSection = useStore((state) => state.isSelectionOutsideSection);
+  const blocks = useStore((state) => state.blocks);
   const toggleBlockInSelection = useStore((state) => state.toggleBlockInSelection);
   const enterSectionModeAction = useStore((state) => state.enterSectionMode);
   const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
+
+  // Derived: whether any selected blocks are outside the current section
+  const isSelectionOutsideSection = useMemo(() => {
+    if (!sectionHeadingId || selectedBlockIds.length === 0) return false;
+    const sectionBlockIds = getSectionBlockIds(blocks, sectionHeadingId);
+    return selectedBlockIds.some((id) => !sectionBlockIds.includes(id));
+  }, [sectionHeadingId, selectedBlockIds, blocks]);
 
   /**
    * Check if a block is selected

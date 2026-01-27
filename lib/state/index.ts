@@ -28,7 +28,6 @@ export const createInitialState = (
     mode: 'landing',
     selectedBlockIds: [],
     sectionHeadingId: null,
-    isSelectionOutsideSection: false,
     activeThreadId: threadId,
     threads: [
       {

@@ -37,8 +37,6 @@ export function ExportButton() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const isSelectionOutsideSection = useStore((state) => state.isSelectionOutsideSection);
-
   const hasMessages = activeThread && activeThread.messages.length > 0;
   const isInSectionMode = sectionHeadingId !== null;
   const hasSelection = selectedBlockIds.length > 0 || isInSectionMode;
@@ -48,6 +46,12 @@ export function ExportButton() {
     if (!sectionHeadingId) return [];
     return getSectionBlockIds(blocks, sectionHeadingId);
   }, [sectionHeadingId, blocks]);
+
+  // Derived: whether any selected blocks are outside the current section
+  const isSelectionOutsideSection = useMemo(() => {
+    if (!sectionHeadingId || selectedBlockIds.length === 0) return false;
+    return selectedBlockIds.some((id) => !sectionBlockIds.includes(id));
+  }, [sectionHeadingId, selectedBlockIds, sectionBlockIds]);
 
   // Compute blocks to export based on mode
   const computedExportBlocks = useMemo(() => {

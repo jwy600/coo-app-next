@@ -8,7 +8,6 @@ export interface AppState {
   mode: AppMode;
   selectedBlockIds: string[];
   sectionHeadingId: string | null; // Heading ID when in section mode (double-click heading)
-  isSelectionOutsideSection: boolean; // True when selected block is outside current section
   activeThreadId: string;
   threads: Thread[];
   blocks: Block[];

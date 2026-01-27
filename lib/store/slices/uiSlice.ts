@@ -10,7 +10,6 @@ export interface UISlice {
   mode: AppMode;
   selectedBlockIds: string[];
   sectionHeadingId: string | null;
-  isSelectionOutsideSection: boolean;
   isAwaitingResponse: boolean;
   error: string | null;
 
@@ -33,7 +32,6 @@ export const uiSlice: StateCreator<
   mode: 'landing',
   selectedBlockIds: [],
   sectionHeadingId: null,
-  isSelectionOutsideSection: false,
   isAwaitingResponse: false,
   error: null,
 
@@ -43,7 +41,6 @@ export const uiSlice: StateCreator<
       mode: result.mode,
       selectedBlockIds: result.selectedBlockIds,
       sectionHeadingId: null,
-      isSelectionOutsideSection: false,
     });
   },
 
@@ -56,7 +53,6 @@ export const uiSlice: StateCreator<
       set({
         sectionHeadingId: null,
         selectedBlockIds: [blockId],
-        isSelectionOutsideSection: false,
       });
       return;
     }
@@ -77,7 +73,7 @@ export const uiSlice: StateCreator<
               ? { ...b, selections: [], isRewritten: false, prevText: null }
               : b
           );
-          set({ selectedBlockIds: [], isSelectionOutsideSection: false, blocks: updatedBlocks });
+          set({ selectedBlockIds: [], blocks: updatedBlocks });
         } else {
           // Clear selections from previously selected block(s) before switching
           const previousSelectedIds = state.selectedBlockIds;
@@ -91,7 +87,6 @@ export const uiSlice: StateCreator<
 
           set({
             selectedBlockIds: [blockId],
-            isSelectionOutsideSection: false,
             blocks: updatedBlocks,
           });
         }
@@ -100,19 +95,10 @@ export const uiSlice: StateCreator<
         if (isAlreadySelected) {
           // Remove from selection
           const newSelectedIds = state.selectedBlockIds.filter((id) => id !== blockId);
-          const hasOutsideSelection = newSelectedIds.some(
-            (id) => !sectionBlockIds.includes(id)
-          );
-          set({
-            selectedBlockIds: newSelectedIds,
-            isSelectionOutsideSection: hasOutsideSelection,
-          });
+          set({ selectedBlockIds: newSelectedIds });
         } else {
           // Add to selection
-          set({
-            selectedBlockIds: [...state.selectedBlockIds, blockId],
-            isSelectionOutsideSection: true,
-          });
+          set({ selectedBlockIds: [...state.selectedBlockIds, blockId] });
         }
       }
       return;
@@ -120,7 +106,7 @@ export const uiSlice: StateCreator<
 
     // Outside section mode - use normal toggle logic
     const result = stateFns.toggleBlockInSelection(get(), blockId);
-    set({ selectedBlockIds: result.selectedBlockIds, isSelectionOutsideSection: false });
+    set({ selectedBlockIds: result.selectedBlockIds });
   },
 
   enterSectionMode: (headingId) => {
@@ -140,28 +126,22 @@ export const uiSlice: StateCreator<
     if (state.sectionHeadingId) {
       if (headingId === state.sectionHeadingId) {
         // Same heading - exit section mode, select it as block
-        set({ sectionHeadingId: null, selectedBlockIds: [headingId], isSelectionOutsideSection: false });
+        set({ sectionHeadingId: null, selectedBlockIds: [headingId] });
       } else {
         // Different heading - keep section mode, toggle heading in selection (card + separate block)
         const isAlreadySelected = state.selectedBlockIds.includes(headingId);
         if (isAlreadySelected) {
           const newSelectedIds = state.selectedBlockIds.filter((id) => id !== headingId);
-          set({
-            selectedBlockIds: newSelectedIds,
-            isSelectionOutsideSection: newSelectedIds.length > 0,
-          });
+          set({ selectedBlockIds: newSelectedIds });
         } else {
-          set({
-            selectedBlockIds: [...state.selectedBlockIds, headingId],
-            isSelectionOutsideSection: true,
-          });
+          set({ selectedBlockIds: [...state.selectedBlockIds, headingId] });
         }
       }
       return;
     }
 
     // Not in section mode - select heading directly
-    set({ sectionHeadingId: null, selectedBlockIds: [headingId], isSelectionOutsideSection: false });
+    set({ sectionHeadingId: null, selectedBlockIds: [headingId] });
   },
 
   clearSelectedBlocks: () => {
@@ -169,7 +149,6 @@ export const uiSlice: StateCreator<
     set({
       selectedBlockIds: result.selectedBlockIds,
       sectionHeadingId: null,
-      isSelectionOutsideSection: false,
       blocks: result.blocks,  // Update blocks to clear session state
     });
   },

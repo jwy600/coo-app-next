@@ -167,7 +167,6 @@ export const getSectionContentIds = (
 export interface SectionModeState {
   sectionHeadingId: string | null;
   selectedBlockIds: string[];
-  isSelectionOutsideSection: boolean;
 }
 
 /**
@@ -200,6 +199,5 @@ export const enterSectionMode = (
   return {
     sectionHeadingId: headingId,
     selectedBlockIds: [],
-    isSelectionOutsideSection: false,
   };
 };

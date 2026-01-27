@@ -4,6 +4,7 @@ import type { TranslateLanguage } from '@/types/settings';
 import { getOpenAiClient } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
 import { getOpenAIModelConfig, BLOCK_ACTION_PROMPT } from '@/lib/config/openai';
+import { handleApiError } from '@/lib/api/errorHandler';
 
 // Build action-specific prompt based on action type
 function buildActionPrompt(
@@ -115,32 +116,7 @@ export async function POST(request: NextRequest) {
 
     // Return successful response
     return NextResponse.json<BlockActionResponse>({ text });
-  } catch (error: any) {
-    console.error('Block action API error:', error);
-
-    // Handle OpenAI configuration errors
-    if (error?.message?.includes('Missing OpenAI API key')) {
-      return NextResponse.json<ApiError>(
-        { error: 'Missing OpenAI API key configuration.' },
-        { status: 500 }
-      );
-    }
-
-    // Handle OpenAI specific errors
-    if (error?.status) {
-      return NextResponse.json<ApiError>(
-        {
-          error: "We couldn't reach the assistant. Please try again in a moment.",
-          details: error.message,
-        },
-        { status: 500 }
-      );
-    }
-
-    // Generic error
-    return NextResponse.json<ApiError>(
-      { error: 'We ran into an issue generating a response. Please try again.' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, 'Block action');
   }
 }

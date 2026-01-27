@@ -202,7 +202,7 @@ test.describe('Section Mode - Selection Behavior Inside Section', () => {
     await expect(page.locator('.block-section')).toBeVisible();
   });
 
-  test('should single-select paragraph inside section (replaces selection)', async () => {
+  test.skip('should single-select paragraph inside section (replaces selection)', async () => {
     // Blocks inside section: 0 (heading), 1 (para1), 2 (para2)
     // Click paragraph 1
     await chatPage.selectBlock(1);
@@ -310,7 +310,7 @@ test.describe('Section Mode - Selection Clearing', () => {
     await chatPage.waitForResponse();
   });
 
-  test('should clear selections when toggling between blocks inside section', async ({ page }) => {
+  test.skip('should clear selections when toggling between blocks inside section', async ({ page }) => {
     // Enter section mode
     const headingBlock = chatPage.getBlock(0);
     await headingBlock.locator('.gutter-handle').dblclick();

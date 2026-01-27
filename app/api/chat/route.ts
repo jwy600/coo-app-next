@@ -3,6 +3,7 @@ import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
 import { createResponse, createResponseStream } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
 import { getOpenAIModelConfig, DEVELOPER_PROMPT } from '@/lib/config/openai';
+import { handleApiError } from '@/lib/api/errorHandler';
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,32 +102,7 @@ export async function POST(request: NextRequest) {
       text: result.text,
       responseId: result.responseId,
     });
-  } catch (error: any) {
-    console.error('Chat API error:', error);
-
-    // Handle OpenAI configuration errors
-    if (error?.message?.includes('Missing OpenAI API key')) {
-      return NextResponse.json<ApiError>(
-        { error: 'Missing OpenAI API key configuration.' },
-        { status: 500 }
-      );
-    }
-
-    // Handle OpenAI specific errors
-    if (error?.status) {
-      return NextResponse.json<ApiError>(
-        {
-          error: "We couldn't reach the assistant. Please try again in a moment.",
-          details: error.message,
-        },
-        { status: 500 }
-      );
-    }
-
-    // Generic error
-    return NextResponse.json<ApiError>(
-      { error: 'We ran into an issue generating a response. Please try again.' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, 'Chat API');
   }
 }

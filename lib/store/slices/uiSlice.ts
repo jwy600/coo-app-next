@@ -36,7 +36,8 @@ export const uiSlice: StateCreator<
   error: null,
 
   setMode: (mode) => {
-    const result = stateFns.setMode(get(), mode);
+    const { selectedBlockIds } = get();
+    const result = stateFns.setMode(selectedBlockIds, mode);
     set({
       mode: result.mode,
       selectedBlockIds: result.selectedBlockIds,
@@ -103,7 +104,8 @@ export const uiSlice: StateCreator<
     }
 
     // Outside section mode - use normal toggle logic
-    const result = stateFns.toggleBlockInSelection(get(), blockId);
+    const { mode, selectedBlockIds: currentSelectedIds } = get();
+    const result = stateFns.toggleBlockInSelection(mode, currentSelectedIds, blockId);
     const isNowSelected = result.selectedBlockIds.includes(blockId);
 
     // If selecting a block, clear its pre-existing selections to start fresh
@@ -155,7 +157,8 @@ export const uiSlice: StateCreator<
   },
 
   clearSelectedBlocks: () => {
-    const result = stateFns.clearSelectedBlocks(get());
+    const { selectedBlockIds, blocks } = get();
+    const result = stateFns.clearSelectedBlocks(selectedBlockIds, blocks);
     set({
       selectedBlockIds: result.selectedBlockIds,
       sectionHeadingId: null,

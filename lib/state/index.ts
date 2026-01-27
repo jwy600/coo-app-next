@@ -3,9 +3,14 @@
  *
  * All functions in this module are pure - they take state as input
  * and return new state objects without mutating the original.
+ *
+ * Functions are designed with narrow signatures - they accept only
+ * the fields they need, making dependencies explicit and enabling
+ * better testing.
  */
 
 import { AppState, AppMode } from '@/types/state';
+import { Block } from '@/types/block';
 
 // Re-export all state functions from modules
 export * from './thread';
@@ -39,19 +44,47 @@ export const createInitialState = (
       },
     ],
     blocks: [],
+    isAwaitingResponse: false,
+    error: null,
   };
 };
 
+// ============================================================================
+// UI State Functions (Narrow Signatures)
+// ============================================================================
+
+/**
+ * Result of setMode - contains only the fields that change
+ */
+export interface SetModeResult {
+  mode: AppMode;
+  selectedBlockIds: string[];
+}
+
 /**
  * Set application mode (landing or thread)
+ *
+ * @param selectedBlockIds - Current selected block IDs
+ * @param mode - Target mode
+ * @returns New mode and selectedBlockIds (cleared if entering landing)
  */
-export const setMode = (state: AppState, mode: AppMode): AppState => {
-  const next = { ...state, mode };
+export const setMode = (
+  selectedBlockIds: string[],
+  mode: AppMode
+): SetModeResult => {
   if (mode === 'landing') {
-    return { ...next, selectedBlockIds: [] };
+    return { mode, selectedBlockIds: [] };
   }
-  return next;
+  return { mode, selectedBlockIds };
 };
+
+/**
+ * Result of clearSelectedBlocks - contains only the fields that change
+ */
+export interface ClearSelectedBlocksResult {
+  selectedBlockIds: string[];
+  blocks: Block[];
+}
 
 /**
  * Clear all selected blocks and reset their session state
@@ -62,17 +95,22 @@ export const setMode = (state: AppState, mode: AppMode): AppState => {
  *
  * This ensures each block mode session is independent - undo only works
  * within the current session, and once you exit, the rewrite becomes permanent.
+ *
+ * @param selectedBlockIds - Current selected block IDs
+ * @param blocks - All blocks
+ * @returns New selectedBlockIds (empty) and blocks with cleared session state
  */
-export const clearSelectedBlocks = (state: AppState): AppState => {
-  const blockIds = state.selectedBlockIds;
-
-  if (blockIds.length === 0) {
-    return { ...state, selectedBlockIds: [] };
+export const clearSelectedBlocks = (
+  selectedBlockIds: string[],
+  blocks: Block[]
+): ClearSelectedBlocksResult => {
+  if (selectedBlockIds.length === 0) {
+    return { selectedBlockIds: [], blocks };
   }
 
   // Clear the session state for all selected blocks
-  const blocks = state.blocks.map((block) => {
-    if (!blockIds.includes(block.id)) return block;
+  const updatedBlocks = blocks.map((block) => {
+    if (!selectedBlockIds.includes(block.id)) return block;
 
     return {
       ...block,
@@ -83,11 +121,17 @@ export const clearSelectedBlocks = (state: AppState): AppState => {
   });
 
   return {
-    ...state,
     selectedBlockIds: [],
-    blocks,
+    blocks: updatedBlocks,
   };
 };
+
+/**
+ * Result of toggleBlockInSelection - contains only selectedBlockIds
+ */
+export interface ToggleBlockResult {
+  selectedBlockIds: string[];
+}
 
 /**
  * Toggle a block in the selection set (add if not present, remove if present)
@@ -95,29 +139,32 @@ export const clearSelectedBlocks = (state: AppState): AppState => {
  * Selection is additive - clicking a block adds/removes it from the set.
  * The array maintains selection order (useful for export).
  *
- * Special case: Headings are mutually exclusive - selecting a heading
- * deselects any previously selected heading (only one heading section
- * can be displayed at a time).
+ * @param mode - Current app mode (selection only allowed in 'thread' mode)
+ * @param selectedBlockIds - Current selected block IDs
+ * @param blockId - Block ID to toggle
+ * @returns New selectedBlockIds
  */
-export const toggleBlockInSelection = (state: AppState, blockId: string): AppState => {
-  if (state.mode !== 'thread') {
-    return { ...state, selectedBlockIds: [] };
+export const toggleBlockInSelection = (
+  mode: AppMode,
+  selectedBlockIds: string[],
+  blockId: string
+): ToggleBlockResult => {
+  if (mode !== 'thread') {
+    return { selectedBlockIds: [] };
   }
 
-  const isSelected = state.selectedBlockIds.includes(blockId);
+  const isSelected = selectedBlockIds.includes(blockId);
 
   if (isSelected) {
     // Remove from selection
     return {
-      ...state,
-      selectedBlockIds: state.selectedBlockIds.filter((id) => id !== blockId),
+      selectedBlockIds: selectedBlockIds.filter((id) => id !== blockId),
     };
   }
 
   // Add to selection (headings and paragraphs can all be multi-selected)
   return {
-    ...state,
-    selectedBlockIds: [...state.selectedBlockIds, blockId],
+    selectedBlockIds: [...selectedBlockIds, blockId],
   };
 };
 

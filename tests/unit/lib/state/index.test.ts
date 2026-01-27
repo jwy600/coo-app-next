@@ -52,20 +52,22 @@ describe('State Management - Core Functions', () => {
 
   describe('setMode', () => {
     it('should set mode to thread', () => {
-      const nextState = setMode(state, 'thread');
-      expect(nextState.mode).toBe('thread');
+      const result = setMode(state.selectedBlockIds, 'thread');
+      expect(result.mode).toBe('thread');
     });
 
     it('should set mode to landing and clear selected blocks', () => {
-      state = { ...state, selectedBlockIds: ['some-block-id'] };
-      const nextState = setMode(state, 'landing');
-      expect(nextState.mode).toBe('landing');
-      expect(nextState.selectedBlockIds).toEqual([]);
+      const selectedBlockIds = ['some-block-id'];
+      const result = setMode(selectedBlockIds, 'landing');
+      expect(result.mode).toBe('landing');
+      expect(result.selectedBlockIds).toEqual([]);
     });
 
     it('should maintain immutability', () => {
-      const nextState = setMode(state, 'thread');
-      expect(nextState).not.toBe(state);
+      const originalSelectedBlockIds = ['block-1'];
+      const result = setMode(originalSelectedBlockIds, 'thread');
+      expect(result.selectedBlockIds).toBe(originalSelectedBlockIds); // Same reference when not clearing
+      expect(result).not.toBe(state);
     });
   });
 
@@ -108,46 +110,58 @@ describe('State Management - Core Functions', () => {
 
   describe('clearSelectedBlocks', () => {
     it('should clear all selected block ids', () => {
-      state = { ...state, selectedBlockIds: ['block-123', 'block-456'] };
-      const nextState = clearSelectedBlocks(state);
-      expect(nextState.selectedBlockIds).toEqual([]);
+      const selectedBlockIds = ['block-123', 'block-456'];
+      const result = clearSelectedBlocks(selectedBlockIds, state.blocks);
+      expect(result.selectedBlockIds).toEqual([]);
+    });
+
+    it('should clear session state from selected blocks', () => {
+      const blocks = [
+        {
+          id: 'block-1',
+          messageId: 'msg-1',
+          type: 'paragraph' as const,
+          text: 'Test',
+          edited: false,
+          selections: ['some selection'],
+          prevText: 'old text',
+          isRewritten: true,
+        },
+      ];
+      const selectedBlockIds = ['block-1'];
+      const result = clearSelectedBlocks(selectedBlockIds, blocks);
+      expect(result.blocks[0].selections).toEqual([]);
+      expect(result.blocks[0].prevText).toBeNull();
+      expect(result.blocks[0].isRewritten).toBe(false);
     });
   });
 
   describe('toggleBlockInSelection', () => {
-    beforeEach(() => {
-      state = setMode(state, 'thread');
-    });
-
     it('should add a block when none is selected', () => {
-      const nextState = toggleBlockInSelection(state, 'block-1');
-      expect(nextState.selectedBlockIds).toEqual(['block-1']);
+      const result = toggleBlockInSelection('thread', [], 'block-1');
+      expect(result.selectedBlockIds).toEqual(['block-1']);
     });
 
     it('should remove a block when same block is clicked', () => {
-      state = { ...state, selectedBlockIds: ['block-1'] };
-      const nextState = toggleBlockInSelection(state, 'block-1');
-      expect(nextState.selectedBlockIds).toEqual([]);
+      const result = toggleBlockInSelection('thread', ['block-1'], 'block-1');
+      expect(result.selectedBlockIds).toEqual([]);
     });
 
     it('should add another block to selection (multi-select)', () => {
-      state = { ...state, selectedBlockIds: ['block-1'] };
-      const nextState = toggleBlockInSelection(state, 'block-2');
-      expect(nextState.selectedBlockIds).toEqual(['block-1', 'block-2']);
+      const result = toggleBlockInSelection('thread', ['block-1'], 'block-2');
+      expect(result.selectedBlockIds).toEqual(['block-1', 'block-2']);
     });
 
     it('should not select block when not in thread mode', () => {
-      state = setMode(state, 'landing');
-      const nextState = toggleBlockInSelection(state, 'block-1');
-      expect(nextState.selectedBlockIds).toEqual([]);
+      const result = toggleBlockInSelection('landing', [], 'block-1');
+      expect(result.selectedBlockIds).toEqual([]);
     });
 
     it('should maintain selection order', () => {
-      state = setMode(state, 'thread');
-      let nextState = toggleBlockInSelection(state, 'block-3');
-      nextState = toggleBlockInSelection(nextState, 'block-1');
-      nextState = toggleBlockInSelection(nextState, 'block-2');
-      expect(nextState.selectedBlockIds).toEqual(['block-3', 'block-1', 'block-2']);
+      let result = toggleBlockInSelection('thread', [], 'block-3');
+      result = toggleBlockInSelection('thread', result.selectedBlockIds, 'block-1');
+      result = toggleBlockInSelection('thread', result.selectedBlockIds, 'block-2');
+      expect(result.selectedBlockIds).toEqual(['block-3', 'block-1', 'block-2']);
     });
   });
 

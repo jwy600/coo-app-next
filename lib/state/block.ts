@@ -31,6 +31,20 @@ const updateBlock = (
 export const getBlockById = (state: AppState, blockId: string): Block | undefined =>
   state.blocks.find((block) => block.id === blockId);
 
+/**
+ * Add a text selection from a transformation result to a block.
+ *
+ * When a user selects a block and requests a transformation (e.g., "expand",
+ * "translate"), the AI result appears in the composer. The user can then
+ * highlight portions of that result to store as "selections" on the block.
+ *
+ * These selections are associated with the block for later use (e.g., applying
+ * as a rewrite or referencing in follow-up prompts).
+ *
+ * @param state - Current app state
+ * @param blockId - ID of the block to add selection to
+ * @param text - Text snippet from transformation result
+ */
 export const addSelection = (
   state: AppState,
   blockId: string,
@@ -41,6 +55,9 @@ export const addSelection = (
     selections: [...block.selections, text],
   }));
 
+/**
+ * Remove a selection from a block by index.
+ */
 export const removeSelection = (
   state: AppState,
   blockId: string,
@@ -51,6 +68,9 @@ export const removeSelection = (
     selections: block.selections.filter((_, idx) => idx !== index),
   }));
 
+/**
+ * Clear all selections from a block.
+ */
 export const clearSelections = (
   state: AppState,
   blockId: string
@@ -60,6 +80,14 @@ export const clearSelections = (
     selections: [],
   }));
 
+/**
+ * Toggle a rewrite on a block with undo capability.
+ *
+ * First call: Stores original text in `prevText`, applies rewrite, sets `isRewritten: true`
+ * Second call: Restores `prevText`, clears rewrite state (undo)
+ *
+ * Preserves heading/list prefixes if the rewrite lacks them.
+ */
 export const toggleRewrite = (
   state: AppState,
   blockId: string,
@@ -104,14 +132,3 @@ export const toggleRewrite = (
     };
   });
 
-export const updateBlockText = (
-  state: AppState,
-  blockId: string,
-  text: string,
-  edited: boolean = false
-): UpdateBlockResult =>
-  updateBlock(state, blockId, (block) => ({
-    ...block,
-    text,
-    edited: edited ? true : block.edited,
-  }));

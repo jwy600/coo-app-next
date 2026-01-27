@@ -156,30 +156,6 @@ describe('Store Integration Tests', () => {
     });
   });
 
-  describe('User Flow: Inline block editing', () => {
-    it('should handle inline text editing', async () => {
-      const store = useStore.getState();
-
-      // Setup
-      store.createThread('thread-1');
-      store.setMode('thread');
-      store.addAssistantMessage([
-        { text: 'Original paragraph.', type: 'paragraph' },
-      ]);
-
-      const blockId = useStore.getState().blocks[0].id;
-
-      // 1. User edits block text inline
-      store.updateBlockText(blockId, 'Edited paragraph.', true);
-
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      const block = useStore.getState().blocks.find((b) => b.id === blockId);
-      expect(block?.text).toBe('Edited paragraph.');
-      expect(block?.edited).toBe(true);
-      expect(supabaseBlocks.persistBlockUpdate).toHaveBeenCalled();
-    });
-  });
-
   describe('User Flow: Thread loading from Supabase', () => {
     it('should merge loaded thread into state', () => {
       const store = useStore.getState();

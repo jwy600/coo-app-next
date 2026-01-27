@@ -16,7 +16,6 @@ import {
   removeSelection,
   clearSelections,
   toggleRewrite,
-  updateBlockText,
   splitIntoBlocks,
   getLastAssistantResponseId,
 } from '@/lib/state';
@@ -429,19 +428,6 @@ describe('Block Operations', () => {
     });
   });
 
-  describe('updateBlockText', () => {
-    it('should update block text without marking as edited', () => {
-      const result = updateBlockText(state, 'block-1', 'Updated text', false);
-      expect(result.block?.text).toBe('Updated text');
-      expect(result.block?.edited).toBe(false);
-    });
-
-    it('should update block text and mark as edited', () => {
-      const result = updateBlockText(state, 'block-1', 'Updated text', true);
-      expect(result.block?.text).toBe('Updated text');
-      expect(result.block?.edited).toBe(true);
-    });
-  });
 });
 
 describe('splitIntoBlocks', () => {

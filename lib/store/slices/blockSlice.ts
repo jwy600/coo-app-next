@@ -17,7 +17,6 @@ export interface BlockSlice {
   removeSelection: (blockId: string, index: number) => void;
   clearSelections: (blockId: string) => void;
   toggleRewrite: (blockId: string, rewriteText: string) => void;
-  updateBlockText: (blockId: string, text: string, edited?: boolean) => void;
 }
 
 export const blockSlice: StateCreator<
@@ -69,17 +68,6 @@ export const blockSlice: StateCreator<
       if (result.block && !isTestMode()) {
         persistBlockUpdate(result.block).catch((error) =>
           console.error('Failed to persist rewrite toggle:', error)
-        );
-      }
-    },
-
-    updateBlockText: (blockId, text, edited = false) => {
-      const result = stateFns.updateBlockText(get(), blockId, text, edited);
-      set({ blocks: result.state.blocks });
-
-      if (result.block && !isTestMode()) {
-        persistBlockUpdate(result.block).catch((error) =>
-          console.error('Failed to update block text:', error)
         );
       }
     },

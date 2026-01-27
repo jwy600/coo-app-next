@@ -28,8 +28,14 @@ test.describe('Keyboard Shortcuts', () => {
     // Mock successful response
     await apiMocker.mockChatSuccess(MOCK_RESPONSES.chat.simple);
 
-    // Type prompt
-    await composer.fillPrompt('Test Enter key');
+    // Focus the prompt input first
+    await composer.focus();
+
+    // Type prompt using keyboard (more reliable than fillPrompt for Enter key test)
+    await page.keyboard.type('Test Enter key');
+
+    // Small wait to ensure input is processed (Firefox needs this)
+    await page.waitForTimeout(100);
 
     // Submit with Enter
     await composer.submitWithEnter();

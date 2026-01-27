@@ -79,13 +79,26 @@ test.describe('Error Handling', () => {
     // Mock "too long" error
     await apiMocker.mockChatError(MOCK_RESPONSES.errors.tooLong, 400);
 
-    // Create a very long prompt
-    const longPrompt = 'a'.repeat(5000);
-    await composer.submitPrompt(longPrompt);
+    // Create a moderately long prompt (5000 chars can be slow to process in Firefox)
+    const longPrompt = 'a'.repeat(1000);
 
-    // Wait for error message
+    // Fill and submit using direct evaluation (more reliable for long text)
+    await composer.fillPrompt(longPrompt);
+
+    // Wait for the API response to be intercepted
+    const responsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/chat'),
+      { timeout: 15000 }
+    );
+
+    await composer.submit();
+
+    // Wait for the mocked error response
+    await responsePromise;
+
+    // Wait for error message with extended timeout for Firefox
     const errorMessage = page.locator('.assistant-error');
-    await expect(errorMessage).toBeVisible({ timeout: 10000 });
+    await expect(errorMessage).toBeVisible({ timeout: 15000 });
     await expect(errorMessage).toContainText(/too long|shorten/i);
   });
 

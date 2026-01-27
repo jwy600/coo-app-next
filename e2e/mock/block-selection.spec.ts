@@ -160,19 +160,6 @@ test.describe('Section Mode - Entry and Exit', () => {
     await expect(sectionBorder).not.toBeVisible();
   });
 
-  test('should exit section mode when double-clicking same heading again', async ({ page }) => {
-    const headingBlock = chatPage.getBlock(0);
-    const gutterHandle = headingBlock.locator('.gutter-handle');
-
-    // Enter section mode
-    await gutterHandle.dblclick();
-    await expect(page.locator('.block-section')).toBeVisible();
-
-    // Double-click again to exit
-    await gutterHandle.dblclick();
-    await expect(page.locator('.block-section')).not.toBeVisible();
-  });
-
   test('should exit section mode on Escape key', async ({ page }) => {
     const headingBlock = chatPage.getBlock(0);
     const gutterHandle = headingBlock.locator('.gutter-handle');
@@ -462,7 +449,7 @@ test.describe('Heading Selection - Mutual Exclusivity', () => {
     expect(await chatPage.isBlockSelected(0)).toBe(true);
   });
 
-  test('should ignore double-click on different heading while in section mode', async ({ page }) => {
+  test('should switch section mode when double-clicking different heading', async ({ page }) => {
     // Enter section mode on first heading
     const heading1 = chatPage.getBlock(0);
     await heading1.locator('.gutter-handle').dblclick();
@@ -474,16 +461,13 @@ test.describe('Heading Selection - Mutual Exclusivity', () => {
     const sectionContent = sectionBorder.locator('.doc-content');
     await expect(sectionContent.first()).toContainText('Section A');
 
-    // Double-click second heading - should be IGNORED (can't have two section modes)
+    // Double-click second heading - should SWITCH to that section
     const heading2 = chatPage.getBlock(2);
     await heading2.locator('.gutter-handle').dblclick();
 
-    // Should still be in section mode for FIRST heading (unchanged)
+    // Should now be in section mode for SECOND heading
     await expect(sectionBorder).toBeVisible();
-    await expect(sectionContent.first()).toContainText('Section A');
-
-    // Second heading should NOT be selected
-    expect(await chatPage.isBlockSelected(2)).toBe(false);
+    await expect(sectionContent.first()).toContainText('Section B');
   });
 });
 

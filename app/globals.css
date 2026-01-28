@@ -260,12 +260,31 @@
     box-shadow: none;
   }
 
-  .block-section {
+  /* Card container - created by double-clicking gutter */
+  .block-card {
     display: grid;
     gap: 16px;
     border: 1px solid var(--gray-200);
     border-radius: 8px;
     padding: 16px;
+    position: relative;
+  }
+
+  .block-card .card-controls {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .block-card:hover .card-controls {
+    opacity: 1;
+  }
+
+  /* Non-card segment - renders blocks normally */
+  .block-segment {
+    display: contents;
   }
 
   .doc-block {

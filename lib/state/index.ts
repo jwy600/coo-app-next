@@ -19,6 +19,7 @@ export * from './block';
 export * from './parser';
 export * from './settings';
 export * from './heading';
+export * from './card';
 
 /**
  * Create initial application state
@@ -31,8 +32,8 @@ export const createInitialState = (
   const now = nowFactory();
   return {
     mode: 'landing',
-    selectedBlockIds: [],
-    sectionHeadingId: null,
+    selectedBlockId: null,
+    cards: [],
     activeThreadId: threadId,
     threads: [
       {
@@ -58,59 +59,59 @@ export const createInitialState = (
  */
 export interface SetModeResult {
   mode: AppMode;
-  selectedBlockIds: string[];
+  selectedBlockId: string | null;
 }
 
 /**
  * Set application mode (landing or thread)
  *
- * @param selectedBlockIds - Current selected block IDs
+ * @param selectedBlockId - Current selected block ID
  * @param mode - Target mode
- * @returns New mode and selectedBlockIds (cleared if entering landing)
+ * @returns New mode and selectedBlockId (cleared if entering landing)
  */
 export const setMode = (
-  selectedBlockIds: string[],
+  selectedBlockId: string | null,
   mode: AppMode
 ): SetModeResult => {
   if (mode === 'landing') {
-    return { mode, selectedBlockIds: [] };
+    return { mode, selectedBlockId: null };
   }
-  return { mode, selectedBlockIds };
+  return { mode, selectedBlockId };
 };
 
 /**
- * Result of clearSelectedBlocks - contains only the fields that change
+ * Result of clearSelection - contains only the fields that change
  */
-export interface ClearSelectedBlocksResult {
-  selectedBlockIds: string[];
+export interface ClearSelectionResult {
+  selectedBlockId: string | null;
   blocks: Block[];
 }
 
 /**
- * Clear all selected blocks and reset their session state
+ * Clear selected block and reset its session state
  *
  * When exiting block mode, we need to:
- * 1. Clear selectedBlockIds (exit block mode)
- * 2. Clear each block's session state (selections, isRewritten, prevText)
+ * 1. Clear selectedBlockId (exit block mode)
+ * 2. Clear the block's session state (selections, isRewritten, prevText)
  *
  * This ensures each block mode session is independent - undo only works
  * within the current session, and once you exit, the rewrite becomes permanent.
  *
- * @param selectedBlockIds - Current selected block IDs
+ * @param selectedBlockId - Current selected block ID (null if none)
  * @param blocks - All blocks
- * @returns New selectedBlockIds (empty) and blocks with cleared session state
+ * @returns New selectedBlockId (null) and blocks with cleared session state
  */
-export const clearSelectedBlocks = (
-  selectedBlockIds: string[],
+export const clearSelection = (
+  selectedBlockId: string | null,
   blocks: Block[]
-): ClearSelectedBlocksResult => {
-  if (selectedBlockIds.length === 0) {
-    return { selectedBlockIds: [], blocks };
+): ClearSelectionResult => {
+  if (selectedBlockId === null) {
+    return { selectedBlockId: null, blocks };
   }
 
-  // Clear the session state for all selected blocks
+  // Clear the session state for the selected block
   const updatedBlocks = blocks.map((block) => {
-    if (!selectedBlockIds.includes(block.id)) return block;
+    if (block.id !== selectedBlockId) return block;
 
     return {
       ...block,
@@ -121,50 +122,44 @@ export const clearSelectedBlocks = (
   });
 
   return {
-    selectedBlockIds: [],
+    selectedBlockId: null,
     blocks: updatedBlocks,
   };
 };
 
 /**
- * Result of toggleBlockInSelection - contains only selectedBlockIds
+ * Result of selectBlock - contains only selectedBlockId
  */
-export interface ToggleBlockResult {
-  selectedBlockIds: string[];
+export interface SelectBlockResult {
+  selectedBlockId: string | null;
 }
 
 /**
- * Toggle a block in the selection set (add if not present, remove if present)
+ * Select a block (single selection only)
  *
- * Selection is additive - clicking a block adds/removes it from the set.
- * The array maintains selection order (useful for export).
+ * Clicking a block:
+ * - If not selected: select it (deselect previous)
+ * - If already selected: deselect it
  *
  * @param mode - Current app mode (selection only allowed in 'thread' mode)
- * @param selectedBlockIds - Current selected block IDs
- * @param blockId - Block ID to toggle
- * @returns New selectedBlockIds
+ * @param selectedBlockId - Current selected block ID (null if none)
+ * @param blockId - Block ID to select/deselect
+ * @returns New selectedBlockId
  */
-export const toggleBlockInSelection = (
+export const selectBlock = (
   mode: AppMode,
-  selectedBlockIds: string[],
+  selectedBlockId: string | null,
   blockId: string
-): ToggleBlockResult => {
+): SelectBlockResult => {
   if (mode !== 'thread') {
-    return { selectedBlockIds: [] };
+    return { selectedBlockId: null };
   }
 
-  const isSelected = selectedBlockIds.includes(blockId);
-
-  if (isSelected) {
-    // Remove from selection
-    return {
-      selectedBlockIds: selectedBlockIds.filter((id) => id !== blockId),
-    };
+  // Toggle: if same block, deselect; otherwise select the new block
+  if (selectedBlockId === blockId) {
+    return { selectedBlockId: null };
   }
 
-  // Add to selection (headings and paragraphs can all be multi-selected)
-  return {
-    selectedBlockIds: [...selectedBlockIds, blockId],
-  };
+  return { selectedBlockId: blockId };
 };
 

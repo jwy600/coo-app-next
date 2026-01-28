@@ -6,8 +6,8 @@ import {
   updateThreadTitle,
   getThreadById,
   createThread,
-  clearSelectedBlocks,
-  toggleBlockInSelection,
+  clearSelection,
+  selectBlock,
   getBlockById,
   addUserMessage,
   addAssistantMessage,
@@ -20,7 +20,6 @@ import {
   getLastAssistantResponseId,
 } from '@/lib/state';
 import { AppState } from '@/types/state';
-import { Block } from '@/types/block';
 
 // Helper factories
 const idFactory = () => 'test-id-' + Math.random().toString(36).substr(2, 9);
@@ -36,8 +35,10 @@ describe('State Management - Core Functions', () => {
   describe('createInitialState', () => {
     it('should create initial state with default values', () => {
       expect(state).toHaveProperty('mode', 'landing');
-      expect(state).toHaveProperty('selectedBlockIds');
-      expect(state.selectedBlockIds).toEqual([]);
+      expect(state).toHaveProperty('selectedBlockId');
+      expect(state.selectedBlockId).toBeNull();
+      expect(state).toHaveProperty('cards');
+      expect(state.cards).toEqual([]);
       expect(state).toHaveProperty('activeThreadId');
       expect(state.threads).toHaveLength(1);
       expect(state.blocks).toHaveLength(0);
@@ -51,21 +52,21 @@ describe('State Management - Core Functions', () => {
 
   describe('setMode', () => {
     it('should set mode to thread', () => {
-      const result = setMode(state.selectedBlockIds, 'thread');
+      const result = setMode(state.selectedBlockId, 'thread');
       expect(result.mode).toBe('thread');
     });
 
-    it('should set mode to landing and clear selected blocks', () => {
-      const selectedBlockIds = ['some-block-id'];
-      const result = setMode(selectedBlockIds, 'landing');
+    it('should set mode to landing and clear selected block', () => {
+      const selectedBlockId = 'some-block-id';
+      const result = setMode(selectedBlockId, 'landing');
       expect(result.mode).toBe('landing');
-      expect(result.selectedBlockIds).toEqual([]);
+      expect(result.selectedBlockId).toBeNull();
     });
 
     it('should maintain immutability', () => {
-      const originalSelectedBlockIds = ['block-1'];
-      const result = setMode(originalSelectedBlockIds, 'thread');
-      expect(result.selectedBlockIds).toBe(originalSelectedBlockIds); // Same reference when not clearing
+      const originalSelectedBlockId = 'block-1';
+      const result = setMode(originalSelectedBlockId, 'thread');
+      expect(result.selectedBlockId).toBe(originalSelectedBlockId); // Same value when not clearing
       expect(result).not.toBe(state);
     });
   });
@@ -107,14 +108,14 @@ describe('State Management - Core Functions', () => {
     });
   });
 
-  describe('clearSelectedBlocks', () => {
-    it('should clear all selected block ids', () => {
-      const selectedBlockIds = ['block-123', 'block-456'];
-      const result = clearSelectedBlocks(selectedBlockIds, state.blocks);
-      expect(result.selectedBlockIds).toEqual([]);
+  describe('clearSelection', () => {
+    it('should clear selected block id', () => {
+      const selectedBlockId = 'block-123';
+      const result = clearSelection(selectedBlockId, state.blocks);
+      expect(result.selectedBlockId).toBeNull();
     });
 
-    it('should clear session state from selected blocks', () => {
+    it('should clear session state from selected block', () => {
       const blocks = [
         {
           id: 'block-1',
@@ -127,40 +128,39 @@ describe('State Management - Core Functions', () => {
           isRewritten: true,
         },
       ];
-      const selectedBlockIds = ['block-1'];
-      const result = clearSelectedBlocks(selectedBlockIds, blocks);
+      const selectedBlockId = 'block-1';
+      const result = clearSelection(selectedBlockId, blocks);
       expect(result.blocks[0].selections).toEqual([]);
       expect(result.blocks[0].prevText).toBeNull();
       expect(result.blocks[0].isRewritten).toBe(false);
     });
+
+    it('should return unchanged state when no block selected', () => {
+      const result = clearSelection(null, state.blocks);
+      expect(result.selectedBlockId).toBeNull();
+      expect(result.blocks).toBe(state.blocks);
+    });
   });
 
-  describe('toggleBlockInSelection', () => {
-    it('should add a block when none is selected', () => {
-      const result = toggleBlockInSelection('thread', [], 'block-1');
-      expect(result.selectedBlockIds).toEqual(['block-1']);
+  describe('selectBlock', () => {
+    it('should select a block when none is selected', () => {
+      const result = selectBlock('thread', null, 'block-1');
+      expect(result.selectedBlockId).toBe('block-1');
     });
 
-    it('should remove a block when same block is clicked', () => {
-      const result = toggleBlockInSelection('thread', ['block-1'], 'block-1');
-      expect(result.selectedBlockIds).toEqual([]);
+    it('should deselect when same block is clicked (toggle)', () => {
+      const result = selectBlock('thread', 'block-1', 'block-1');
+      expect(result.selectedBlockId).toBeNull();
     });
 
-    it('should add another block to selection (multi-select)', () => {
-      const result = toggleBlockInSelection('thread', ['block-1'], 'block-2');
-      expect(result.selectedBlockIds).toEqual(['block-1', 'block-2']);
+    it('should select new block when different block is clicked (single-select)', () => {
+      const result = selectBlock('thread', 'block-1', 'block-2');
+      expect(result.selectedBlockId).toBe('block-2');
     });
 
     it('should not select block when not in thread mode', () => {
-      const result = toggleBlockInSelection('landing', [], 'block-1');
-      expect(result.selectedBlockIds).toEqual([]);
-    });
-
-    it('should maintain selection order', () => {
-      let result = toggleBlockInSelection('thread', [], 'block-3');
-      result = toggleBlockInSelection('thread', result.selectedBlockIds, 'block-1');
-      result = toggleBlockInSelection('thread', result.selectedBlockIds, 'block-2');
-      expect(result.selectedBlockIds).toEqual(['block-3', 'block-1', 'block-2']);
+      const result = selectBlock('landing', null, 'block-1');
+      expect(result.selectedBlockId).toBeNull();
     });
   });
 

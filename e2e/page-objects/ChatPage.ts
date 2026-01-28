@@ -64,20 +64,26 @@ export class ChatPage {
 
   /**
    * Select a block by clicking its gutter handle
+   * Note: Gutter click has a 200ms delay to distinguish from double-click
    */
   async selectBlock(index: number): Promise<void> {
     const block = this.getBlock(index);
     const gutterHandle = block.locator('.gutter-handle');
     await gutterHandle.click();
+    // Wait for the click delay (200ms) plus a small buffer for state update
+    await this.page.waitForTimeout(250);
   }
 
   /**
    * Select a block by ID
+   * Note: Gutter click has a 200ms delay to distinguish from double-click
    */
   async selectBlockById(blockId: string): Promise<void> {
     const block = this.getBlockById(blockId);
     const gutterHandle = block.locator('.gutter-handle');
     await gutterHandle.click();
+    // Wait for the click delay (200ms) plus a small buffer for state update
+    await this.page.waitForTimeout(250);
   }
 
   /**
@@ -352,36 +358,6 @@ export class ChatPage {
   }
 
   /**
-   * Get section border element (visible when in section mode)
-   */
-  getSectionBorder(): Locator {
-    return this.page.locator('.block-section');
-  }
-
-  /**
-   * Check if section mode is active (section border visible)
-   */
-  async isInSectionMode(): Promise<boolean> {
-    return await this.getSectionBorder().isVisible();
-  }
-
-  /**
-   * Enter section mode by double-clicking a heading block's gutter
-   */
-  async enterSectionMode(headingIndex: number): Promise<void> {
-    const block = this.getBlock(headingIndex);
-    const gutterHandle = block.locator('.gutter-handle');
-    await gutterHandle.dblclick();
-  }
-
-  /**
-   * Get blocks inside the current section (when in section mode)
-   */
-  getSectionBlocks(): Locator {
-    return this.getSectionBorder().locator('.doc-block');
-  }
-
-  /**
    * Get the count of selected blocks
    */
   async getSelectedBlockCount(): Promise<number> {
@@ -389,7 +365,7 @@ export class ChatPage {
   }
 
   /**
-   * Check if block is visually muted (not selected and not in section)
+   * Check if block is visually muted (not selected and not in a card)
    */
   async isBlockMuted(index: number): Promise<boolean> {
     const block = this.getBlock(index);
@@ -397,23 +373,121 @@ export class ChatPage {
     return className?.includes('is-muted') || false;
   }
 
+  // ==================== Card Mode Methods ====================
+
   /**
-   * Check if a block is inside the section border
+   * Create a card by double-clicking a block's gutter
    */
-  async isBlockInSection(index: number): Promise<boolean> {
-    const block = this.getBlock(index);
-    const sectionBorder = this.getSectionBorder();
+  async createCard(blockIndex: number): Promise<void> {
+    const block = this.getBlock(blockIndex);
+    const gutterHandle = block.locator('.gutter-handle');
+    await gutterHandle.dblclick();
+    // Wait for card to appear in DOM
+    await this.page.locator('.block-card').first().waitFor({ state: 'visible', timeout: 5000 });
+  }
 
-    // Check if section border exists and contains the block
-    if (!(await sectionBorder.isVisible())) {
-      return false;
-    }
+  /**
+   * Check if a block is inside a card
+   */
+  async isBlockInCard(blockIndex: number): Promise<boolean> {
+    const block = this.getBlock(blockIndex);
+    // Check if the block's ancestor is a .block-card
+    const cardContainer = block.locator('xpath=ancestor::div[contains(@class, "block-card")]');
+    const count = await cardContainer.count();
+    return count > 0;
+  }
 
-    // Get block ID and check if it's inside section
-    const blockId = await block.getAttribute('data-block-id');
-    if (!blockId) return false;
+  /**
+   * Get all card containers on the page
+   */
+  getCards(): Locator {
+    return this.page.locator('.block-card');
+  }
 
-    const sectionBlock = sectionBorder.locator(`[data-block-id="${blockId}"]`);
-    return await sectionBlock.isVisible();
+  /**
+   * Get count of cards on the page
+   */
+  async getCardCount(): Promise<number> {
+    return await this.getCards().count();
+  }
+
+  /**
+   * Get card controls for a specific card (by index)
+   */
+  getCardControls(cardIndex: number = 0): Locator {
+    return this.getCards().nth(cardIndex).locator('.card-controls');
+  }
+
+  /**
+   * Click the Clear button on a card to remove it
+   * Uses dispatchEvent for cross-browser compatibility when element is overlapped
+   */
+  async clickCardClear(cardIndex: number = 0): Promise<void> {
+    const card = this.getCards().nth(cardIndex);
+    // Ensure card is visible before trying to click
+    await card.waitFor({ state: 'visible' });
+    const clearButton = card.locator('.card-controls button', { hasText: 'Clear' });
+    // Use dispatchEvent to bypass pointer event interception issues in WebKit
+    await clearButton.dispatchEvent('click');
+    // Wait for card removal state change
+    await this.page.waitForTimeout(200);
+  }
+
+  /**
+   * Click the Export button on a card to open export dialog
+   * Uses dispatchEvent for cross-browser compatibility when element is overlapped
+   */
+  async clickCardExport(cardIndex: number = 0): Promise<void> {
+    const card = this.getCards().nth(cardIndex);
+    // Ensure card is visible before trying to click
+    await card.waitFor({ state: 'visible' });
+    const exportButton = card.locator('.card-controls button', { hasText: 'Export' });
+    // Use dispatchEvent to bypass pointer event interception issues in WebKit
+    await exportButton.dispatchEvent('click');
+    // Wait for dialog to open
+    await this.page.waitForTimeout(200);
+  }
+
+  /**
+   * Get the export card dialog
+   */
+  getExportCardDialog(): Locator {
+    return this.page.locator('[role="dialog"]');
+  }
+
+  /**
+   * Check if export card dialog is open
+   */
+  async isExportDialogOpen(): Promise<boolean> {
+    const dialog = this.getExportCardDialog();
+    const isVisible = await dialog.isVisible();
+    if (!isVisible) return false;
+    // Verify it's the export dialog by checking title
+    const title = dialog.locator('text=Export Card');
+    return await title.isVisible();
+  }
+
+  /**
+   * Fill the card title in export dialog and confirm
+   */
+  async confirmExport(title: string): Promise<void> {
+    const dialog = this.getExportCardDialog();
+    const input = dialog.locator('input#card-title');
+    await input.fill(title);
+    const confirmButton = dialog.locator('button', { hasText: 'Export' });
+    await confirmButton.click();
+    // Wait for dialog to close
+    await this.page.waitForTimeout(100);
+  }
+
+  /**
+   * Cancel export dialog
+   */
+  async cancelExport(): Promise<void> {
+    const dialog = this.getExportCardDialog();
+    const cancelButton = dialog.locator('button', { hasText: 'Cancel' });
+    await cancelButton.click();
+    // Wait for dialog to close
+    await this.page.waitForTimeout(100);
   }
 }

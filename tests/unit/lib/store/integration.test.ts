@@ -27,7 +27,8 @@ describe('Store Integration Tests', () => {
       blocks: [],
       activeThreadId: '',
       mode: 'landing',
-      selectedBlockIds: [],
+      selectedBlockId: null,
+      cards: [],
       isAwaitingResponse: false,
     });
 
@@ -96,8 +97,8 @@ describe('Store Integration Tests', () => {
       const blockId = useStore.getState().blocks[1].id; // Get assistant block
 
       // 1. User clicks block to select it
-      store.toggleBlockInSelection(blockId);
-      expect(useStore.getState().selectedBlockIds).toContain(blockId);
+      store.selectBlock(blockId);
+      expect(useStore.getState().selectedBlockId).toBe(blockId);
 
       // 2. User highlights text within block
       store.addSelection(blockId, 'important text');
@@ -117,9 +118,9 @@ describe('Store Integration Tests', () => {
       const blockAfterRemoval = useStore.getState().blocks.find((b) => b.id === blockId);
       expect(blockAfterRemoval?.selections).toHaveLength(1);
 
-      // 5. User deselects block
-      store.toggleBlockInSelection(blockId);
-      expect(useStore.getState().selectedBlockIds).toEqual([]);
+      // 5. User deselects block (toggle same block)
+      store.selectBlock(blockId);
+      expect(useStore.getState().selectedBlockId).toBeNull();
     });
   });
 
@@ -272,15 +273,15 @@ describe('Store Integration Tests', () => {
       const blockId = useStore.getState().blocks[0].id;
 
       // Chat mode (no block selected)
-      expect(useStore.getState().selectedBlockIds).toEqual([]);
+      expect(useStore.getState().selectedBlockId).toBeNull();
 
       // Switch to block mode
-      store.toggleBlockInSelection(blockId);
-      expect(useStore.getState().selectedBlockIds).toContain(blockId);
+      store.selectBlock(blockId);
+      expect(useStore.getState().selectedBlockId).toBe(blockId);
 
       // Back to chat mode
-      store.clearSelectedBlocks();
-      expect(useStore.getState().selectedBlockIds).toEqual([]);
+      store.clearSelection();
+      expect(useStore.getState().selectedBlockId).toBeNull();
     });
 
     it('should clear selection when switching to landing mode', () => {
@@ -294,11 +295,11 @@ describe('Store Integration Tests', () => {
       ]);
 
       const blockId = useStore.getState().blocks[0].id;
-      store.toggleBlockInSelection(blockId);
+      store.selectBlock(blockId);
 
       // Switch to landing mode
       store.setMode('landing');
-      expect(useStore.getState().selectedBlockIds).toEqual([]);
+      expect(useStore.getState().selectedBlockId).toBeNull();
     });
   });
 });

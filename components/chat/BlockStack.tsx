@@ -1,19 +1,61 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Block } from '@/types/block';
+import { Card } from '@/types/card';
 import { DocBlock } from './DocBlock';
-import { getSectionRange } from '@/lib/state/heading';
+import { CardControls } from './CardControls';
+
+/**
+ * Segment represents a group of consecutive blocks
+ * Either in a card (with cardId) or not (cardId = null)
+ */
+interface BlockSegment {
+  cardId: string | null;
+  blocks: Block[];
+}
+
+/**
+ * Group blocks into segments based on card membership
+ * Maintains document order while grouping consecutive blocks in the same card
+ */
+function groupBlocksIntoSegments(blocks: Block[], cards: Card[]): BlockSegment[] {
+  // Build lookup: blockId → cardId
+  const blockToCard = new Map<string, string>();
+  cards.forEach((card) => {
+    card.blockIds.forEach((blockId) => blockToCard.set(blockId, card.id));
+  });
+
+  const segments: BlockSegment[] = [];
+  let currentSegment: BlockSegment | null = null;
+
+  for (const block of blocks) {
+    const cardId = blockToCard.get(block.id) || null;
+
+    if (!currentSegment || currentSegment.cardId !== cardId) {
+      // Start a new segment
+      currentSegment = { cardId, blocks: [block] };
+      segments.push(currentSegment);
+    } else {
+      // Add to current segment
+      currentSegment.blocks.push(block);
+    }
+  }
+
+  return segments;
+}
 
 /**
  * Client Component - Container for multiple blocks
- * Handles section mode display and block selection
+ * Handles card display and block selection
  */
 interface BlockStackProps {
   blocks: Block[];
-  selectedBlockIds: string[];
-  sectionHeadingId: string | null;
+  selectedBlockId: string | null;
+  cards: Card[];
   onBlockSelect?: (blockId: string) => void;
-  onEnterSectionMode?: (headingId: string) => void;
+  onAddCard?: (anchorBlockId: string) => void;
+  onRemoveCard?: (cardId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -21,29 +63,43 @@ interface BlockStackProps {
 
 export function BlockStack({
   blocks,
-  selectedBlockIds,
-  sectionHeadingId,
+  selectedBlockId,
+  cards,
   onBlockSelect,
-  onEnterSectionMode,
+  onAddCard,
+  onRemoveCard,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
 }: BlockStackProps) {
-  // Get section range if in section mode
-  const sectionRange = sectionHeadingId
-    ? getSectionRange(blocks, sectionHeadingId)
-    : null;
+  // Build lookup for card membership
+  const blockToCard = useMemo(() => {
+    const map = new Map<string, string>();
+    cards.forEach((card) => {
+      card.blockIds.forEach((blockId) => map.set(blockId, card.id));
+    });
+    return map;
+  }, [cards]);
 
-  const renderBlock = (block: Block, isInSection: boolean = false) => {
-    const isSelected = selectedBlockIds.includes(block.id);
+  // Group blocks into segments
+  const segments = useMemo(
+    () => groupBlocksIntoSegments(blocks, cards),
+    [blocks, cards]
+  );
+
+  const renderBlock = (block: Block, isInCard: boolean = false) => {
+    const isSelected = selectedBlockId === block.id;
+    const cardId = blockToCard.get(block.id);
+
     return (
       <DocBlock
         key={block.id}
         block={block}
         isSelected={isSelected}
-        isInSection={isInSection}
+        isInCard={isInCard}
+        cardId={cardId}
         onSelect={onBlockSelect}
-        onEnterSectionMode={onEnterSectionMode}
+        onAddCard={onAddCard}
         onRemoveSelection={onRemoveSelection}
         onClearSelections={onClearSelections}
         onRewrite={onRewrite}
@@ -51,8 +107,8 @@ export function BlockStack({
     );
   };
 
-  // No section mode - render all blocks normally
-  if (!sectionRange) {
+  // No cards - render all blocks normally
+  if (cards.length === 0) {
     return (
       <div className="block-stack">
         {blocks.map((block) => renderBlock(block, false))}
@@ -60,19 +116,31 @@ export function BlockStack({
     );
   }
 
-  // Section mode - group the section with a border
-  const { startIndex, endIndex } = sectionRange;
-  const beforeSection = blocks.slice(0, startIndex);
-  const sectionBlocks = blocks.slice(startIndex, endIndex + 1);
-  const afterSection = blocks.slice(endIndex + 1);
-
+  // Render segments (cards and non-card blocks)
   return (
     <div className="block-stack">
-      {beforeSection.map((block) => renderBlock(block, false))}
-      <div className="block-section">
-        {sectionBlocks.map((block) => renderBlock(block, true))}
-      </div>
-      {afterSection.map((block) => renderBlock(block, false))}
+      {segments.map((segment, index) => {
+        if (segment.cardId) {
+          // Card segment - render with border and controls
+          return (
+            <div key={segment.cardId} className="block-card">
+              <CardControls
+                cardId={segment.cardId}
+                cardBlocks={segment.blocks}
+                onRemove={() => onRemoveCard?.(segment.cardId!)}
+              />
+              {segment.blocks.map((block) => renderBlock(block, true))}
+            </div>
+          );
+        }
+
+        // Non-card segment - render blocks normally
+        return (
+          <div key={`segment-${index}`} className="block-segment">
+            {segment.blocks.map((block) => renderBlock(block, false))}
+          </div>
+        );
+      })}
     </div>
   );
 }

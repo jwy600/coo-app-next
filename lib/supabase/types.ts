@@ -31,6 +31,14 @@ export interface DbBlock {
   is_rewritten: boolean;
 }
 
+export interface DbCard {
+  id: string;
+  message_id: string;
+  anchor_block_id: string;
+  block_ids: string[]; // JSONB array
+  created_at: string; // ISO timestamp
+}
+
 /**
  * Data structure for persisting a thread snapshot
  */

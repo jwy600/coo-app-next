@@ -14,10 +14,11 @@ function resetStore() {
   const state = useStore.getState();
   // Set initial state values
   state.mode = 'landing';
-  state.selectedBlockIds = [];
+  state.selectedBlockId = null;
   state.activeThreadId = '';
   state.threads = [];
   state.blocks = [];
+  state.cards = [];
 }
 
 describe('User Flow Tests', () => {
@@ -78,30 +79,30 @@ describe('User Flow Tests', () => {
       addAssistantMessage(splitIntoBlocks(assistantText));
 
       // Select a block
-      const toggleBlockInSelection = useStore.getState().toggleBlockInSelection;
+      const selectBlock = useStore.getState().selectBlock;
       const blocks = useStore.getState().blocks;
       const blockId = blocks[0]?.id;
 
       expect(blockId).toBeDefined();
-      toggleBlockInSelection(blockId!);
+      selectBlock(blockId!);
 
       // Verify block is selected
       const state = useStore.getState();
-      expect(state.selectedBlockIds).toContain(blockId);
+      expect(state.selectedBlockId).toBe(blockId);
     });
 
     it('should handle block transformation actions', async () => {
       // Setup: Create thread with selected block
       const createThread = useStore.getState().createThread;
       const addAssistantMessage = useStore.getState().addAssistantMessage;
-      const toggleBlockInSelection = useStore.getState().toggleBlockInSelection;
-      
+      const selectBlock = useStore.getState().selectBlock;
+
       createThread();
       addAssistantMessage(splitIntoBlocks('React is a JavaScript library.'));
 
       const blocks = useStore.getState().blocks;
       const blockId = blocks[0]?.id;
-      toggleBlockInSelection(blockId!);
+      selectBlock(blockId!);
       
       // Test ELI5 transformation
       // (In real app, this would call handleBlockAction from useComposer)
@@ -212,9 +213,9 @@ describe('User Flow Tests', () => {
     it('should clear selection and return to landing mode', () => {
       const createThread = useStore.getState().createThread;
       const addAssistantMessage = useStore.getState().addAssistantMessage;
-      const toggleBlockInSelection = useStore.getState().toggleBlockInSelection;
+      const selectBlock = useStore.getState().selectBlock;
       const setMode = useStore.getState().setMode;
-      const clearSelectedBlocks = useStore.getState().clearSelectedBlocks;
+      const clearSelection = useStore.getState().clearSelection;
 
       // Setup: Create thread with selected block
       createThread();
@@ -223,28 +224,28 @@ describe('User Flow Tests', () => {
 
       const blocks = useStore.getState().blocks;
       const blockId = blocks[0]?.id;
-      toggleBlockInSelection(blockId!);
+      selectBlock(blockId!);
 
       // Verify selection
       let state = useStore.getState();
-      expect(state.selectedBlockIds).toContain(blockId);
+      expect(state.selectedBlockId).toBe(blockId);
       expect(state.mode).toBe('thread');
 
       // Return to landing
-      clearSelectedBlocks();
+      clearSelection();
       setMode('landing');
 
       // Verify landing state
       state = useStore.getState();
       expect(state.mode).toBe('landing');
-      expect(state.selectedBlockIds).toEqual([]);
+      expect(state.selectedBlockId).toBeNull();
     });
   });
 
   describe('Flow 6: Keyboard Shortcuts', () => {
     it('should clear block selection on Escape key', () => {
-      const toggleBlockInSelection = useStore.getState().toggleBlockInSelection;
-      const clearSelectedBlocks = useStore.getState().clearSelectedBlocks;
+      const selectBlock = useStore.getState().selectBlock;
+      const clearSelection = useStore.getState().clearSelection;
       const createThread = useStore.getState().createThread;
       const addAssistantMessage = useStore.getState().addAssistantMessage;
       const setMode = useStore.getState().setMode;
@@ -256,18 +257,18 @@ describe('User Flow Tests', () => {
 
       const blocks = useStore.getState().blocks;
       const blockId = blocks[0]?.id;
-      toggleBlockInSelection(blockId!);
+      selectBlock(blockId!);
 
       // Verify selection
       let state = useStore.getState();
-      expect(state.selectedBlockIds).toContain(blockId);
+      expect(state.selectedBlockId).toBe(blockId);
 
       // Simulate Escape key
-      clearSelectedBlocks();
+      clearSelection();
 
       // Verify cleared
       state = useStore.getState();
-      expect(state.selectedBlockIds).toEqual([]);
+      expect(state.selectedBlockId).toBeNull();
     });
   });
 });

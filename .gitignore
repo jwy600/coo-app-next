@@ -36,6 +36,8 @@ data/supabaseConfig.js
 docs/
 codemaps/
 .reports
+next-env.d.ts
+futureimprovement.md
 
 # Pencil
 *.pen

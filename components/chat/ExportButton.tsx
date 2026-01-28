@@ -8,7 +8,8 @@ import {
   useStore,
   selectActiveThread,
   selectActiveThreadBlocks,
-  selectBlocksForExport,
+  selectCards,
+  selectAllCardBlocks,
 } from '@/lib/store/useStore';
 import {
   threadToMarkdown,
@@ -18,58 +19,23 @@ import {
   downloadMarkdown,
 } from '@/lib/export';
 import { ExportCardDialog } from './ExportCardDialog';
-import { getSectionBlockIds } from '@/lib/state';
 
 /**
- * Export button for downloading thread or selected blocks as markdown
+ * Export button for downloading thread or all cards as markdown
  *
- * - No blocks selected: "Export" → exports entire thread
- * - Section mode: "Export Card" → exports section content (excluding heading)
- * - Blocks selected: "Export Card" → opens dialog for card title
+ * - No cards: "Export" → exports entire thread
+ * - Has cards: "Export All Cards" → opens dialog, exports all cards combined
  */
 export function ExportButton() {
   const activeThread = useStore(selectActiveThread);
   const allBlocks = useStore(useShallow(selectActiveThreadBlocks));
-  const blocksForExport = useStore(useShallow(selectBlocksForExport));
-  const selectedBlockIds = useStore((state) => state.selectedBlockIds);
-  const sectionHeadingId = useStore((state) => state.sectionHeadingId);
-  const blocks = useStore((state) => state.blocks);
+  const cards = useStore(selectCards);
+  const allCardBlocks = useStore(useShallow(selectAllCardBlocks));
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const hasMessages = activeThread && activeThread.messages.length > 0;
-  const isInSectionMode = sectionHeadingId !== null;
-  const hasSelection = selectedBlockIds.length > 0 || isInSectionMode;
-
-  // Get all section blocks (including heading) when in section mode
-  const sectionBlockIds = useMemo(() => {
-    if (!sectionHeadingId) return [];
-    return getSectionBlockIds(blocks, sectionHeadingId);
-  }, [sectionHeadingId, blocks]);
-
-  // Derived: whether any selected blocks are outside the current section
-  const isSelectionOutsideSection = useMemo(() => {
-    if (!sectionHeadingId || selectedBlockIds.length === 0) return false;
-    return selectedBlockIds.some((id) => !sectionBlockIds.includes(id));
-  }, [sectionHeadingId, selectedBlockIds, sectionBlockIds]);
-
-  // Compute blocks to export based on mode
-  const computedExportBlocks = useMemo(() => {
-    if (!isInSectionMode) {
-      // Normal mode - use selected blocks
-      return blocksForExport;
-    }
-
-    if (isSelectionOutsideSection && selectedBlockIds.length > 0) {
-      // Section mode + outside selection - combine and preserve document order
-      const outsideBlockIds = selectedBlockIds.filter((id) => !sectionBlockIds.includes(id));
-      const allExportIds = new Set([...sectionBlockIds, ...outsideBlockIds]);
-      return blocks.filter((b) => allExportIds.has(b.id));
-    }
-
-    // Section mode only - return section blocks in document order
-    return blocks.filter((b) => sectionBlockIds.includes(b.id));
-  }, [isInSectionMode, sectionBlockIds, blocks, isSelectionOutsideSection, selectedBlockIds, blocksForExport]);
+  const hasCards = cards.length > 0;
 
   /**
    * Export entire thread as markdown
@@ -87,15 +53,15 @@ export function ExportButton() {
   };
 
   /**
-   * Export selected blocks as a card
+   * Export all cards as a combined markdown file
    */
-  const handleExportCard = (title: string) => {
+  const handleExportAllCards = (title: string) => {
     if (!activeThread) return;
 
     const markdown = blocksToCardMarkdown(
       title,
-      activeThread.title, // original question
-      computedExportBlocks
+      activeThread.title,
+      allCardBlocks
     );
     const filename = generateCardFilename(title);
     downloadMarkdown(markdown, filename);
@@ -105,7 +71,7 @@ export function ExportButton() {
    * Handle button click - either export thread or open card dialog
    */
   const handleClick = () => {
-    if (hasSelection) {
+    if (hasCards) {
       setDialogOpen(true);
     } else {
       handleExportThread();
@@ -113,7 +79,7 @@ export function ExportButton() {
   };
 
   // Block count for display
-  const exportBlockCount = computedExportBlocks.length;
+  const exportBlockCount = allCardBlocks.length;
 
   return (
     <>
@@ -123,19 +89,19 @@ export function ExportButton() {
         onClick={handleClick}
         disabled={!hasMessages}
         title={
-          hasSelection
-            ? `Export ${exportBlockCount} block${exportBlockCount !== 1 ? 's' : ''} as card`
+          hasCards
+            ? `Export ${exportBlockCount} block${exportBlockCount !== 1 ? 's' : ''} from ${cards.length} card${cards.length !== 1 ? 's' : ''}`
             : hasMessages
               ? 'Export thread as markdown'
               : 'No messages to export'
         }
-        aria-label={hasSelection ? 'Export card' : 'Export thread'}
+        aria-label={hasCards ? 'Export all cards' : 'Export thread'}
         className="gap-2"
       >
-        {hasSelection ? (
+        {hasCards ? (
           <>
             <FileText className="h-4 w-4" />
-            <span>Export Card</span>
+            <span>Export All Cards</span>
           </>
         ) : (
           <>
@@ -148,7 +114,7 @@ export function ExportButton() {
       <ExportCardDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onConfirm={handleExportCard}
+        onConfirm={handleExportAllCards}
         selectedBlockCount={exportBlockCount}
       />
     </>

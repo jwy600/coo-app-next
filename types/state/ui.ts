@@ -12,8 +12,7 @@ export type ComposerMode = 'chat' | 'block';
 
 export interface UIState {
   mode: AppMode;
-  selectedBlockIds: string[];
-  sectionHeadingId: string | null; // Heading ID when in section mode (double-click heading)
+  selectedBlockId: string | null; // Single block for composer/transform (null = none)
   isAwaitingResponse: boolean;
   error: string | null;
 }

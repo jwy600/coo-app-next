@@ -46,28 +46,26 @@ export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps
 
   return (
     <>
-      <div className="card-controls flex items-center gap-1 mb-2">
+      <div className="card-controls flex items-center gap-1">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={() => setDialogOpen(true)}
           title={`Export ${blockCount} block${blockCount !== 1 ? 's' : ''} as card`}
           aria-label="Export card"
-          className="h-7 px-2 text-xs"
+          className="h-7 w-7"
         >
-          <Download className="h-3 w-3 mr-1" />
-          Export
+          <Download className="h-3.5 w-3.5" />
         </Button>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onRemove}
           title="Remove card"
           aria-label="Remove card"
-          className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive"
         >
-          <X className="h-3 w-3 mr-1" />
-          Clear
+          <X className="h-3.5 w-3.5" />
         </Button>
       </div>
 

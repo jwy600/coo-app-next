@@ -263,17 +263,14 @@
   /* Card container - created by double-clicking gutter */
   .block-card {
     display: grid;
-    gap: 16px;
+    gap: 12px;
     border: 1px solid var(--gray-200);
     border-radius: 8px;
-    padding: 16px;
-    position: relative;
+    padding: 8px 16px 16px 16px;
   }
 
   .block-card .card-controls {
-    position: absolute;
-    top: 4px;
-    right: 8px;
+    justify-self: end;
     opacity: 0;
     transition: opacity 0.15s ease;
   }

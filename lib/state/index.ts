@@ -19,6 +19,7 @@ export * from './block';
 export * from './parser';
 export * from './settings';
 export * from './heading';
+export * from './card';
 
 /**
  * Create initial application state

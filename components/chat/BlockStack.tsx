@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { Block } from '@/types/block';
-import { Card } from '@/types/state';
+import { Card } from '@/types/card';
 import { DocBlock } from './DocBlock';
 import { CardControls } from './CardControls';
 

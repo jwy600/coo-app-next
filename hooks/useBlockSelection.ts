@@ -18,7 +18,7 @@
 
 import { useCallback } from 'react';
 import { useStore } from '@/lib/store/useStore';
-import { Card } from '@/types/state';
+import { Card } from '@/types/card';
 
 export interface UseBlockSelectionReturn {
   // Selection state (single block)

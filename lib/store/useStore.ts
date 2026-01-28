@@ -8,15 +8,17 @@ import { devtools, persist } from 'zustand/middleware';
 import { threadSlice, ThreadSlice } from './slices/threadSlice';
 import { blockSlice, BlockSlice } from './slices/blockSlice';
 import { uiSlice, UISlice } from './slices/uiSlice';
+import { cardSlice, CardSlice } from './slices/cardSlice';
 import { streamingSlice, StreamingSlice } from './slices/streamingSlice';
 import { settingsSlice, SettingsSlice } from './slices/settingsSlice';
-import { AppState, Card } from '@/types/state';
+import { AppState } from '@/types/state';
+import { Card } from '@/types/card';
 import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { isTestMode } from '@/lib/utils/testMode';
 
-export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice & SettingsSlice;
+export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & CardSlice & StreamingSlice & SettingsSlice;
 
 /**
  * Main store hook
@@ -31,6 +33,7 @@ export const useStore = create<StoreState>()(
         ...threadSlice(...args),
         ...blockSlice(...args),
         ...uiSlice(...args),
+        ...cardSlice(...args),
         ...streamingSlice(...args),
         ...settingsSlice(...args),
       }),

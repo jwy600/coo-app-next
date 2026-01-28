@@ -3,7 +3,7 @@
 import { useRef, useEffect, useMemo } from 'react';
 import { Message } from '@/types/message';
 import { Block, BlockData } from '@/types/block';
-import { Card } from '@/types/state';
+import { Card } from '@/types/card';
 import { UserMessage } from './UserMessage';
 import { AssistantMessage } from './AssistantMessage';
 import { PendingMessage } from './PendingMessage';

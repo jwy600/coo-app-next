@@ -2,7 +2,7 @@
 
 import { Message } from '@/types/message';
 import { Block } from '@/types/block';
-import { Card } from '@/types/state';
+import { Card } from '@/types/card';
 import { BlockStack } from './BlockStack';
 
 /**

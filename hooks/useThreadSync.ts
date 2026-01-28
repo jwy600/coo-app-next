@@ -11,10 +11,12 @@ import { useStore } from '@/lib/store/useStore';
 import { loadThreadFromSupabase } from '@/lib/supabase/threads';
 import { loadMessagesForThread } from '@/lib/supabase/messages';
 import { loadBlocksForThread } from '@/lib/supabase/blocks';
+import { loadCardsForThread } from '@/lib/supabase/cards';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import type { Thread } from '@/types/thread';
 import type { Message } from '@/types/message';
 import type { Block } from '@/types/block';
+import type { Card } from '@/types/card';
 
 export interface UseThreadSyncReturn {
   isLoading: boolean;
@@ -26,6 +28,7 @@ export interface UseThreadSyncOptions {
   initialThread?: Thread;
   initialMessages?: Message[];
   initialBlocks?: Block[];
+  initialCards?: Card[];
 }
 
 export function useThreadSync(
@@ -102,6 +105,7 @@ export function useThreadSync(
 
           const messages = await loadMessagesForThread(threadId);
           const blocks = await loadBlocksForThread(threadId);
+          const cards = await loadCardsForThread(threadId);
 
           const completeThread: Thread = {
             id: threadData.id,
@@ -122,6 +126,8 @@ export function useThreadSync(
 
           // Merge into store
           useStore.getState().mergeThreadFromSupabase(completeThread, messages, blocks);
+          // Set cards for this thread
+          useStore.getState().setCards(cards);
           setIsLoading(false);
           loadingRef.current = false;
           loadedThreadRef.current = threadId;

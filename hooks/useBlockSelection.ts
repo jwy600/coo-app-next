@@ -32,7 +32,6 @@ export interface UseBlockSelectionReturn {
   cards: Card[];
   addCard: (anchorBlockId: string) => void;
   removeCard: (cardId: string) => void;
-  clearAllCards: () => void;
   isBlockInCard: (blockId: string) => boolean;
   getCardForBlock: (blockId: string) => Card | undefined;
 }
@@ -45,7 +44,6 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   const clearSelectionAction = useStore((state) => state.clearSelection);
   const addCardAction = useStore((state) => state.addCard);
   const removeCardAction = useStore((state) => state.removeCard);
-  const clearAllCardsAction = useStore((state) => state.clearAllCards);
 
   /**
    * Check if a block is selected
@@ -93,13 +91,6 @@ export function useBlockSelection(): UseBlockSelectionReturn {
   );
 
   /**
-   * Clear all cards
-   */
-  const clearAllCards = useCallback(() => {
-    clearAllCardsAction();
-  }, [clearAllCardsAction]);
-
-  /**
    * Check if a block is in any card
    */
   const isBlockInCard = useCallback(
@@ -127,7 +118,6 @@ export function useBlockSelection(): UseBlockSelectionReturn {
     cards,
     addCard,
     removeCard,
-    clearAllCards,
     isBlockInCard,
     getCardForBlock,
   };

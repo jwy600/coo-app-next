@@ -23,7 +23,6 @@ export interface CardSlice {
   // Actions
   addCard: (anchorBlockId: string) => void;
   removeCard: (cardId: string) => void;
-  clearAllCards: () => void;
   setCards: (cards: Card[]) => void; // For loading from database
 }
 
@@ -136,17 +135,6 @@ export const cardSlice: StateCreator<
 
     // Persist deletion
     persistAsync(() => deleteCard(cardId), 'delete card');
-  },
-
-  clearAllCards: () => {
-    const { cards } = get();
-
-    // Delete all cards from database
-    cards.forEach((card) => {
-      persistAsync(() => deleteCard(card.id), 'delete card');
-    });
-
-    set({ cards: [] });
   },
 
   setCards: (cards) => {

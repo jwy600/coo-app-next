@@ -13,7 +13,7 @@ export default function ThreadNotFound() {
       <div className="text-center max-w-md">
         <h1 className="text-4xl font-semibold text-black mb-3">Thread not found</h1>
         <p className="text-base text-gray-600 mb-6">
-          The thread you're looking for doesn't exist or has been deleted.
+          The thread you&apos;re looking for doesn&apos;t exist or has been deleted.
         </p>
         <Link
           href="/"

@@ -17,7 +17,7 @@ export type KatexOptions = KatexLibOptions;
  * Automatically finds all elements with [data-tex] attribute
  * and renders them with KaTeX
  */
-export function useMathTypesetting(deps: any[] = []) {
+export function useMathTypesetting(deps: unknown[] = []) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,6 +44,7 @@ export function useMathTypesetting(deps: any[] = []) {
         node.textContent = tex;
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deps is passed dynamically by the caller
   }, deps);
 
   return containerRef;

@@ -25,6 +25,9 @@ export function MessageSkeleton() {
   );
 }
 
+// Fixed widths for skeleton items (deterministic for SSR/hydration)
+const SKELETON_WIDTHS = ['55%', '70%', '45%'];
+
 /**
  * ThreadListSkeleton Component
  *
@@ -33,11 +36,11 @@ export function MessageSkeleton() {
 export function ThreadListSkeleton() {
   return (
     <div className="animate-pulse space-y-3">
-      {[1, 2, 3].map((i) => (
+      {SKELETON_WIDTHS.map((width, i) => (
         <div
           key={i}
           className="h-12 bg-slate-200 rounded-full w-full"
-          style={{ maxWidth: `${Math.random() * 30 + 40}%` }}
+          style={{ maxWidth: width }}
         />
       ))}
     </div>

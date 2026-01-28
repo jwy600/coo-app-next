@@ -51,7 +51,7 @@ export function MathExample() {
       <div>
         <h3>Inline Math</h3>
         <p>
-          Einstein's famous equation: <Math tex="E = mc^2" display={false} />
+          Einstein&apos;s famous equation: <Math tex="E = mc^2" display={false} />
         </p>
       </div>
 

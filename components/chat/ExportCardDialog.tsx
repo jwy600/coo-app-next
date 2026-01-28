@@ -33,6 +33,7 @@ export function ExportCardDialog({
   // Reset title when dialog opens
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync title with defaultTitle when dialog opens
       setTitle(defaultTitle);
     }
   }, [open, defaultTitle]);

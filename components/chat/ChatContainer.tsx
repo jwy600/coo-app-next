@@ -64,7 +64,6 @@ export function ChatContainer({
       // Set thread mode on mount (don't check current mode to avoid fighting with Logo)
       setMode('thread');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId, setActiveThread, setMode]);
 
   // Composer hook (handles submission and block actions)

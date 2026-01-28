@@ -60,7 +60,7 @@ export function useComposer(): UseComposerReturn {
   const clearPrompt = useCallback(() => {
     setPrompt('');
     setError(null);
-  }, []);
+  }, [setError]);
 
   /**
    * Handle block action (ELI5, Translate, Expand, Example, Ask)
@@ -108,7 +108,7 @@ export function useComposer(): UseComposerReturn {
         setAwaitingResponse(false);
       }
     },
-    [contentForTransform, prompt, setAwaitingResponse, settings.translateLanguage]
+    [contentForTransform, prompt, setAwaitingResponse, settings.translateLanguage, setError]
   );
 
   /**
@@ -209,6 +209,7 @@ export function useComposer(): UseComposerReturn {
       updateThreadTitle,
       setAwaitingResponse,
       streamChat,
+      setError,
     ]
   );
 

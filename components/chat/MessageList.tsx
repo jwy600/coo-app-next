@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import { Message } from '@/types/message';
 import { Block, BlockData } from '@/types/block';
 import { Card } from '@/types/card';
@@ -56,11 +56,21 @@ export function MessageList({
   onRetry,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Capture timestamp when streaming starts for stable render
+  const [streamingTimestamp, setStreamingTimestamp] = useState<number | null>(null);
 
   // Auto-scroll to bottom when streaming starts for a new chat message
   // Block transformations and rewrite don't use streaming, so they won't trigger this
+  const streamingMessageId = streamingMessage?.messageId;
   useEffect(() => {
-    if (!streamingMessage) return;
+    if (!streamingMessageId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset timestamp when streaming ends
+      setStreamingTimestamp(null);
+      return;
+    }
+
+    // Capture timestamp when streaming starts
+    setStreamingTimestamp(Date.now());
 
     if (containerRef.current) {
       const lastChild = containerRef.current.lastElementChild;
@@ -70,7 +80,7 @@ export function MessageList({
         });
       }
     }
-  }, [streamingMessage?.messageId]);
+  }, [streamingMessageId]);
 
   // Memoize block lookup map to avoid recreation on every render
   const blockLookup = useMemo(
@@ -121,7 +131,7 @@ export function MessageList({
             id: streamingMessage.messageId,
             threadId: streamingMessage.threadId,
             role: 'assistant',
-            createdAt: Date.now(),
+            createdAt: streamingTimestamp ?? 0,
             content: streamingMessage.blocks.map((_, i) => ({ blockId: `stream-${i}` })),
             meta: {},
           }}

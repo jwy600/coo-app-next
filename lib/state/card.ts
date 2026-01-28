@@ -9,7 +9,7 @@
 
 import { Block } from '@/types/block';
 import { Card } from '@/types/card';
-import { getSectionBlockIds } from './heading';
+import { getHeadingCardBlockIds } from './heading';
 
 /**
  * Get block IDs for a card based on anchor block
@@ -36,8 +36,8 @@ export const getCardBlockIds = (
     return [anchorBlockId];
   }
 
-  // Heading: use section range logic
-  return getSectionBlockIds(messageBlocks, anchorBlockId);
+  // Heading: use heading card range logic
+  return getHeadingCardBlockIds(messageBlocks, anchorBlockId);
 };
 
 /**

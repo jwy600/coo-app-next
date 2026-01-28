@@ -84,7 +84,7 @@ test.describe('Card Mode - Basic Operations', () => {
   });
 
   test('should show card visual border around carded blocks', async ({ page }) => {
-    // Double-click a heading block's gutter (should card the entire section)
+    // Double-click a heading block's gutter (should card the entire heading content)
     const headingBlock = chatPage.getBlock(0);
     const gutterHandle = headingBlock.locator('.gutter-handle');
 
@@ -97,8 +97,8 @@ test.describe('Card Mode - Basic Operations', () => {
     // Verify card has proper styling (border, padding)
     await expect(cardBorder).toHaveCSS('border-style', 'solid');
 
-    // For heading, card should contain heading + its section blocks
-    // Introduction section: heading + 2 paragraphs = 3 blocks
+    // For heading, card should contain heading + its content blocks
+    // Introduction card: heading + 2 paragraphs = 3 blocks
     const blocksInCard = cardBorder.locator('.doc-block');
     await expect(blocksInCard).toHaveCount(3);
   });
@@ -127,7 +127,7 @@ test.describe('Card Mode - Basic Operations', () => {
     const firstBlock = chatPage.getBlock(1);
     await firstBlock.locator('.gutter-handle').dblclick();
 
-    // Create card for second section heading (block 3)
+    // Create card for second heading (block 3)
     const secondHeading = chatPage.getBlock(3);
     await secondHeading.locator('.gutter-handle').dblclick();
 
@@ -141,7 +141,7 @@ test.describe('Card Mode - Basic Operations', () => {
     const headingBlock = chatPage.getBlock(0);
     await headingBlock.locator('.gutter-handle').dblclick();
 
-    // Try to create card for paragraph inside the section (block 1)
+    // Try to create card for paragraph inside the card (block 1)
     // This should not create a new card since block 1 is already in a card
     const paragraphBlock = chatPage.getBlock(1);
     await paragraphBlock.locator('.gutter-handle').dblclick();
@@ -245,7 +245,7 @@ test.describe('Card Mode - Card Controls', () => {
   });
 
   test('should export card content as markdown', async ({ page }) => {
-    // Create a card with heading (includes section blocks)
+    // Create a card with heading (includes content blocks)
     await chatPage.createCard(0); // First heading creates card with 3 blocks
     await expect(page.locator('.block-card')).toBeVisible();
 
@@ -358,7 +358,7 @@ test.describe('Card Mode - Export Integration', () => {
     await chatPage.waitForResponse();
   });
 
-  test('should include all blocks in card when exporting heading section', async ({ page }) => {
+  test('should include all blocks in card when exporting heading card', async ({ page }) => {
     // Create a card for the first heading (includes 3 blocks: heading + 2 paragraphs)
     await chatPage.createCard(0);
     const card = page.locator('.block-card');
@@ -475,12 +475,12 @@ test.describe('Card Mode - Card and Selection Independence', () => {
   });
 
   test('should allow selecting block outside card without affecting card', async ({ page }) => {
-    // Create a card for the first heading section (blocks 0, 1, 2)
+    // Create a card for the first heading (blocks 0, 1, 2)
     await chatPage.createCard(0);
     const initialCardCount = await chatPage.getCardCount();
     expect(initialCardCount).toBe(1);
 
-    // Select a block outside the card (block 4 is in the second section)
+    // Select a block outside the card (block 4 is in the second heading's content)
     await chatPage.selectBlock(4);
 
     // Block should be selected
@@ -548,7 +548,7 @@ test.describe('Card Mode - Card and Selection Independence', () => {
   test('should maintain multiple cards when selecting blocks', async ({ page }) => {
     // Create two separate cards
     await chatPage.createCard(1); // First card with block 1
-    await chatPage.createCard(3); // Second card with section starting at block 3
+    await chatPage.createCard(3); // Second card with heading at block 3
 
     // Should have two cards
     const initialCardCount = await chatPage.getCardCount();

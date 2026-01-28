@@ -3,8 +3,8 @@ import { Block } from '@/types/block';
 /**
  * Heading-related pure functions
  *
- * Handles heading parsing, detection, and section scope.
- * A "section" is a heading plus all content blocks until the next heading
+ * Handles heading parsing, detection, and card scope.
+ * A heading "card" includes the heading plus all content blocks until the next heading
  * of the same or higher level (hierarchy-aware).
  */
 
@@ -54,14 +54,14 @@ export const hasHeading = (text: string): boolean => {
 };
 
 // ============================================================================
-// Section Range (Hierarchy-Aware)
+// Card Range (Hierarchy-Aware)
 // ============================================================================
 
 /**
- * Internal helper: find section end index given a starting index
- * Section ends at next heading of same or higher level
+ * Internal helper: find card end index given a starting index
+ * Card ends at next heading of same or higher level
  */
-const findSectionEndIndex = (
+const findCardEndIndex = (
   blocks: Block[],
   headingIndex: number,
   headingLevel: number
@@ -71,18 +71,18 @@ const findSectionEndIndex = (
     if (block.type === 'heading') {
       const level = getHeadingLevel(block.text);
       if (level <= headingLevel) {
-        // Found a heading of same or higher level - section ends before it
+        // Found a heading of same or higher level - card ends before it
         return i - 1;
       }
     }
   }
-  // No same/higher level heading found - section goes to end
+  // No same/higher level heading found - card goes to end
   return blocks.length - 1;
 };
 
 /**
- * Get section range for a heading block
- * Section ends at next heading of same or higher level (hierarchy-aware)
+ * Get card range for a heading block
+ * Card ends at next heading of same or higher level (hierarchy-aware)
  *
  * @param blocks - Array of blocks
  * @param headingId - ID of the heading block
@@ -90,9 +90,9 @@ const findSectionEndIndex = (
  *
  * @example
  * // blocks: [H1, p, H2, p, H1]
- * getSectionRange(blocks, 'h1-id')  → { startIndex: 0, endIndex: 3 }
+ * getHeadingCardRange(blocks, 'h1-id')  → { startIndex: 0, endIndex: 3 }
  */
-export const getSectionRange = (
+export const getHeadingCardRange = (
   blocks: Block[],
   headingId: string
 ): { startIndex: number; endIndex: number } | null => {
@@ -100,24 +100,24 @@ export const getSectionRange = (
   if (headingIndex === -1) return null;
 
   const headingLevel = getHeadingLevel(blocks[headingIndex].text);
-  const endIndex = findSectionEndIndex(blocks, headingIndex, headingLevel);
+  const endIndex = findCardEndIndex(blocks, headingIndex, headingLevel);
 
   return { startIndex: headingIndex, endIndex };
 };
 
 /**
- * Get block IDs that belong to a section (heading + all content)
- * This is hierarchy-aware: an H2 section includes nested H3s.
+ * Get block IDs that belong to a heading card (heading + all content)
+ * This is hierarchy-aware: an H2 card includes nested H3s.
  *
  * @param blocks - Array of blocks
  * @param headingId - ID of the heading block
- * @returns Array of block IDs in the section (including the heading)
+ * @returns Array of block IDs in the card (including the heading)
  */
-export const getSectionBlockIds = (
+export const getHeadingCardBlockIds = (
   blocks: Block[],
   headingId: string
 ): string[] => {
-  const range = getSectionRange(blocks, headingId);
+  const range = getHeadingCardRange(blocks, headingId);
   if (!range) return [];
 
   return blocks

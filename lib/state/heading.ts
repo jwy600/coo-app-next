@@ -36,13 +36,9 @@ export const getHeadingInfo = (text: string): HeadingInfo | null => {
 
 /**
  * Get heading level from text (counts # characters)
- * Returns 0 if not a valid heading
- *
- * @example
- * getHeadingLevel("## Title")  → 2
- * getHeadingLevel("Hello")     → 0
+ * Returns 0 if not a valid heading (internal use only)
  */
-export const getHeadingLevel = (text: string): number => {
+const getHeadingLevel = (text: string): number => {
   return getHeadingInfo(text)?.level ?? 0;
 };
 
@@ -55,18 +51,6 @@ export const getHeadingLevel = (text: string): number => {
  */
 export const hasHeading = (text: string): boolean => {
   return getHeadingInfo(text) !== null;
-};
-
-/**
- * Get heading prefix from text (e.g., "## ")
- * Returns empty string if not a heading
- *
- * @example
- * getHeadingPrefix("## Title")  → "## "
- * getHeadingPrefix("Hello")     → ""
- */
-export const getHeadingPrefix = (text: string): string => {
-  return getHeadingInfo(text)?.prefix ?? '';
 };
 
 // ============================================================================
@@ -141,23 +125,3 @@ export const getSectionBlockIds = (
     .map((b) => b.id);
 };
 
-// ============================================================================
-// Card Helpers
-// ============================================================================
-
-/**
- * Check if a block is in any of the given cards
- */
-export const isBlockInAnyCard = (blockId: string, cards: { blockIds: string[] }[]): boolean => {
-  return cards.some((card) => card.blockIds.includes(blockId));
-};
-
-/**
- * Get all cards that contain a specific block
- */
-export const getCardsContainingBlock = <T extends { blockIds: string[] }>(
-  blockId: string,
-  cards: T[]
-): T[] => {
-  return cards.filter((card) => card.blockIds.includes(blockId));
-};

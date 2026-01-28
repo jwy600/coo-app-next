@@ -426,7 +426,7 @@ export class ChatPage {
     const card = this.getCards().nth(cardIndex);
     // Ensure card is visible before trying to click
     await card.waitFor({ state: 'visible' });
-    const clearButton = card.locator('.card-controls button', { hasText: 'Clear' });
+    const clearButton = card.locator('button[aria-label="Remove card"]');
     // Use dispatchEvent to bypass pointer event interception issues in WebKit
     await clearButton.dispatchEvent('click');
     // Wait for card removal state change
@@ -441,7 +441,7 @@ export class ChatPage {
     const card = this.getCards().nth(cardIndex);
     // Ensure card is visible before trying to click
     await card.waitFor({ state: 'visible' });
-    const exportButton = card.locator('.card-controls button', { hasText: 'Export' });
+    const exportButton = card.locator('button[aria-label="Export card"]');
     // Use dispatchEvent to bypass pointer event interception issues in WebKit
     await exportButton.dispatchEvent('click');
     // Wait for dialog to open

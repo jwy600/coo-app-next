@@ -182,7 +182,7 @@ test.describe('Card Mode - Card Controls', () => {
     await expect(cardContainer).toBeVisible();
 
     // Use dispatchEvent to bypass pointer interception issues in WebKit
-    const clearButton = cardContainer.locator('.card-controls button', { hasText: 'Clear' });
+    const clearButton = cardContainer.locator('button[aria-label="Remove card"]');
     await clearButton.dispatchEvent('click');
 
     // Card should be removed

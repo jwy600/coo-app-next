@@ -2,20 +2,21 @@
 
 import { Message } from '@/types/message';
 import { Block } from '@/types/block';
+import { Card } from '@/types/state';
 import { BlockStack } from './BlockStack';
 
 /**
  * Client Component - Assistant message with blocks
- * Reference: legacy/app.js lines 575-595
- * Needs 'use client' for block selection state
+ * Needs 'use client' for block selection and card state
  */
 interface AssistantMessageProps {
   message: Message;
   blocks: Block[];
-  selectedBlockIds?: string[];
-  sectionHeadingId?: string | null;
+  selectedBlockId?: string | null;
+  cards?: Card[];
   onBlockSelect?: (blockId: string) => void;
-  onEnterSectionMode?: (headingId: string) => void;
+  onAddCard?: (anchorBlockId: string) => void;
+  onRemoveCard?: (cardId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -24,23 +25,28 @@ interface AssistantMessageProps {
 export function AssistantMessage({
   message,
   blocks,
-  selectedBlockIds = [],
-  sectionHeadingId = null,
+  selectedBlockId = null,
+  cards = [],
   onBlockSelect,
-  onEnterSectionMode,
+  onAddCard,
+  onRemoveCard,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
 }: AssistantMessageProps) {
+  // Filter cards to only those belonging to this message
+  const messageCards = cards.filter((c) => c.messageId === message.id);
+
   return (
     <div className="assistant-message">
       <span className="assistant-label">Coo</span>
       <BlockStack
         blocks={blocks}
-        selectedBlockIds={selectedBlockIds}
-        sectionHeadingId={sectionHeadingId}
+        selectedBlockId={selectedBlockId}
+        cards={messageCards}
         onBlockSelect={onBlockSelect}
-        onEnterSectionMode={onEnterSectionMode}
+        onAddCard={onAddCard}
+        onRemoveCard={onRemoveCard}
         onRemoveSelection={onRemoveSelection}
         onClearSelections={onClearSelections}
         onRewrite={onRewrite}

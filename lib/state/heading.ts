@@ -142,43 +142,22 @@ export const getSectionBlockIds = (
 };
 
 // ============================================================================
-// Section Mode (Mutual Exclusivity)
+// Card Helpers
 // ============================================================================
 
-export interface SectionModeState {
-  sectionHeadingId: string | null;
-  selectedBlockIds: string[];
-}
+/**
+ * Check if a block is in any of the given cards
+ */
+export const isBlockInAnyCard = (blockId: string, cards: { blockIds: string[] }[]): boolean => {
+  return cards.some((card) => card.blockIds.includes(blockId));
+};
 
 /**
- * Determine new section mode state when double-clicking a heading
- *
- * @param currentSectionHeadingId - Current section heading ID (null if not in section mode)
- * @param headingId - Heading being double-clicked
- * @returns New state, or null if no change needed (same heading double-clicked)
- *
- * @example
- * // Not in section mode → enter
- * enterSectionMode(null, 'h1')  → { sectionHeadingId: 'h1', ... }
- *
- * // Same heading → no change (exit via blank space click instead)
- * enterSectionMode('h1', 'h1')  → null
- *
- * // Different heading → switch to new heading
- * enterSectionMode('h1', 'h2')  → { sectionHeadingId: 'h2', ... }
+ * Get all cards that contain a specific block
  */
-export const enterSectionMode = (
-  currentSectionHeadingId: string | null,
-  headingId: string
-): SectionModeState | null => {
-  // Same heading → no change (user exits via blank space click)
-  if (currentSectionHeadingId === headingId) {
-    return null;
-  }
-
-  // Different heading OR not in section mode → enter/switch section mode
-  return {
-    sectionHeadingId: headingId,
-    selectedBlockIds: [],
-  };
+export const getCardsContainingBlock = <T extends { blockIds: string[] }>(
+  blockId: string,
+  cards: T[]
+): T[] => {
+  return cards.filter((card) => card.blockIds.includes(blockId));
 };

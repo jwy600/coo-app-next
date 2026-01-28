@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
  */
 interface ComposerProps {
   selectedBlockId: string | null;
-  isInSectionMode?: boolean;
   prompt: string;
   onPromptChange: (value: string) => void;
   onSubmit: (e: FormEvent) => void;
@@ -23,7 +22,6 @@ interface ComposerProps {
 
 export function Composer({
   selectedBlockId,
-  isInSectionMode = false,
   prompt,
   onPromptChange,
   onSubmit,
@@ -31,8 +29,8 @@ export function Composer({
   onBlockAction,
   disabled = false,
 }: ComposerProps) {
-  // Show block controls when block selected OR in section mode
-  const hasBlockSelected = !!selectedBlockId || isInSectionMode;
+  // Show block controls when a block is selected
+  const hasBlockSelected = !!selectedBlockId;
 
   return (
     <form

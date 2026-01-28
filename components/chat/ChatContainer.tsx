@@ -3,10 +3,6 @@
  *
  * Client Component - Main orchestrator for entire chat UI
  * Connects MessageList, Composer, BlockControls with real functionality
- *
- * Reference: legacy/app.js (overall structure)
- * Phase 7b: Wired up with custom hooks
- * Phase 8: Updated to accept initial server-loaded data
  */
 
 'use client';
@@ -85,50 +81,46 @@ export function ChatContainer({
 
   // Block selection hook
   const {
-    selectedBlockIds,
-    sectionHeadingId,
-    toggleBlockSelection,
-    enterSectionMode,
+    selectedBlockId,
+    selectBlock,
     clearSelection,
-    isSingleBlockMode,
     hasSelection,
-    isInSectionMode,
-    isComposerDisabled,
+    cards,
+    addCard,
+    removeCard,
   } = useBlockSelection();
 
-  // Text selection hook (for prompt input) - only active in single block mode
-  const singleSelectedBlockId = isSingleBlockMode ? selectedBlockIds[0] : null;
+  // Text selection hook (for prompt input) - only active when a block is selected
   const {
     captureSelection,
     removeSelection: removeSelectionFromHook,
     clearSelections: clearSelectionsFromHook,
-  } = useTextSelection(singleSelectedBlockId);
+  } = useTextSelection(selectedBlockId);
 
   // Wrap handlers to match MessageList expected signatures
   const handleRemoveSelection = (blockId: string, index: number) => {
-    // Verify blockId matches the single selected block
-    if (blockId === singleSelectedBlockId) {
+    // Verify blockId matches the selected block
+    if (blockId === selectedBlockId) {
       removeSelectionFromHook(index);
     }
   };
 
   const handleClearSelections = (blockId: string) => {
-    // Verify blockId matches the single selected block
-    if (blockId === singleSelectedBlockId) {
+    // Verify blockId matches the selected block
+    if (blockId === selectedBlockId) {
       clearSelectionsFromHook();
     }
   };
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts - Escape clears selection only (cards remain)
   useKeyboardShortcuts({
     Escape: clearSelection,
   });
 
   // Global click handler to deselect when clicking outside blocks or composer
-  // Reference: legacy/app.js lines 1154-1163
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Only handle if any blocks are selected
+      // Only handle if a block is selected
       if (!hasSelection) return;
 
       const target = event.target as HTMLElement;
@@ -184,7 +176,6 @@ export function ChatContainer({
       toggleRewrite(blockId, result.text);
 
       // DON'T clear selections - they should persist until user exits block mode
-      // clearSelectionsFromHook(); ← REMOVED
     } catch (error) {
       console.error('Rewrite failed:', error);
     }
@@ -204,6 +195,9 @@ export function ChatContainer({
     setShowOfflineBanner(isOfflineMode());
   }, []);
 
+  // Composer is disabled during submission or loading
+  const isComposerDisabled = isSubmitting || isLoadingThread;
+
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar with offline banner and export button */}
@@ -219,13 +213,14 @@ export function ChatContainer({
           <MessageList
             messages={messages}
             blocks={blocks}
-            selectedBlockIds={selectedBlockIds}
-            sectionHeadingId={sectionHeadingId}
+            selectedBlockId={selectedBlockId}
+            cards={cards}
             isPending={isSubmitting}
             error={error}
             streamingMessage={streamingMessage}
-            onBlockSelect={toggleBlockSelection}
-            onEnterSectionMode={enterSectionMode}
+            onBlockSelect={selectBlock}
+            onAddCard={addCard}
+            onRemoveCard={removeCard}
             onRemoveSelection={handleRemoveSelection}
             onClearSelections={handleClearSelections}
             onRewrite={handleRewrite}
@@ -237,14 +232,13 @@ export function ChatContainer({
       <div className="flex-shrink-0 p-4 pb-6">
         <div className="max-w-chat mx-auto">
           <Composer
-            selectedBlockId={singleSelectedBlockId}
-            isInSectionMode={isInSectionMode}
+            selectedBlockId={selectedBlockId}
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleSubmit}
             onSelectionCapture={captureSelection}
             onBlockAction={handleBlockAction}
-            disabled={isSubmitting || isLoadingThread || isComposerDisabled}
+            disabled={isComposerDisabled}
           />
         </div>
       </div>

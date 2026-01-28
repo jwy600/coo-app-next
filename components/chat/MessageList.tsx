@@ -3,6 +3,7 @@
 import { useRef, useEffect, useMemo } from 'react';
 import { Message } from '@/types/message';
 import { Block, BlockData } from '@/types/block';
+import { Card } from '@/types/state';
 import { UserMessage } from './UserMessage';
 import { AssistantMessage } from './AssistantMessage';
 import { PendingMessage } from './PendingMessage';
@@ -19,19 +20,19 @@ interface StreamingMessageData {
 
 /**
  * Client Component - Container for all messages in a thread
- * Reference: legacy/index.html line 44, legacy/app.js lines 409-424
  * Needs 'use client' for scroll handling and state
  */
 interface MessageListProps {
   messages: Message[];
   blocks: Block[];
-  selectedBlockIds?: string[];
-  sectionHeadingId?: string | null;
+  selectedBlockId?: string | null;
+  cards?: Card[];
   isPending?: boolean;
   error?: string | null;
   streamingMessage?: StreamingMessageData | null;
   onBlockSelect?: (blockId: string) => void;
-  onEnterSectionMode?: (headingId: string) => void;
+  onAddCard?: (anchorBlockId: string) => void;
+  onRemoveCard?: (cardId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -41,13 +42,14 @@ interface MessageListProps {
 export function MessageList({
   messages,
   blocks,
-  selectedBlockIds = [],
-  sectionHeadingId = null,
+  selectedBlockId = null,
+  cards = [],
   isPending = false,
   error = null,
   streamingMessage = null,
   onBlockSelect,
-  onEnterSectionMode,
+  onAddCard,
+  onRemoveCard,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
@@ -99,10 +101,11 @@ export function MessageList({
             key={message.id}
             message={message}
             blocks={messageBlocks}
-            selectedBlockIds={selectedBlockIds}
-            sectionHeadingId={sectionHeadingId}
+            selectedBlockId={selectedBlockId}
+            cards={cards}
             onBlockSelect={onBlockSelect}
-            onEnterSectionMode={onEnterSectionMode}
+            onAddCard={onAddCard}
+            onRemoveCard={onRemoveCard}
             onRemoveSelection={onRemoveSelection}
             onClearSelections={onClearSelections}
             onRewrite={onRewrite}
@@ -132,11 +135,12 @@ export function MessageList({
             prevText: null,
             isRewritten: false,
           }))}
-          selectedBlockIds={[]}
+          selectedBlockId={null}
+          cards={[]}
         />
       )}
 
-      {isPending && selectedBlockIds.length === 0 && !sectionHeadingId && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
+      {isPending && !selectedBlockId && cards.length === 0 && (!streamingMessage || streamingMessage.blocks.length === 0) && <PendingMessage />}
       {error && <ErrorMessage error={error} onRetry={onRetry} />}
     </div>
   );

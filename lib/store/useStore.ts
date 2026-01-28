@@ -10,12 +10,11 @@ import { blockSlice, BlockSlice } from './slices/blockSlice';
 import { uiSlice, UISlice } from './slices/uiSlice';
 import { streamingSlice, StreamingSlice } from './slices/streamingSlice';
 import { settingsSlice, SettingsSlice } from './slices/settingsSlice';
-import { AppState } from '@/types/state';
+import { AppState, Card } from '@/types/state';
 import { Block } from '@/types/block';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { isTestMode } from '@/lib/utils/testMode';
-import { getSectionRange } from '@/lib/state/heading';
 
 export type StoreState = AppState & ThreadSlice & BlockSlice & UISlice & StreamingSlice & SettingsSlice;
 
@@ -78,108 +77,73 @@ export const selectBlockById = (blockId: string) => (state: StoreState): Block |
   state.blocks.find((b) => b.id === blockId);
 
 /**
- * Select all currently selected blocks (in selection order)
+ * Select the currently selected block (single selection)
  */
-export const selectSelectedBlocks = (state: StoreState): Block[] =>
-  state.selectedBlockIds
-    .map((id) => state.blocks.find((b) => b.id === id))
-    .filter((b): b is Block => b !== undefined);
-
+export const selectSelectedBlock = (state: StoreState): Block | null =>
+  state.selectedBlockId
+    ? state.blocks.find((b) => b.id === state.selectedBlockId) || null
+    : null;
 
 /**
- * Select blocks for export - expands heading selections to include their sections
- * Non-heading blocks are included as-is, heading blocks include all content until next heading
- */
-export const selectBlocksForExport = (state: StoreState): Block[] => {
-  const { blocks, selectedBlockIds } = state;
-  const includeIndices = new Set<number>();
-
-  for (const blockId of selectedBlockIds) {
-    const index = blocks.findIndex((b) => b.id === blockId);
-    if (index === -1) continue;
-
-    const block = blocks[index];
-
-    if (block.type === 'heading') {
-      const range = getSectionRange(blocks, blockId);
-      if (range) {
-        for (let i = range.startIndex; i <= range.endIndex; i++) {
-          includeIndices.add(i);
-        }
-      }
-    } else {
-      includeIndices.add(index);
-    }
-  }
-
-  return [...includeIndices]
-    .sort((a, b) => a - b)
-    .map((i) => blocks[i]);
-};
-
-/**
- * Get section content blocks for a heading (excludes the heading itself)
- */
-const getSectionContentBlocks = (state: StoreState, headingId: string): Block[] => {
-  const { blocks } = state;
-  const range = getSectionRange(blocks, headingId);
-  if (!range) return [];
-
-  // Return content blocks only (startIndex + 1 to skip heading)
-  return blocks.slice(range.startIndex + 1, range.endIndex + 1);
-};
-
-/**
- * Select content blocks for transformation (used by API)
- * - Section mode: all content blocks in section (or narrowed selection)
- * - Direct heading selection: heading text
- * - Normal selection: selected blocks
+ * Select content for transformation (used by API)
+ * Simply returns the selected block if one is selected
  */
 export const selectContentForTransform = (state: StoreState): Block[] => {
-  const { sectionHeadingId, selectedBlockIds, blocks } = state;
+  const { selectedBlockId, blocks } = state;
 
-  // Section mode
-  if (sectionHeadingId) {
-    if (selectedBlockIds.length > 0) {
-      // Narrowed selection - return only explicitly selected paragraph(s)
-      return selectedBlockIds
-        .map((id) => blocks.find((b) => b.id === id))
-        .filter((b): b is Block => b !== undefined);
-    }
-    // No narrowed selection - return all section content blocks
-    return getSectionContentBlocks(state, sectionHeadingId);
-  }
+  if (!selectedBlockId) return [];
 
-  // Normal mode - return selected blocks
-  return selectedBlockIds
-    .map((id) => blocks.find((b) => b.id === id))
-    .filter((b): b is Block => b !== undefined);
+  const block = blocks.find((b) => b.id === selectedBlockId);
+  return block ? [block] : [];
 };
 
 /**
- * Check if in section mode (double-click heading)
+ * Select all cards
  */
-export const selectIsInSectionMode = (state: StoreState): boolean =>
-  state.sectionHeadingId !== null;
+export const selectCards = (state: StoreState): Card[] => state.cards;
 
 /**
- * Get section range when in section mode (for visual rendering)
+ * Select cards for a specific message
  */
-export const selectSectionRange = (state: StoreState): { startIndex: number; endIndex: number } | null => {
-  const { sectionHeadingId, blocks } = state;
-  if (!sectionHeadingId) return null;
+export const selectCardsByMessage = (messageId: string) => (state: StoreState): Card[] =>
+  state.cards.filter((c) => c.messageId === messageId);
 
-  return getSectionRange(blocks, sectionHeadingId);
+/**
+ * Check if a block is in any card
+ */
+export const selectIsBlockInCard = (blockId: string) => (state: StoreState): boolean =>
+  state.cards.some((c) => c.blockIds.includes(blockId));
+
+/**
+ * Get the card that contains a specific block (if any)
+ */
+export const selectCardContainingBlock = (blockId: string) => (state: StoreState): Card | null =>
+  state.cards.find((c) => c.blockIds.includes(blockId)) || null;
+
+/**
+ * Select blocks for a specific card (in document order)
+ */
+export const selectCardBlocks = (cardId: string) => (state: StoreState): Block[] => {
+  const card = state.cards.find((c) => c.id === cardId);
+  if (!card) return [];
+
+  // Return blocks in document order
+  return state.blocks.filter((b) => card.blockIds.includes(b.id));
 };
 
 /**
- * Select the single selected block (only when exactly one is selected)
- * Used for backward compatibility with block mode features (rewrite, expand, etc.)
+ * Select all blocks that are in any card (for export all cards)
+ * Returns blocks in document order, grouped by card
  */
-export const selectSingleSelectedBlock = (state: StoreState): Block | null =>
-  state.selectedBlockIds.length === 1
-    ? state.blocks.find((b) => b.id === state.selectedBlockIds[0]) || null
-    : null;
+export const selectAllCardBlocks = (state: StoreState): Block[] => {
+  const allCardBlockIds = new Set(state.cards.flatMap((c) => c.blockIds));
+  return state.blocks.filter((b) => allCardBlockIds.has(b.id));
+};
+
+/**
+ * Check if there are any cards
+ */
+export const selectHasCards = (state: StoreState): boolean => state.cards.length > 0;
 
 /**
  * Create a selector for messages in a specific thread
@@ -223,15 +187,7 @@ export const selectHasThreads = (state: StoreState): boolean =>
   state.threads.length > 0;
 
 /**
- * Check if composer is in single-block mode (exactly one block selected)
- * This enables block-specific actions like rewrite, expand, etc.
+ * Check if a block is selected (for composer/transform)
  */
-export const selectIsSingleBlockMode = (state: StoreState): boolean =>
-  state.selectedBlockIds.length === 1;
-
-/**
- * Check if multi-select mode is active (2+ blocks selected)
- * When true, composer should be disabled
- */
-export const selectIsMultiSelectMode = (state: StoreState): boolean =>
-  state.selectedBlockIds.length >= 2;
+export const selectHasBlockSelected = (state: StoreState): boolean =>
+  state.selectedBlockId !== null;

@@ -7,8 +7,9 @@ import { SelectionChips } from './SelectionChips';
 
 /**
  * Client Component - Individual editable block with selection handle
- * Reference: legacy/app.js lines 500-573
- * Needs 'use client' for click handlers and selection state
+ *
+ * Single-click gutter: Select block for composer/transform
+ * Double-click gutter: Create card for display/export
  *
  * Wrapped in React.memo with custom comparator to prevent unnecessary re-renders
  * when parent re-renders with new callback references but same data.
@@ -16,9 +17,10 @@ import { SelectionChips } from './SelectionChips';
 interface DocBlockProps {
   block: Block;
   isSelected: boolean;
-  isInSection?: boolean; // Block is inside a section border (but not necessarily selected)
+  isInCard?: boolean; // Block is inside a card border
+  cardId?: string; // ID of the card this block belongs to (if any)
   onSelect?: (blockId: string) => void;
-  onEnterSectionMode?: (headingId: string) => void; // Double-click gutter on heading
+  onAddCard?: (anchorBlockId: string) => void; // Double-click gutter to create card
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
@@ -30,9 +32,10 @@ const CLICK_DELAY = 200;
 function DocBlockComponent({
   block,
   isSelected,
-  isInSection = false,
+  isInCard = false,
+  cardId,
   onSelect,
-  onEnterSectionMode,
+  onAddCard,
   onRemoveSelection,
   onClearSelections,
   onRewrite,
@@ -48,34 +51,32 @@ function DocBlockComponent({
     };
   }, []);
 
-  // Handle gutter click with delay for headings to distinguish from double-click
+  // Handle gutter click with delay to distinguish from double-click
   const handleClick = useCallback(() => {
-    if (block.type === 'heading') {
-      // For headings, delay single-click to check for double-click
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current);
-      }
-      clickTimeoutRef.current = setTimeout(() => {
-        onSelect?.(block.id);
-        clickTimeoutRef.current = null;
-      }, CLICK_DELAY);
-    } else {
-      // For non-headings, execute immediately
+    // Delay single-click to check for double-click
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+    clickTimeoutRef.current = setTimeout(() => {
       onSelect?.(block.id);
-    }
-  }, [block.id, block.type, onSelect]);
+      clickTimeoutRef.current = null;
+    }, CLICK_DELAY);
+  }, [block.id, onSelect]);
 
-  // Double-click gutter: enter section mode (headings only)
+  // Double-click gutter: create/toggle card
+  // If block is already in a card, double-click does nothing
+  // If not in a card, creates a new card anchored at this block
   const handleGutterDoubleClick = useCallback(() => {
-    if (block.type === 'heading' && onEnterSectionMode) {
-      // Cancel pending single-click
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current);
-        clickTimeoutRef.current = null;
-      }
-      onEnterSectionMode(block.id);
+    // Cancel pending single-click
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
     }
-  }, [block.id, block.type, onEnterSectionMode]);
+
+    // If block is in a card, do nothing (except if clicking the anchor - handled by store)
+    // onAddCard handles the toggle logic
+    onAddCard?.(block.id);
+  }, [block.id, onAddCard]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -86,10 +87,10 @@ function DocBlockComponent({
   }, [block.id, onSelect]);
 
   // Determine visual state
-  // isSelected = explicitly selected (in selectedBlockIds)
-  // isInSection = inside section border (may or may not be selected)
+  // isSelected = explicitly selected for composer/transform
+  // isInCard = inside card border (for display/export)
   const showSelectedBackground = isSelected;
-  const showMuted = !isSelected && !isInSection && onSelect;
+  const showMuted = !isSelected && !isInCard && onSelect;
 
   return (
     <div
@@ -97,6 +98,7 @@ function DocBlockComponent({
         showMuted ? 'is-muted' : ''
       }`}
       data-block-id={block.id}
+      data-card-id={cardId}
     >
       {/* Gutter handle - 6 dots */}
       <button
@@ -105,8 +107,8 @@ function DocBlockComponent({
         onClick={handleClick}
         onDoubleClick={handleGutterDoubleClick}
         onKeyDown={handleKeyDown}
-        aria-label={block.type === 'heading' ? 'Select heading' : 'Select paragraph'}
-        title={block.type === 'heading' ? 'Click to select, double-click for section mode' : 'Select paragraph'}
+        aria-label={block.type === 'heading' ? 'Select heading' : 'Select block'}
+        title="Click to select, double-click to create card"
       >
       </button>
 
@@ -135,7 +137,8 @@ function DocBlockComponent({
 export const DocBlock = memo(DocBlockComponent, (prevProps, nextProps) => {
   // Re-render if selection state changed
   if (prevProps.isSelected !== nextProps.isSelected) return false;
-  if (prevProps.isInSection !== nextProps.isInSection) return false;
+  if (prevProps.isInCard !== nextProps.isInCard) return false;
+  if (prevProps.cardId !== nextProps.cardId) return false;
 
   // Re-render if block data changed
   const prevBlock = prevProps.block;

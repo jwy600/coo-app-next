@@ -3,8 +3,6 @@
  *
  * Manages composer state, form submission, and API calls based on composer mode (chat vs block).
  *
- * Reference: legacy/app.js lines 901-1002 (respondToPrompt function)
- *
  * CRITICAL DISTINCTION (Composer Modes):
  * - Chat Mode (no block selected): Creates user/assistant messages
  * - Block Mode (block selected): Result goes to composer (editable draft)
@@ -14,7 +12,7 @@
 
 import { useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useStore, selectSingleSelectedBlock, selectContentForTransform } from '@/lib/store/useStore';
+import { useStore, selectSelectedBlock, selectContentForTransform } from '@/lib/store/useStore';
 import { fetchBlockAction } from '@/lib/api';
 import { getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
@@ -37,13 +35,12 @@ export function useComposer(): UseComposerReturn {
 
   // Store state
   const settings = useStore((state) => state.settings);
-  const selectedBlockIds = useStore((state) => state.selectedBlockIds);
-  const sectionHeadingId = useStore((state) => state.sectionHeadingId);
-  const selectedBlock = useStore(selectSingleSelectedBlock);
+  const selectedBlockId = useStore((state) => state.selectedBlockId);
+  const selectedBlock = useStore(selectSelectedBlock);
   const contentForTransform = useStore(useShallow(selectContentForTransform));
   const addUserMessage = useStore((state) => state.addUserMessage);
   const addAssistantMessage = useStore((state) => state.addAssistantMessage);
-  const clearSelectedBlocks = useStore((state) => state.clearSelectedBlocks);
+  const clearSelection = useStore((state) => state.clearSelection);
   const mode = useStore((state) => state.mode);
   const setMode = useStore((state) => state.setMode);
   const createThread = useStore((state) => state.createThread);
@@ -69,12 +66,7 @@ export function useComposer(): UseComposerReturn {
    * Handle block action (ELI5, Translate, Expand, Example, Ask)
    * Result goes to composer (NOT as new message)
    *
-   * Uses contentForTransform which handles:
-   * - Section mode: all content blocks in section (or narrowed selection)
-   * - Direct heading selection: heading text
-   * - Normal selection: selected blocks
-   *
-   * Reference: legacy/app.js lines 835-856 (handleBlockCommand)
+   * Uses contentForTransform which is the selected block
    */
   const handleBlockAction = useCallback(
     async (action: BlockAction) => {
@@ -121,8 +113,6 @@ export function useComposer(): UseComposerReturn {
 
   /**
    * Handle form submission
-   *
-   * Reference: legacy/app.js lines 901-1033 (respondToPrompt)
    */
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
@@ -136,11 +126,8 @@ export function useComposer(): UseComposerReturn {
       if (isSubmitting) return;
       if (!trimmedPrompt) return;
 
-      // BLOCK MODE: Result goes to composer
-      // - Section mode (heading clicked): uses section content
-      // - Single block selected: uses that block
-      const hasContent = contentForTransform.length > 0;
-      if (hasContent && (sectionHeadingId || selectedBlockIds.length === 1)) {
+      // BLOCK MODE: Result goes to composer when a block is selected
+      if (selectedBlockId && contentForTransform.length > 0) {
         await handleBlockAction('ask');
         return;
       }
@@ -196,7 +183,7 @@ export function useComposer(): UseComposerReturn {
             if (blocks.length > 0) {
               addAssistantMessage(blocks, responseId);
             }
-            clearSelectedBlocks();
+            clearSelection();
             setError(null);
             setAwaitingResponse(false);
           },
@@ -210,8 +197,7 @@ export function useComposer(): UseComposerReturn {
     [
       prompt,
       isSubmitting,
-      selectedBlockIds,
-      sectionHeadingId,
+      selectedBlockId,
       contentForTransform,
       mode,
       handleBlockAction,
@@ -219,7 +205,7 @@ export function useComposer(): UseComposerReturn {
       setMode,
       addUserMessage,
       addAssistantMessage,
-      clearSelectedBlocks,
+      clearSelection,
       updateThreadTitle,
       setAwaitingResponse,
       streamChat,

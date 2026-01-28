@@ -168,7 +168,8 @@ export function ChatContainer({
     // Call rewrite via block action API
     try {
       const { fetchBlockAction } = await import('@/lib/api');
-      const result = await fetchBlockAction('rewrite', block.text, selectionsText);
+      const currentSettings = useStore.getState().settings;
+      const result = await fetchBlockAction('rewrite', block.text, selectionsText, undefined, currentSettings);
 
       // Update block with rewrite using store action
       const toggleRewrite = useStore.getState().toggleRewrite;

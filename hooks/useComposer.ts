@@ -92,7 +92,8 @@ export function useComposer(): UseComposerReturn {
           action,
           contentText,
           action === 'ask' ? prompt : undefined,
-          action === 'translate' ? settings.translateLanguage : undefined
+          action === 'translate' ? settings.translateLanguage : undefined,
+          settings
         );
 
         // CRITICAL: Result goes to composer (editable draft), NOT as message
@@ -108,7 +109,7 @@ export function useComposer(): UseComposerReturn {
         setAwaitingResponse(false);
       }
     },
-    [contentForTransform, prompt, setAwaitingResponse, settings.translateLanguage, setError]
+    [contentForTransform, prompt, setAwaitingResponse, settings, setError]
   );
 
   /**

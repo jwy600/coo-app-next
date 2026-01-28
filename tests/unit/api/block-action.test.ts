@@ -59,6 +59,58 @@ describe('Block Action API Route', () => {
     });
   });
 
+  describe('Settings support', () => {
+    it('should use model from settings when provided', async () => {
+      mockCreate.mockResolvedValue(createMockCompletion('Translated text'));
+
+      const request = new NextRequest('http://localhost:3000/api/block-action', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'translate',
+          blockText: 'Hello world',
+          settings: {
+            model: 'gpt-5.2',
+            reasoningEffort: 'none',
+            webSearchEnabled: false,
+            translateLanguage: 'Chinese',
+          },
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.text).toBe('Translated text');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: 'gpt-5.2',
+        })
+      );
+    });
+
+    it('should fall back to default model when settings not provided', async () => {
+      mockCreate.mockResolvedValue(createMockCompletion('Translated text'));
+
+      const request = new NextRequest('http://localhost:3000/api/block-action', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'translate',
+          blockText: 'Hello world',
+        }),
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(200);
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: 'gpt-5-mini',
+        })
+      );
+    });
+  });
+
   describe('Example action', () => {
     it('should provide example for text', async () => {
       mockCreate.mockResolvedValue(createMockCompletion('For example: ...'));

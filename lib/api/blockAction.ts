@@ -1,6 +1,6 @@
 import { apiFetch } from './client';
 import type { BlockAction, BlockActionRequest, BlockActionResponse } from '@/types/api';
-import type { TranslateLanguage } from '@/types/settings';
+import type { Settings, TranslateLanguage } from '@/types/settings';
 import { parseString } from '@/lib/utils/validation';
 
 /**
@@ -10,6 +10,7 @@ import { parseString } from '@/lib/utils/validation';
  * @param blockText - Text content to transform
  * @param prompt - Optional prompt for 'ask' and 'rewrite' actions
  * @param translateLanguage - Optional target language for 'translate' action
+ * @param settings - Optional settings to use for the request (model, etc.)
  * @returns Promise with transformed text
  * @throws ApiClientError on validation or API errors
  */
@@ -17,7 +18,8 @@ export async function fetchBlockAction(
   action: BlockAction,
   blockText: string,
   prompt?: string,
-  translateLanguage?: TranslateLanguage
+  translateLanguage?: TranslateLanguage,
+  settings?: Settings
 ): Promise<BlockActionResponse> {
   // Parse and validate inputs
   const trimmedBlockText = parseString(blockText);
@@ -38,6 +40,7 @@ export async function fetchBlockAction(
     prompt: trimmedPrompt || undefined,
     mode: 'block',
     translateLanguage: action === 'translate' ? translateLanguage : undefined,
+    settings,
   };
 
   // Call API

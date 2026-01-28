@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     const blockText = parseString(body?.blockText);
     const prompt = parseString(body?.prompt);
     const translateLanguage = body?.translateLanguage;
+    const settings = body?.settings;
 
     // Validation: Required fields
     if (!action || !blockText) {
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: modelConfig.model,
+      model: settings?.model || modelConfig.model,
       messages: [
         { role: 'system', content: BLOCK_ACTION_PROMPT },
         { role: 'user', content: actionPrompt },

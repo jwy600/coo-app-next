@@ -24,6 +24,7 @@ export interface BlockActionRequest {
   prompt?: string;
   mode?: 'block';
   translateLanguage?: TranslateLanguage;
+  settings?: Settings;
 }
 
 export interface BlockActionResponse {

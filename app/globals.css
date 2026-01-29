@@ -512,22 +512,6 @@
     padding: 0 0 0 4px;
   }
 
-  .chip-clear {
-    border: 1px solid var(--border);
-    background: var(--white);
-    color: var(--gray-700);
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 0.813rem;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background 0.15s;
-  }
-
-  .chip-clear:hover {
-    background: var(--gray-50);
-  }
-
   .chip-rewrite {
     border: 1px solid var(--border);
     background: var(--white);
@@ -541,6 +525,22 @@
   }
 
   .chip-rewrite:hover {
+    background: var(--gray-50);
+  }
+
+  .chip-undo {
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--gray-600);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.813rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+
+  .chip-undo:hover {
     background: var(--gray-50);
   }
 

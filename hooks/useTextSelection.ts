@@ -17,7 +17,6 @@ export interface UseTextSelectionReturn {
   captureSelection: (inputElement: HTMLElement | null) => void;
   addSelectionText: (text: string) => void;
   removeSelection: (index: number) => void;
-  clearSelections: () => void;
   selections: string[];
 }
 
@@ -25,7 +24,6 @@ export function useTextSelection(blockId: string | null): UseTextSelectionReturn
   // Store actions
   const addSelection = useStore((state) => state.addSelection);
   const removeSelectionFromBlock = useStore((state) => state.removeSelection);
-  const clearSelectionsFromBlock = useStore((state) => state.clearSelections);
   const blocks = useStore((state) => state.blocks);
 
   // Get selections for the current block
@@ -113,19 +111,10 @@ export function useTextSelection(blockId: string | null): UseTextSelectionReturn
     [blockId, removeSelectionFromBlock]
   );
 
-  /**
-   * Clear all selections
-   */
-  const clearSelections = useCallback(() => {
-    if (!blockId) return;
-    clearSelectionsFromBlock(blockId);
-  }, [blockId, clearSelectionsFromBlock]);
-
   return {
     captureSelection,
     addSelectionText,
     removeSelection,
-    clearSelections,
     selections,
   };
 }

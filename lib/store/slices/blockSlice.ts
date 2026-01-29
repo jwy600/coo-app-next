@@ -16,7 +16,10 @@ export interface BlockSlice {
   addSelection: (blockId: string, text: string) => void;
   removeSelection: (blockId: string, index: number) => void;
   clearSelections: (blockId: string) => void;
+  /** @deprecated Use rewriteBlock and undoRewrite separately */
   toggleRewrite: (blockId: string, rewriteText: string) => void;
+  rewriteBlock: (blockId: string, rewriteText: string) => void;
+  undoRewrite: (blockId: string) => void;
 }
 
 export const blockSlice: StateCreator<
@@ -61,6 +64,24 @@ export const blockSlice: StateCreator<
 
       if (result.block) {
         persistAsync(() => persistBlockUpdate(result.block!), 'persist rewrite toggle');
+      }
+    },
+
+    rewriteBlock: (blockId, rewriteText) => {
+      const result = stateFns.rewriteBlock(get(), blockId, rewriteText);
+      set({ blocks: result.state.blocks });
+
+      if (result.block) {
+        persistAsync(() => persistBlockUpdate(result.block!), 'persist rewrite');
+      }
+    },
+
+    undoRewrite: (blockId) => {
+      const result = stateFns.undoRewrite(get(), blockId);
+      set({ blocks: result.state.blocks });
+
+      if (result.block) {
+        persistAsync(() => persistBlockUpdate(result.block!), 'persist undo rewrite');
       }
     },
   };

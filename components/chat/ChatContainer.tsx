@@ -93,7 +93,6 @@ export function ChatContainer({
   const {
     captureSelection,
     removeSelection: removeSelectionFromHook,
-    clearSelections: clearSelectionsFromHook,
   } = useTextSelection(selectedBlockId);
 
   // Wrap handlers to match MessageList expected signatures
@@ -101,13 +100,6 @@ export function ChatContainer({
     // Verify blockId matches the selected block
     if (blockId === selectedBlockId) {
       removeSelectionFromHook(index);
-    }
-  };
-
-  const handleClearSelections = (blockId: string) => {
-    // Verify blockId matches the selected block
-    if (blockId === selectedBlockId) {
-      clearSelectionsFromHook();
     }
   };
 
@@ -172,13 +164,19 @@ export function ChatContainer({
       const result = await fetchBlockAction('rewrite', block.text, selectionsText, undefined, currentSettings);
 
       // Update block with rewrite using store action
-      const toggleRewrite = useStore.getState().toggleRewrite;
-      toggleRewrite(blockId, result.text);
+      const rewriteBlock = useStore.getState().rewriteBlock;
+      rewriteBlock(blockId, result.text);
 
       // DON'T clear selections - they should persist until user exits block mode
     } catch (error) {
       console.error('Rewrite failed:', error);
     }
+  };
+
+  // Handle undo action - reverts to previous text
+  const handleUndo = (blockId: string) => {
+    const undoRewrite = useStore.getState().undoRewrite;
+    undoRewrite(blockId);
   };
 
   // Handle retry after error
@@ -222,8 +220,8 @@ export function ChatContainer({
             onAddCard={addCard}
             onRemoveCard={removeCard}
             onRemoveSelection={handleRemoveSelection}
-            onClearSelections={handleClearSelections}
             onRewrite={handleRewrite}
+            onUndo={handleUndo}
             onRetry={handleRetry}
           />
         </div>

@@ -174,7 +174,7 @@ test.describe('Text Selection & Rewrite', () => {
     expect(restoredText).toBe(originalText);
   });
 
-  test('should toggle between original and rewritten text', async ({ page }) => {
+  test('should allow chained rewrites after undo', async ({ page }) => {
     // Create thread
     await apiMocker.mockChatSuccess({
       text: 'React is a JavaScript library.',
@@ -187,22 +187,29 @@ test.describe('Text Selection & Rewrite', () => {
     await chatPage.selectBlock(0);
     const originalText = await chatPage.getBlockText(0);
 
-    // Rewrite
+    // First rewrite
     await apiMocker.mockAllBlockActions();
     await chatPage.clickBlockAction('ELI5');
     await chatPage.waitForResponse();
     await chatPage.selectTextInComposer('LEGO');
     await chatPage.clickRewrite(0);
 
-    const rewrittenText = await chatPage.getBlockText(0);
+    const firstRewrite = await chatPage.getBlockText(0);
+    expect(firstRewrite).not.toBe(originalText);
 
-    // First toggle - should show original
+    // Undo - should restore original
     await chatPage.clickUndo(0);
     expect(await chatPage.getBlockText(0)).toBe(originalText);
 
-    // Second toggle - should show rewritten (button now says "Rewrite")
+    // Second rewrite - should work (new API call)
+    // Do another ELI5 and select "LEGO" again
+    await chatPage.clickBlockAction('ELI5');
+    await chatPage.waitForResponse();
+    await chatPage.selectTextInComposer('LEGO');
     await chatPage.clickRewrite(0);
-    expect(await chatPage.getBlockText(0)).toBe(rewrittenText);
+
+    const secondRewrite = await chatPage.getBlockText(0);
+    expect(secondRewrite).not.toBe(originalText);
   });
 
   test('should clear selections when deselecting block', async ({ page }) => {

@@ -315,11 +315,11 @@ export class ChatPage {
   }
 
   /**
-   * Click undo button for a block
+   * Click undo button for a block (separate button from Rewrite)
    */
   async clickUndo(blockIndex: number): Promise<void> {
     const block = this.getBlock(blockIndex);
-    const undoButton = block.locator('.chip-rewrite'); // Same button, different label
+    const undoButton = block.locator('.chip-undo');
     await undoButton.click();
 
     // Give React a moment to update the DOM (undo is synchronous, no API call)

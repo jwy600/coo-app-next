@@ -226,11 +226,12 @@ export class ChatPage {
   }
 
   /**
-   * Select text within the composer prompt
-   * This automatically triggers chip creation via onMouseUp event
+   * Select text within the composer prompt using real mouse drag
+   * This triggers chip creation via the mousedown/mouseup drag detection
    */
   async selectTextInComposer(text: string): Promise<void> {
-    await this.page.evaluate((searchText) => {
+    // Get the position info for the text we want to select
+    const positions = await this.page.evaluate((searchText) => {
       const composer = document.querySelector('div#prompt');
       if (!composer) throw new Error('Composer prompt input not found');
 
@@ -253,20 +254,33 @@ export class ChatPage {
           const startOffset = startIndex - currentOffset;
           const endOffset = startOffset + searchText.length;
 
+          // Get start position
           range.setStart(currentNode, startOffset);
+          range.setEnd(currentNode, startOffset);
+          const startRect = range.getBoundingClientRect();
+
+          // Get end position
+          range.setStart(currentNode, Math.min(endOffset, nodeLength));
           range.setEnd(currentNode, Math.min(endOffset, nodeLength));
+          const endRect = range.getBoundingClientRect();
 
-          const selection = window.getSelection();
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-
-          // Trigger mouseup event to automatically create chip
-          composer.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-          break;
+          return {
+            startX: startRect.left,
+            startY: startRect.top + startRect.height / 2,
+            endX: endRect.left,
+            endY: endRect.top + endRect.height / 2,
+          };
         }
         currentOffset += nodeLength;
       }
+      throw new Error('Could not find text position');
     }, text);
+
+    // Perform actual mouse drag to select text
+    await this.page.mouse.move(positions.startX, positions.startY);
+    await this.page.mouse.down();
+    await this.page.mouse.move(positions.endX, positions.endY);
+    await this.page.mouse.up();
 
     // Wait a bit for the chip to be created
     await this.page.waitForTimeout(100);

@@ -1,3 +1,9 @@
+<figure>
+    <img src="https://blog.yitianshijie.net/wp-content/uploads/2017/07/fullsizeoutput_33bf.jpeg?w=550&h=862"
+         alt="Books are scattered around Shuji Terayama">
+    <figcaption>Source: Li Ruyi (Yi Tian Shi Jie); from ‎Kawade Shobo Shinsha: Terayama Shuji (Shin bungei-dokuhon).</figcaption>
+</figure>
+
 # Coo
 
 Coo is a personalized wiki built on top of chat — a chatbot where you can **interact with LLM responses in context**.
@@ -6,7 +12,7 @@ Instead of treating AI output as immutable chat bubbles, Coo breaks responses in
 
 ## Why Coo?
 
-Research and learning aren’t linear — questions *emerge (涌现)* while you’re still reading. But most LLM products inherit the **messaging app** model: responses arrive as frozen bubbles optimized for provenance, not for thinking.
+Research and learning aren’t linear — questions *emerge (湧現)* while you’re still reading. But most LLM products inherit the **messaging app** model: responses arrive as frozen bubbles optimized for provenance, not for thinking.
 
 That creates a “glass wall.” You can see the answer, but you can’t really **work on it where it lives**.
 

@@ -10,7 +10,6 @@ import { Block } from '@/types/block';
 interface SelectionChipsProps {
   block: Block;
   onRemoveSelection?: (index: number) => void;
-  onClearSelections?: () => void;
   onRewrite?: () => void;
   onUndo?: () => void;
 }
@@ -18,7 +17,6 @@ interface SelectionChipsProps {
 export function SelectionChips({
   block,
   onRemoveSelection,
-  onClearSelections,
   onRewrite,
   onUndo,
 }: SelectionChipsProps) {
@@ -43,14 +41,6 @@ export function SelectionChips({
           </button>
         </span>
       ))}
-
-      <button
-        type="button"
-        className="chip-clear"
-        onClick={onClearSelections}
-      >
-        Clear
-      </button>
 
       {/* Always show Rewrite when there are selections */}
       <button

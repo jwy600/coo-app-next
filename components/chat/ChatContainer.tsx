@@ -93,7 +93,6 @@ export function ChatContainer({
   const {
     captureSelection,
     removeSelection: removeSelectionFromHook,
-    clearSelections: clearSelectionsFromHook,
   } = useTextSelection(selectedBlockId);
 
   // Wrap handlers to match MessageList expected signatures
@@ -101,13 +100,6 @@ export function ChatContainer({
     // Verify blockId matches the selected block
     if (blockId === selectedBlockId) {
       removeSelectionFromHook(index);
-    }
-  };
-
-  const handleClearSelections = (blockId: string) => {
-    // Verify blockId matches the selected block
-    if (blockId === selectedBlockId) {
-      clearSelectionsFromHook();
     }
   };
 
@@ -228,7 +220,6 @@ export function ChatContainer({
             onAddCard={addCard}
             onRemoveCard={removeCard}
             onRemoveSelection={handleRemoveSelection}
-            onClearSelections={handleClearSelections}
             onRewrite={handleRewrite}
             onUndo={handleUndo}
             onRetry={handleRetry}

@@ -18,7 +18,6 @@ interface AssistantMessageProps {
   onAddCard?: (anchorBlockId: string) => void;
   onRemoveCard?: (cardId: string) => void;
   onRemoveSelection?: (blockId: string, index: number) => void;
-  onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
   onUndo?: (blockId: string) => void;
 }
@@ -32,7 +31,6 @@ export function AssistantMessage({
   onAddCard,
   onRemoveCard,
   onRemoveSelection,
-  onClearSelections,
   onRewrite,
   onUndo,
 }: AssistantMessageProps) {
@@ -50,7 +48,6 @@ export function AssistantMessage({
         onAddCard={onAddCard}
         onRemoveCard={onRemoveCard}
         onRemoveSelection={onRemoveSelection}
-        onClearSelections={onClearSelections}
         onRewrite={onRewrite}
         onUndo={onUndo}
       />

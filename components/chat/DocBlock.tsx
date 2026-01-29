@@ -22,7 +22,6 @@ interface DocBlockProps {
   onSelect?: (blockId: string) => void;
   onAddCard?: (anchorBlockId: string) => void; // Double-click gutter to create card
   onRemoveSelection?: (blockId: string, index: number) => void;
-  onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
   onUndo?: (blockId: string) => void;
 }
@@ -38,7 +37,6 @@ function DocBlockComponent({
   onSelect,
   onAddCard,
   onRemoveSelection,
-  onClearSelections,
   onRewrite,
   onUndo,
 }: DocBlockProps) {
@@ -123,7 +121,6 @@ function DocBlockComponent({
           <SelectionChips
             block={block}
             onRemoveSelection={(index) => onRemoveSelection?.(block.id, index)}
-            onClearSelections={() => onClearSelections?.(block.id)}
             onRewrite={() => onRewrite?.(block.id)}
             onUndo={() => onUndo?.(block.id)}
           />

@@ -116,6 +116,11 @@ function DocBlockComponent({
       <div className="doc-content">
         <BlockContent text={block.text} type={block.type} />
 
+        {/* Edited indicator for rewritten blocks */}
+        {block.isRewritten && (
+          <span className="block-edited-indicator">edited</span>
+        )}
+
         {/* Selection chips (only show when selected) */}
         {isSelected && (
           <SelectionChips

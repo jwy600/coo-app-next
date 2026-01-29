@@ -36,8 +36,8 @@ export function PromptInput({
   const finalPlaceholder = placeholder || defaultPlaceholder;
   const inputRef = useRef<HTMLDivElement>(null);
   const isUserInputRef = useRef<boolean>(false);
-  // Track if Ctrl/Cmd+A was just pressed (select all) to skip chip creation
-  const isSelectAllRef = useRef<boolean>(false);
+  // Track mouse drag state for selection capture (only drag creates chips, not clicks)
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // Sync value to DOM (preserve cursor position)
   useEffect(() => {
@@ -93,21 +93,27 @@ export function PromptInput({
         onSubmit();
       }
     }
-
-    // Detect Ctrl+A / Cmd+A (select all) to skip chip creation
-    if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-      isSelectAllRef.current = true;
-    }
   };
 
-  const handleSelectionCapture = () => {
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Record mouse position to detect drag vs click
+    mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
     if (!onSelectionCapture || !inputRef.current) return;
 
-    // Skip chip creation if Ctrl+A / Cmd+A was just pressed
-    if (isSelectAllRef.current) {
-      isSelectAllRef.current = false;
-      return;
-    }
+    // Check if this was a drag (mouse moved significantly from mousedown position)
+    const startPos = mouseDownPosRef.current;
+    mouseDownPosRef.current = null;
+
+    if (!startPos) return;
+
+    const dx = Math.abs(e.clientX - startPos.x);
+    const dy = Math.abs(e.clientY - startPos.y);
+    const wasDrag = dx > 3 || dy > 3; // 3px threshold for drag detection
+
+    if (!wasDrag) return;
 
     // Pass the input element to the handler from useTextSelection
     // The hook will handle all the DOM manipulation
@@ -121,8 +127,8 @@ export function PromptInput({
       contentEditable={!disabled}
       onInput={handleInput}
       onKeyDown={handleKeyDown}
-      onMouseUp={handleSelectionCapture}
-      onKeyUp={handleSelectionCapture}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       className={`min-h-[48px] max-h-[300px] h-full px-4 py-3 border border-border rounded-lg bg-white overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500 text-[0.9375rem] leading-[1.5] ${
         disabled ? 'bg-gray-100 cursor-not-allowed' : ''
       }`}

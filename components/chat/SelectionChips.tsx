@@ -24,7 +24,7 @@ export function SelectionChips({
     return null;
   }
 
-  const canUndo = block.isRewritten && block.prevText != null;
+  const canUndo = block.prevText != null;
 
   return (
     <div className="block-chips">

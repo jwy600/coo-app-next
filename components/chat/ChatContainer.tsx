@@ -172,13 +172,19 @@ export function ChatContainer({
       const result = await fetchBlockAction('rewrite', block.text, selectionsText, undefined, currentSettings);
 
       // Update block with rewrite using store action
-      const toggleRewrite = useStore.getState().toggleRewrite;
-      toggleRewrite(blockId, result.text);
+      const rewriteBlock = useStore.getState().rewriteBlock;
+      rewriteBlock(blockId, result.text);
 
       // DON'T clear selections - they should persist until user exits block mode
     } catch (error) {
       console.error('Rewrite failed:', error);
     }
+  };
+
+  // Handle undo action - reverts to previous text
+  const handleUndo = (blockId: string) => {
+    const undoRewrite = useStore.getState().undoRewrite;
+    undoRewrite(blockId);
   };
 
   // Handle retry after error
@@ -224,6 +230,7 @@ export function ChatContainer({
             onRemoveSelection={handleRemoveSelection}
             onClearSelections={handleClearSelections}
             onRewrite={handleRewrite}
+            onUndo={handleUndo}
             onRetry={handleRetry}
           />
         </div>

@@ -87,6 +87,8 @@ export const clearSelections = (
  * Second call: Restores `prevText`, clears rewrite state (undo)
  *
  * Preserves heading/list prefixes if the rewrite lacks them.
+ *
+ * @deprecated Use `rewriteBlock` and `undoRewrite` separately for better UX
  */
 export const toggleRewrite = (
   state: AppState,
@@ -128,6 +130,73 @@ export const toggleRewrite = (
       prevText: block.text,
       text: newText,
       isRewritten: true,
+      edited: true,
+    };
+  });
+
+/**
+ * Apply a rewrite to a block.
+ *
+ * Always commits the current text as the new "base" and applies the rewrite.
+ * Supports chained rewrites - each rewrite replaces prevText with current text.
+ *
+ * Preserves heading/list prefixes if the rewrite lacks them.
+ */
+export const rewriteBlock = (
+  state: AppState,
+  blockId: string,
+  rewriteText: string
+): UpdateBlockResult =>
+  updateBlock(state, blockId, (block) => {
+    let newText = rewriteText;
+
+    // Preserve heading prefix if original was a heading but rewrite lacks one
+    if (block.type === 'heading') {
+      const originalPrefix = getHeadingInfo(block.text)?.prefix ?? '';
+      if (originalPrefix && !hasHeading(newText)) {
+        newText = originalPrefix + newText;
+      }
+    }
+
+    // Preserve list prefix if original was a list item but rewrite lacks one
+    if (block.type === 'list') {
+      const originalPrefix = block.text.match(/^(\s*)([-*+]|\d+\.)\s+/)?.[0] ?? '';
+      const hasListPrefix = /^(\s*)([-*+]|\d+\.)\s+/.test(newText);
+      if (originalPrefix && !hasListPrefix) {
+        newText = originalPrefix + newText;
+      }
+    }
+
+    return {
+      ...block,
+      prevText: block.text,
+      text: newText,
+      isRewritten: true,
+      edited: true,
+    };
+  });
+
+/**
+ * Undo the last rewrite on a block.
+ *
+ * Restores `prevText` if available and clears rewrite state.
+ * Returns unchanged state if no undo is available.
+ */
+export const undoRewrite = (
+  state: AppState,
+  blockId: string
+): UpdateBlockResult =>
+  updateBlock(state, blockId, (block) => {
+    // Can't undo if not rewritten or no prevText
+    if (!block.isRewritten || block.prevText == null) {
+      return block;
+    }
+
+    return {
+      ...block,
+      text: block.prevText,
+      prevText: null,
+      isRewritten: false,
       edited: true,
     };
   });

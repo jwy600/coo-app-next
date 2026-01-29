@@ -36,6 +36,7 @@ interface MessageListProps {
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
+  onUndo?: (blockId: string) => void;
   onRetry?: () => void;
 }
 
@@ -53,6 +54,7 @@ export function MessageList({
   onRemoveSelection,
   onClearSelections,
   onRewrite,
+  onUndo,
   onRetry,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,6 +121,7 @@ export function MessageList({
             onRemoveSelection={onRemoveSelection}
             onClearSelections={onClearSelections}
             onRewrite={onRewrite}
+            onUndo={onUndo}
           />
         );
       })}

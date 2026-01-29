@@ -544,6 +544,22 @@
     background: var(--gray-50);
   }
 
+  .chip-undo {
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--gray-600);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.813rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+
+  .chip-undo:hover {
+    background: var(--gray-50);
+  }
+
   @keyframes rise {
     from {
       opacity: 0;

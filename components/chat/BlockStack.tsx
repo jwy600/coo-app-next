@@ -59,6 +59,7 @@ interface BlockStackProps {
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
+  onUndo?: (blockId: string) => void;
 }
 
 export function BlockStack({
@@ -71,6 +72,7 @@ export function BlockStack({
   onRemoveSelection,
   onClearSelections,
   onRewrite,
+  onUndo,
 }: BlockStackProps) {
   // Build lookup for card membership
   const blockToCard = useMemo(() => {
@@ -103,6 +105,7 @@ export function BlockStack({
         onRemoveSelection={onRemoveSelection}
         onClearSelections={onClearSelections}
         onRewrite={onRewrite}
+        onUndo={onUndo}
       />
     );
   };

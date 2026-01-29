@@ -20,6 +20,7 @@ interface AssistantMessageProps {
   onRemoveSelection?: (blockId: string, index: number) => void;
   onClearSelections?: (blockId: string) => void;
   onRewrite?: (blockId: string) => void;
+  onUndo?: (blockId: string) => void;
 }
 
 export function AssistantMessage({
@@ -33,6 +34,7 @@ export function AssistantMessage({
   onRemoveSelection,
   onClearSelections,
   onRewrite,
+  onUndo,
 }: AssistantMessageProps) {
   // Filter cards to only those belonging to this message
   const messageCards = cards.filter((c) => c.messageId === message.id);
@@ -50,6 +52,7 @@ export function AssistantMessage({
         onRemoveSelection={onRemoveSelection}
         onClearSelections={onClearSelections}
         onRewrite={onRewrite}
+        onUndo={onUndo}
       />
     </div>
   );

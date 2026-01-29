@@ -12,6 +12,7 @@ interface SelectionChipsProps {
   onRemoveSelection?: (index: number) => void;
   onClearSelections?: () => void;
   onRewrite?: () => void;
+  onUndo?: () => void;
 }
 
 export function SelectionChips({
@@ -19,13 +20,13 @@ export function SelectionChips({
   onRemoveSelection,
   onClearSelections,
   onRewrite,
+  onUndo,
 }: SelectionChipsProps) {
   if (!block.selections || block.selections.length === 0) {
     return null;
   }
 
   const canUndo = block.isRewritten && block.prevText != null;
-  const rewriteLabel = block.isRewritten ? 'Undo' : 'Rewrite';
 
   return (
     <div className="block-chips">
@@ -51,19 +52,23 @@ export function SelectionChips({
         Clear
       </button>
 
-      {block.selections.length > 0 && (
+      {/* Always show Rewrite when there are selections */}
+      <button
+        type="button"
+        className="chip-rewrite"
+        onClick={onRewrite}
+      >
+        Rewrite
+      </button>
+
+      {/* Show Undo separately when available */}
+      {canUndo && (
         <button
           type="button"
-          className="chip-rewrite"
-          onClick={onRewrite}
-          disabled={block.isRewritten && !canUndo}
-          title={
-            block.isRewritten && !canUndo
-              ? 'Cannot undo: original text is unavailable.'
-              : undefined
-          }
+          className="chip-undo"
+          onClick={onUndo}
         >
-          {rewriteLabel}
+          Undo
         </button>
       )}
     </div>

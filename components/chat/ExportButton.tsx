@@ -1,8 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Download } from 'lucide-react';
+import { useState } from 'react';
+import { Download, ChevronDown, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { useShallow } from 'zustand/react/shallow';
 import {
   useStore,
@@ -67,49 +73,64 @@ export function ExportButton() {
     downloadMarkdown(markdown, filename);
   };
 
-  /**
-   * Handle button click - either export thread or open card dialog
-   */
-  const handleClick = () => {
-    if (hasCards) {
-      setDialogOpen(true);
-    } else {
-      handleExportThread();
-    }
-  };
-
   // Block count for display
   const exportBlockCount = allCardBlocks.length;
 
-  return (
-    <>
+  // When no cards exist, show simple "Export Thread" button
+  if (!hasCards) {
+    return (
       <Button
         variant="outline"
         size="sm"
-        onClick={handleClick}
+        onClick={handleExportThread}
         disabled={!hasMessages}
-        title={
-          hasCards
-            ? `Export ${exportBlockCount} block${exportBlockCount !== 1 ? 's' : ''} from ${cards.length} card${cards.length !== 1 ? 's' : ''}`
-            : hasMessages
-              ? 'Export thread as markdown'
-              : 'No messages to export'
-        }
-        aria-label={hasCards ? 'Export all cards' : 'Export thread'}
+        title={hasMessages ? 'Export thread as markdown' : 'No messages to export'}
+        aria-label="Export thread"
         className="gap-2"
       >
-        {hasCards ? (
-          <>
-            <Download className="h-4 w-4" />
-            <span>Export Cards</span>
-          </>
-        ) : (
-          <>
-            <Download className="h-4 w-4" />
-            <span>Export Thread</span>
-          </>
-        )}
+        <Download className="h-4 w-4" />
+        <span>Export Thread</span>
       </Button>
+    );
+  }
+
+  // When cards exist, show split button with dropdown
+  return (
+    <>
+      <div className="flex">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setDialogOpen(true)}
+          disabled={!hasMessages}
+          title={`Export ${exportBlockCount} block${exportBlockCount !== 1 ? 's' : ''} from ${cards.length} card${cards.length !== 1 ? 's' : ''}`}
+          aria-label="Export all cards"
+          className="gap-2 rounded-r-none"
+        >
+          <Download className="h-4 w-4" />
+          <span>Export Cards</span>
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!hasMessages}
+              className="rounded-l-none border-l-0 px-2"
+              aria-label="More export options"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportThread}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export Thread
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <ExportCardDialog
         open={dialogOpen}

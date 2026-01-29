@@ -5,6 +5,7 @@ Coo is a personalized wiki built on top of chat — a chatbot where you can **in
 Instead of treating AI output as immutable chat bubbles, Coo breaks responses into semantic blocks you can work with directly: expand, translate, simplify (ELI5), rewrite, and export as cards.
 
 ![Books are scattered around Shuji Terayama](https://blog.yitianshijie.net/wp-content/uploads/2017/07/fullsizeoutput_33bf.jpeg?w=550&h=862)
+
 *Source: Li Ruyi (Yi Tian Shi Jie); from ‎Kawade Shobo Shinsha: Terayama Shuji (Shin bungei-dokuhon, 1993)*
 
 ## Why Coo?

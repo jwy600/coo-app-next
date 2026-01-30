@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore, selectSelectedBlock, selectContentForTransform } from '@/lib/store/useStore';
 import { fetchBlockAction } from '@/lib/api';
@@ -36,6 +36,23 @@ export function useComposer(): UseComposerReturn {
   // Store state
   const settings = useStore((state) => state.settings);
   const selectedBlockId = useStore((state) => state.selectedBlockId);
+
+  // Track previous selectedBlockId to detect block switches
+  const prevSelectedBlockIdRef = useRef(selectedBlockId);
+
+  // Clear prompt when switching FROM one block TO another block
+  // (Not when entering block mode from chat mode, or when exiting)
+  useEffect(() => {
+    const prev = prevSelectedBlockIdRef.current;
+    const curr = selectedBlockId;
+
+    if (prev !== null && curr !== null && prev !== curr) {
+      setPrompt('');
+    }
+
+    prevSelectedBlockIdRef.current = curr;
+  }, [selectedBlockId]);
+
   const selectedBlock = useStore(selectSelectedBlock);
   const contentForTransform = useStore(useShallow(selectContentForTransform));
   const addUserMessage = useStore((state) => state.addUserMessage);

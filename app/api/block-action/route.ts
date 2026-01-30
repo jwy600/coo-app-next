@@ -32,7 +32,7 @@ function buildActionPrompt(
 
     case 'rewrite': {
       const highlightPrompt = prompt?.trim() || '';
-      return `Rewrite this text, incorporating the highlighted phrases naturally. If a phrase is in a different language, INSERT each highlighted phrase in parentheses immediately after the most relevant word/phrase in the text.\n\nPhrases to incorporate: ${highlightPrompt}\n\nText: ${trimmedBlock}`;
+      return `Rewrite this text, incorporating the highlighted phrases naturally. If a phrase is in a different language, INSERT each highlighted phrase in parentheses immediately after the most relevant word/phrase in the text. Prioritize natural integration, but if no coherent or logical placement exists for a phrase, append it at the end of the text rather than forcing an awkward insertion. Phrases to incorporate: ${highlightPrompt}. Text: ${trimmedBlock}`;
     }
 
     case 'ask': {

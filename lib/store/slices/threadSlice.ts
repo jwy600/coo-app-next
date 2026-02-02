@@ -7,7 +7,7 @@ import * as stateFns from '@/lib/state';
 import { idFactory } from '@/lib/utils/idFactory';
 import { nowFactory } from '@/lib/utils/nowFactory';
 import { isTestMode } from '@/lib/utils/testMode';
-import { persistThreadSnapshot, updateThreadMetadata } from '@/lib/supabase/threads';
+import { persistThreadSnapshot, updateThreadMetadata, deleteThreadFromSupabase } from '@/lib/supabase/threads';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
 import { Block, BlockData } from '@/types/block';
@@ -21,6 +21,7 @@ export interface ThreadSlice {
   createThread: (threadId?: string) => void;
   setActiveThread: (threadId: string) => void;
   updateThreadTitle: (threadId: string, title: string) => void;
+  deleteThread: (threadId: string) => string | null;
   addUserMessage: (text: string) => { message: Message; blocks: Block[] };
   addAssistantMessage: (blocksData: BlockData[], responseId?: string) => { message: Message; blocks: Block[] };
   mergeThreadFromSupabase: (thread: Thread, messages: Message[], blocks: Block[]) => void;
@@ -76,6 +77,28 @@ export const threadSlice: StateCreator<
         new Date(thread.updatedAt).toISOString()
       ).catch((error) => console.error('Failed to update thread metadata:', error));
     }
+  },
+
+  deleteThread: (threadId) => {
+    const result = stateFns.deleteThread(get(), threadId);
+
+    // Update local state immediately (optimistic update)
+    set({
+      threads: result.state.threads,
+      blocks: result.state.blocks,
+      cards: result.state.cards,
+      activeThreadId: result.state.activeThreadId,
+    });
+
+    // Skip database persistence in test mode
+    if (!isTestMode()) {
+      // Async database delete (non-blocking)
+      deleteThreadFromSupabase(threadId).catch((error) =>
+        console.error('Failed to delete thread from database:', error)
+      );
+    }
+
+    return result.nextActiveThreadId;
   },
 
   addUserMessage: (text) => {

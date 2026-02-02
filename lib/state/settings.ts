@@ -3,7 +3,7 @@
  * These are pure functions with no side effects - testable and framework-agnostic
  */
 
-import type { Settings, ModelType, ReasoningEffort, TranslateLanguage } from '@/types/settings';
+import type { Settings, ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
 import { DEFAULT_SETTINGS } from '@/types/settings';
 
 /**
@@ -38,6 +38,16 @@ export const updateWebSearchEnabled = (
   webSearchEnabled: boolean
 ): Settings => {
   return { ...settings, webSearchEnabled };
+};
+
+/**
+ * Update the response language setting
+ */
+export const updateResponseLanguage = (
+  settings: Settings,
+  responseLanguage: ResponseLanguage
+): Settings => {
+  return { ...settings, responseLanguage };
 };
 
 /**

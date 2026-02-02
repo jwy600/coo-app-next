@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/lib/store/useStore';
-import type { ModelType, ReasoningEffort, TranslateLanguage } from '@/types/settings';
+import type { ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
 
 const MODEL_OPTIONS: { value: ModelType; label: string; description: string }[] = [
   { value: 'gpt-5-mini', label: 'GPT-5-mini', description: 'Fast and efficient' },
@@ -18,6 +18,11 @@ const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
+];
+
+const RESPONSE_LANGUAGE_OPTIONS: { value: ResponseLanguage; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' },
 ];
 
 const LANGUAGE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
@@ -32,6 +37,7 @@ export function SettingsForm() {
   const updateModel = useStore((state) => state.updateModel);
   const updateReasoningEffort = useStore((state) => state.updateReasoningEffort);
   const updateWebSearchEnabled = useStore((state) => state.updateWebSearchEnabled);
+  const updateResponseLanguage = useStore((state) => state.updateResponseLanguage);
   const updateTranslateLanguage = useStore((state) => state.updateTranslateLanguage);
   const resetSettings = useStore((state) => state.resetSettings);
 
@@ -75,6 +81,30 @@ export function SettingsForm() {
               <RadioGroupItem value={option.value} id={`reasoning-${option.value}`} />
               <Label
                 htmlFor={`reasoning-${option.value}`}
+                className="cursor-pointer font-normal"
+              >
+                {option.label}
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+
+      <Separator />
+
+      {/* Response Language */}
+      <div className="space-y-3">
+        <Label className="text-sm font-semibold">Response Language</Label>
+        <RadioGroup
+          value={settings.responseLanguage}
+          onValueChange={(value) => updateResponseLanguage(value as ResponseLanguage)}
+          className="grid grid-cols-2 gap-2"
+        >
+          {RESPONSE_LANGUAGE_OPTIONS.map((option) => (
+            <div key={option.value} className="flex items-center space-x-2">
+              <RadioGroupItem value={option.value} id={`response-lang-${option.value}`} />
+              <Label
+                htmlFor={`response-lang-${option.value}`}
                 className="cursor-pointer font-normal"
               >
                 {option.label}

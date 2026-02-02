@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
 import { createResponse, createResponseStream } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
-import { getOpenAIModelConfig, DEVELOPER_PROMPT } from '@/lib/config/openai';
+import { getOpenAIModelConfig, getDeveloperPrompt } from '@/lib/config/openai';
 import { handleApiError } from '@/lib/api/errorHandler';
 
 export async function POST(request: NextRequest) {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
               {
                 model: settings?.model || modelConfig.model,
                 input: prompt,
-                instructions: DEVELOPER_PROMPT,
+                instructions: getDeveloperPrompt(settings?.responseLanguage),
                 previousResponseId,
                 reasoningEffort: settings?.reasoningEffort,
                 webSearchEnabled: settings?.webSearchEnabled,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     const result = await createResponse({
       model: settings?.model || modelConfig.model,
       input: prompt,
-      instructions: DEVELOPER_PROMPT,
+      instructions: getDeveloperPrompt(settings?.responseLanguage),
       previousResponseId,
       reasoningEffort: settings?.reasoningEffort,
       webSearchEnabled: settings?.webSearchEnabled,

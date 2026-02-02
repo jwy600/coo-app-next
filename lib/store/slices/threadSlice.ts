@@ -15,7 +15,7 @@ import { AppState } from '@/types/state';
 
 export interface ThreadSlice {
   threads: Thread[];
-  activeThreadId: string;
+  activeThreadId: string | null;
 
   // Actions that wrap pure functions
   createThread: (threadId?: string) => void;
@@ -83,12 +83,24 @@ export const threadSlice: StateCreator<
     const result = stateFns.deleteThread(get(), threadId);
 
     // Update local state immediately (optimistic update)
-    set({
-      threads: result.state.threads,
-      blocks: result.state.blocks,
-      cards: result.state.cards,
-      activeThreadId: result.state.activeThreadId,
-    });
+    // If no threads remain, switch to landing mode
+    if (result.nextActiveThreadId === null) {
+      set({
+        threads: result.state.threads,
+        blocks: result.state.blocks,
+        cards: result.state.cards,
+        activeThreadId: result.state.activeThreadId,
+        mode: 'landing',
+        selectedBlockId: null,
+      });
+    } else {
+      set({
+        threads: result.state.threads,
+        blocks: result.state.blocks,
+        cards: result.state.cards,
+        activeThreadId: result.state.activeThreadId,
+      });
+    }
 
     // Skip database persistence in test mode
     if (!isTestMode()) {
@@ -115,7 +127,7 @@ export const threadSlice: StateCreator<
     });
 
     // Skip database persistence in test mode
-    if (!isTestMode()) {
+    if (!isTestMode() && result.state.activeThreadId) {
       // Async persistence (non-blocking)
       const activeThread = stateFns.getThreadById(
         result.state,
@@ -152,9 +164,13 @@ export const threadSlice: StateCreator<
   },
 
   addAssistantMessage: (blocksData, responseId) => {
+    const currentActiveThreadId = get().activeThreadId;
+    if (!currentActiveThreadId) {
+      throw new Error('Cannot add assistant message: no active thread');
+    }
     const result = stateFns.addAssistantMessageToThread(
       get(),
-      get().activeThreadId,
+      currentActiveThreadId,
       blocksData,
       idFactory,
       nowFactory,
@@ -167,7 +183,7 @@ export const threadSlice: StateCreator<
     });
 
     // Skip database persistence in test mode
-    if (!isTestMode()) {
+    if (!isTestMode() && result.state.activeThreadId) {
       // Async persistence (non-blocking)
       const activeThread = stateFns.getThreadById(
         result.state,

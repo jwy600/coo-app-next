@@ -167,7 +167,7 @@ export const deleteThread = (
       threads: remainingThreads,
       blocks: filteredBlocks,
       cards: filteredCards,
-      activeThreadId: nextActiveThreadId ?? state.activeThreadId,
+      activeThreadId: nextActiveThreadId,
     },
     nextActiveThreadId,
   };

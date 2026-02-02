@@ -166,6 +166,11 @@ export function useComposer(): UseComposerReturn {
 
       // IMPORTANT: Get fresh activeThreadId from store (after potential createThread())
       const currentThreadId = useStore.getState().activeThreadId;
+      if (!currentThreadId) {
+        setError('No active thread');
+        setAwaitingResponse(false);
+        return;
+      }
 
       // Update thread title ONLY for the first message (when creating new thread)
       if (isNewThread) {

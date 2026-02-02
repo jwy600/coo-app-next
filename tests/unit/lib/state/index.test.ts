@@ -80,7 +80,7 @@ describe('State Management - Core Functions', () => {
 
   describe('updateThreadTitle', () => {
     it('should update thread title and updatedAt', () => {
-      const threadId = state.activeThreadId;
+      const threadId = state.activeThreadId!;
       const nextState = updateThreadTitle(state, threadId, 'New Title', nowFactory);
       const thread = getThreadById(nextState, threadId);
       expect(thread?.title).toBe('New Title');
@@ -88,7 +88,7 @@ describe('State Management - Core Functions', () => {
     });
 
     it('should not modify other threads', () => {
-      const firstThreadId = state.activeThreadId;
+      const firstThreadId = state.activeThreadId!;
       const secondThread = createThread(state, 'thread-2', nowFactory, 'Second');
       state = secondThread.state;
       // Update the first thread, not the active thread (which is thread-2)
@@ -173,7 +173,7 @@ describe('State Management - Core Functions', () => {
       expect(result.blocks[0].text).toBe('Hello world');
       expect(result.state.blocks).toHaveLength(1);
 
-      const thread = getThreadById(result.state, state.activeThreadId);
+      const thread = getThreadById(result.state, state.activeThreadId!);
       expect(thread?.messages).toHaveLength(1);
     });
   });
@@ -190,7 +190,7 @@ describe('State Management - Core Functions', () => {
       expect(result.blocks).toHaveLength(2);
       expect(result.state.blocks).toHaveLength(2);
 
-      const thread = getThreadById(result.state, state.activeThreadId);
+      const thread = getThreadById(result.state, state.activeThreadId!);
       expect(thread?.messages).toHaveLength(1);
       expect(thread?.messages[0].content).toHaveLength(2);
     });
@@ -247,7 +247,7 @@ describe('State Management - Core Functions', () => {
       const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
       const result = addAssistantMessageToThread(
         state,
-        state.activeThreadId,
+        state.activeThreadId!,
         blocksData,
         idFactory,
         nowFactory,
@@ -260,7 +260,7 @@ describe('State Management - Core Functions', () => {
 
   describe('getLastAssistantResponseId', () => {
     it('should return undefined when thread has no messages', () => {
-      const responseId = getLastAssistantResponseId(state, state.activeThreadId);
+      const responseId = getLastAssistantResponseId(state, state.activeThreadId!);
       expect(responseId).toBeUndefined();
     });
 
@@ -271,21 +271,21 @@ describe('State Management - Core Functions', () => {
 
     it('should return undefined when only user messages exist', () => {
       const result = addUserMessage(state, 'Hello', idFactory, nowFactory);
-      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId);
+      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId!);
       expect(responseId).toBeUndefined();
     });
 
     it('should return undefined when assistant message has no responseId', () => {
       const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
       const result = addAssistantMessage(state, blocksData, idFactory, nowFactory);
-      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId);
+      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId!);
       expect(responseId).toBeUndefined();
     });
 
     it('should return responseId from last assistant message', () => {
       const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
       const result = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_first');
-      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId);
+      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId!);
       expect(responseId).toBe('resp_first');
     });
 
@@ -301,7 +301,7 @@ describe('State Management - Core Functions', () => {
       // Add second assistant message
       currentState = addAssistantMessage(currentState, blocksData, idFactory, nowFactory, 'resp_second').state;
 
-      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId);
+      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId!);
       expect(responseId).toBe('resp_second');
     });
 
@@ -317,7 +317,7 @@ describe('State Management - Core Functions', () => {
       // Should still return the first responseId since the latest doesn't have one
       // Actually, wait - it searches backwards and the latest message doesn't have openaiResponseId
       // so it will skip it and return resp_first
-      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId);
+      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId!);
       expect(responseId).toBe('resp_first');
     });
   });

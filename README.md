@@ -73,6 +73,29 @@ Coo works with or without Supabase:
 - **With Supabase**: threads, messages, cards, and blocks are persisted (notes are ephemeral for now)
 - **Without Supabase**: data is stored in localStorage — export periodically if you want to keep long-term notes
 
+### Supabase Setup (Optional)
+By default, Coo works without a database (data is stored in memory and lost on refresh). For persistent storage, set up Supabase:
+
+Create a Supabase project at supabase.com
+
+Run the database schema:
+
+Go to your Supabase dashboard
+Navigate to SQL Editor
+Copy the contents of supabase/schema.sql
+Paste and click Run to create the required tables
+Get your credentials:
+
+Go to Project Settings → API
+Copy the Project URL → use as NEXT_PUBLIC_SUPABASE_URL
+Copy the anon/public key → use as NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+Add to your .env.local:
+
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+
+The app will automatically detect Supabase configuration and enable persistence.
+
 ### Run
 
 ```bash

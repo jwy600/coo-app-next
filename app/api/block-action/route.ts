@@ -3,7 +3,7 @@ import type { BlockActionRequest, BlockActionResponse, ApiError, BlockAction } f
 import type { TranslateLanguage } from '@/types/settings';
 import { getOpenAiClient } from '@/lib/api/openAiClient';
 import { parseString, validatePrompt } from '@/lib/utils/validation';
-import { getOpenAIModelConfig, BLOCK_ACTION_PROMPT } from '@/lib/config/openai';
+import { getOpenAIModelConfig, getBlockActionPrompt } from '@/lib/config/openai';
 import { handleApiError } from '@/lib/api/errorHandler';
 
 // Build action-specific prompt based on action type
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     const completion = await openai.chat.completions.create({
       model: settings?.model || modelConfig.model,
       messages: [
-        { role: 'system', content: BLOCK_ACTION_PROMPT },
+        { role: 'system', content: getBlockActionPrompt(settings?.responseLanguage) },
         { role: 'user', content: actionPrompt },
       ],
     });

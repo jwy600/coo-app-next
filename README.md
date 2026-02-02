@@ -70,6 +70,31 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_key
 ```
 
+### Supabase Setup (Optional)
+
+By default, Coo works without a database (data is stored in memory and lost on refresh). For persistent storage, set up Supabase:
+
+1. **Create a Supabase project** at [supabase.com](https://supabase.com)
+
+2. **Run the database schema**:
+   - Go to your Supabase dashboard
+   - Navigate to **SQL Editor**
+   - Copy the contents of `supabase/schema.sql`
+   - Paste and click **Run** to create the required tables
+
+3. **Get your credentials**:
+   - Go to **Project Settings** → **API**
+   - Copy the **Project URL** → use as `NEXT_PUBLIC_SUPABASE_URL`
+   - Copy the **anon/public key** → use as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+4. **Add to your `.env.local`**:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+   ```
+
+The app will automatically detect Supabase configuration and enable persistence.
+
 ### Running the App
 
 ```bash

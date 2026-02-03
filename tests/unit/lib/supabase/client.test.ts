@@ -32,7 +32,8 @@ describe('Supabase Client', () => {
       'test-key',
       expect.objectContaining({
         auth: {
-          persistSession: false,
+          persistSession: true,
+          autoRefreshToken: true,
         },
       })
     );

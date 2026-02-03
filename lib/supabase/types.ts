@@ -5,6 +5,7 @@
 
 export interface DbThread {
   id: string;
+  user_id: string;
   title: string;
   created_at: string; // ISO timestamp
   updated_at: string; // ISO timestamp
@@ -12,6 +13,7 @@ export interface DbThread {
 
 export interface DbMessage {
   id: string;
+  user_id: string;
   thread_id: string;
   role: 'user' | 'assistant';
   created_at: string; // ISO timestamp
@@ -20,6 +22,7 @@ export interface DbMessage {
 
 export interface DbBlock {
   id: string;
+  user_id: string;
   thread_id: string;
   message_id: string;
   position: number;
@@ -33,6 +36,7 @@ export interface DbBlock {
 
 export interface DbCard {
   id: string;
+  user_id: string;
   message_id: string;
   anchor_block_id: string;
   block_ids: string[]; // JSONB array

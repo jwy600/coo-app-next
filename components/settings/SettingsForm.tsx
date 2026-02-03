@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/lib/store/useStore';
+import { signOut } from '@/lib/supabase/auth';
 import type { ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
 
 const MODEL_OPTIONS: { value: ModelType; label: string; description: string }[] = [
@@ -33,6 +36,9 @@ const LANGUAGE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
 ];
 
 export function SettingsForm() {
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const settings = useStore((state) => state.settings);
   const updateModel = useStore((state) => state.updateModel);
   const updateReasoningEffort = useStore((state) => state.updateReasoningEffort);
@@ -40,6 +46,18 @@ export function SettingsForm() {
   const updateResponseLanguage = useStore((state) => state.updateResponseLanguage);
   const updateTranslateLanguage = useStore((state) => state.updateTranslateLanguage);
   const resetSettings = useStore((state) => state.resetSettings);
+  const resetStore = useStore((state) => state.reset);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    const result = await signOut();
+    if (result.success) {
+      resetStore();
+      router.push('/auth/login');
+      router.refresh();
+    }
+    setIsLoggingOut(false);
+  };
 
   return (
     <div className="flex flex-col gap-6 py-4">
@@ -166,6 +184,18 @@ export function SettingsForm() {
         className="w-full"
       >
         Reset to Defaults
+      </Button>
+
+      <Separator />
+
+      {/* Logout Button */}
+      <Button
+        variant="destructive"
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+        className="w-full"
+      >
+        {isLoggingOut ? 'Signing out...' : 'Sign out'}
       </Button>
     </div>
   );

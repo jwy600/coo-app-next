@@ -12,14 +12,18 @@ import {
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SettingsForm } from './SettingsForm';
+import { useAuth } from '@/hooks/useAuth';
 
 export function SettingsSheet() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const isDisabled = isLoading || !isAuthenticated;
+
   return (
     <Sheet>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SheetTrigger asChild>
-            <SidebarMenuButton>
+          <SheetTrigger asChild disabled={isDisabled}>
+            <SidebarMenuButton disabled={isDisabled}>
               <Settings className="h-4 w-4" />
               <span>Settings</span>
             </SidebarMenuButton>

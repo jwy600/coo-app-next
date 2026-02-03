@@ -46,8 +46,15 @@ export const loadCardsForThread = async (threadId: string): Promise<Card[]> => {
 export const persistCard = async (card: Card): Promise<void> => {
   return withSupabaseClient(
     async (supabase) => {
+      // Get current user for RLS
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { error } = await supabase.from('cards').insert({
         id: card.id,
+        user_id: user.id,
         message_id: card.messageId,
         anchor_block_id: card.anchorBlockId,
         block_ids: card.blockIds,

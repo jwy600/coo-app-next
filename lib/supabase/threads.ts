@@ -134,6 +134,25 @@ export const updateThreadMetadata = async (
 };
 
 /**
+ * Delete a thread from Supabase
+ * Cascade delete handles removing related messages and blocks automatically
+ */
+export const deleteThreadFromSupabase = async (threadId: string): Promise<void> => {
+  return withSupabaseClient(
+    async (supabase) => {
+      const { error } = await supabase
+        .from('threads')
+        .delete()
+        .eq('id', threadId);
+
+      if (error) throw error;
+    },
+    undefined,
+    `deleting thread ${threadId}`
+  );
+};
+
+/**
  * Convert DB thread to app thread
  */
 const dbThreadToThread = (dbThread: DbThread): Thread => ({

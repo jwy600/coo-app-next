@@ -113,3 +113,62 @@ export const getLastAssistantResponseId = (
 
   return undefined;
 };
+
+/**
+ * Result of deleteThread - contains updated state and next thread to navigate to
+ */
+export interface DeleteThreadResult {
+  state: AppState;
+  nextActiveThreadId: string | null;
+}
+
+/**
+ * Delete a thread from state
+ *
+ * - Removes thread from threads array
+ * - Removes all blocks belonging to that thread's messages
+ * - Removes all cards belonging to that thread's messages
+ * - Determines the next active thread (previous > next > null)
+ *
+ * @param state - Current application state
+ * @param threadId - ID of the thread to delete
+ * @returns New state with thread removed and next active thread ID
+ */
+export const deleteThread = (
+  state: AppState,
+  threadId: string
+): DeleteThreadResult => {
+  const thread = getThreadById(state, threadId);
+  if (!thread) {
+    return { state, nextActiveThreadId: state.activeThreadId };
+  }
+
+  // Get message IDs for the thread to filter blocks and cards
+  const messageIds = new Set(thread.messages.map((m) => m.id));
+
+  // Determine next active thread
+  const threadIndex = state.threads.findIndex((t) => t.id === threadId);
+  const remainingThreads = state.threads.filter((t) => t.id !== threadId);
+
+  let nextActiveThreadId: string | null = null;
+  if (remainingThreads.length > 0) {
+    // Prefer previous thread, fall back to next (which is now at same index)
+    const nextIndex = Math.min(threadIndex, remainingThreads.length - 1);
+    nextActiveThreadId = remainingThreads[nextIndex >= 0 ? nextIndex : 0].id;
+  }
+
+  // Filter out blocks and cards belonging to the deleted thread
+  const filteredBlocks = state.blocks.filter((b) => !messageIds.has(b.messageId));
+  const filteredCards = state.cards.filter((c) => !messageIds.has(c.messageId));
+
+  return {
+    state: {
+      ...state,
+      threads: remainingThreads,
+      blocks: filteredBlocks,
+      cards: filteredCards,
+      activeThreadId: nextActiveThreadId,
+    },
+    nextActiveThreadId,
+  };
+};

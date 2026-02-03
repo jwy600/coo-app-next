@@ -36,6 +36,9 @@ export const addUserMessage = (
   nowFactory: () => number
 ): AddMessageResult => {
   const threadId = state.activeThreadId;
+  if (!threadId) {
+    throw new Error('Cannot add message: no active thread');
+  }
   const messageId = idFactory();
   const message: Message = {
     id: messageId,
@@ -70,9 +73,13 @@ export const addAssistantMessage = (
   nowFactory: () => number,
   responseId?: string
 ): AddMessageResult => {
+  const threadId = state.activeThreadId;
+  if (!threadId) {
+    throw new Error('Cannot add message: no active thread');
+  }
   return addAssistantMessageToThread(
     state,
-    state.activeThreadId,
+    threadId,
     blocksData,
     idFactory,
     nowFactory,

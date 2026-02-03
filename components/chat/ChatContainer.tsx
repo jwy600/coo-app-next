@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { MessageList } from './MessageList';
 import { Composer } from '@/components/composer/Composer';
+import { DeleteThreadButton } from './DeleteThreadButton';
 import { ExportButton } from './ExportButton';
 import { OfflineBanner } from './OfflineBanner';
 import { isOfflineMode } from '@/lib/utils/offlineMode';
@@ -198,10 +199,11 @@ export function ChatContainer({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar with offline banner and export button */}
+      {/* Toolbar with offline banner, delete and export buttons */}
       <div className="chat-toolbar relative flex items-center justify-center px-4 border-b border-border/50 min-h-[52px]">
         {showOfflineBanner && <OfflineBanner />}
-        <div className="absolute right-4">
+        <div className="absolute right-4 flex items-center gap-2">
+          <DeleteThreadButton />
           <ExportButton />
         </div>
       </div>

@@ -12,7 +12,7 @@ import { Block } from '../block';
 import { Card } from '../card';
 
 export interface CoreState {
-  activeThreadId: string;
+  activeThreadId: string | null;
   threads: Thread[];
   blocks: Block[];
   cards: Card[];

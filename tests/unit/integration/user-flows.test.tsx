@@ -200,10 +200,10 @@ describe('User Flow Tests', () => {
       
       // Current active should be thread 2
       expect(useStore.getState().activeThreadId).toBe(thread2Id);
-      
+
       // Switch back to thread 1
-      setActiveThread(thread1Id);
-      
+      setActiveThread(thread1Id!);
+
       const state = useStore.getState();
       expect(state.activeThreadId).toBe(thread1Id);
     });

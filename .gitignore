@@ -38,6 +38,7 @@ codemaps/
 .reports
 next-env.d.ts
 futureimprovement.md
+scripts/import-markdown.js
 
 # Pencil
 *.pen

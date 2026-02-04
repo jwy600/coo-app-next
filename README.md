@@ -31,6 +31,18 @@ If you want a longer write-up, check out my blog post: *Are we really chatting w
 - **Cards**: collect blocks into cards as visual anchors, then export to your PKM system
 - **Local-first or database-backed**: works with localStorage, or with Supabase for persistence
 
+## Try Coo
+
+### Hosted Version
+
+Visit **[coo-app-next.vercel.app](https://coo-app-next.vercel.app)** to try Coo for free.
+
+Sign-up is currently invite-only. If you'd like access, contact **jwy600@gmail.com**.
+
+### Self-Hosted
+
+Prefer to run it yourself? Clone the repo and configure your own API keys — see [Getting Started](#getting-started) below.
+
 ## Tech Stack
 
 - **Framework**: Next.js 16 + React 19

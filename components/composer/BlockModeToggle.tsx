@@ -14,12 +14,12 @@ interface BlockModeToggleProps {
  */
 export function BlockModeToggle({ mode, onModeChange, disabled = false }: BlockModeToggleProps) {
   return (
-    <div className="inline-flex rounded-lg border border-border bg-muted p-0.5">
+    <div className="inline-flex rounded border border-border bg-muted p-0.5">
       <button
         type="button"
         onClick={() => onModeChange('ask')}
         disabled={disabled}
-        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+        className={`px-2 py-0.5 text-xs font-medium rounded-sm transition-colors ${
           mode === 'ask'
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground'
@@ -32,7 +32,7 @@ export function BlockModeToggle({ mode, onModeChange, disabled = false }: BlockM
         type="button"
         onClick={() => onModeChange('edit')}
         disabled={disabled}
-        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+        className={`px-2 py-0.5 text-xs font-medium rounded-sm transition-colors ${
           mode === 'edit'
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground'

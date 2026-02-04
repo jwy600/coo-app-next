@@ -45,14 +45,17 @@ export function Composer({
       onSubmit={onSubmit}
       className="composer bg-background rounded-xl border border-border composer-shadow p-4 max-h-[50vh] flex flex-col overflow-hidden w-full"
     >
-      {/* Ask/Edit toggle - shown when block is selected */}
+      {/* Ask/Edit toggle + Block actions - shown when block is selected */}
       {hasBlockSelected && onComposerModeChange && (
-        <div className="mb-3 flex-shrink-0">
+        <div className="mb-3 flex-shrink-0 flex items-center gap-3">
           <BlockModeToggle
             mode={composerMode === 'edit' ? 'edit' : 'ask'}
             onModeChange={onComposerModeChange}
             disabled={disabled}
           />
+          {showBlockControls && (
+            <BlockControls onAction={onBlockAction} disabled={disabled} />
+          )}
         </div>
       )}
 
@@ -75,12 +78,6 @@ export function Composer({
           </span>
         </Button>
       </div>
-
-      {showBlockControls && (
-        <div className="mt-2 flex-shrink-0">
-          <BlockControls onAction={onBlockAction} disabled={disabled} />
-        </div>
-      )}
 
       <ComposerHint hidden={hasBlockSelected} />
     </form>

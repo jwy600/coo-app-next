@@ -101,6 +101,44 @@ export function PromptInput({
       if (onSubmit) {
         onSubmit();
       }
+      return;
+    }
+
+    // In edit mode: convert backspace/delete to strikethrough when ALL text is selected
+    if (composerMode === 'edit' && (e.key === 'Backspace' || e.key === 'Delete')) {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || !inputRef.current) return;
+
+      const selectedText = selection.toString();
+      const fullText = inputRef.current.textContent || '';
+
+      // Only apply strikethrough if ALL text is selected
+      if (!selectedText || selectedText.length !== fullText.length) return;
+
+      e.preventDefault();
+
+      // Wrap entire text in strikethrough
+      const newText = '~~' + fullText + '~~';
+
+      isUserInputRef.current = true;
+      onChange(newText.replace(/\u00a0/g, ' ').trim());
+
+      // Update DOM and position cursor at the end
+      inputRef.current.textContent = newText;
+
+      try {
+        const textNode = inputRef.current.firstChild;
+        if (textNode && selection) {
+          const newRange = document.createRange();
+          const maxOffset = (textNode.textContent || '').length;
+          newRange.setStart(textNode, maxOffset);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      } catch (err) {
+        // Ignore cursor positioning errors
+      }
     }
   };
 

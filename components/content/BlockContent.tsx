@@ -120,6 +120,9 @@ function renderSegment(segment: MarkdownSegment, index: number): React.ReactNode
       // Recursively parse content for nested bold/links
       return <em key={index}>{parseNestedFormatting(segment.content, 'italic')}</em>;
 
+    case 'strikethrough':
+      return <del key={index}>{segment.content}</del>;
+
     case 'link':
       return (
         <a

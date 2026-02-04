@@ -21,8 +21,8 @@ export function BlockControls({ onAction, disabled = false }: BlockControlsProps
   const actions: { action: UIBlockAction; label: string }[] = [
     { action: 'translate', label: 'Translate' },
     { action: 'example', label: 'Example' },
-    { action: 'eli5', label: 'ELI5' },
     { action: 'expand', label: 'Expand' },
+    { action: 'eli5', label: 'ELI5' },
   ];
 
   const handleClick = (e: React.MouseEvent, action: UIBlockAction) => {

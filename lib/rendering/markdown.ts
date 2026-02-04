@@ -4,7 +4,7 @@
  */
 
 export interface MarkdownSegment {
-  type: 'text' | 'bold' | 'italic' | 'link' | 'inline-math' | 'block-math' | 'break';
+  type: 'text' | 'bold' | 'italic' | 'strikethrough' | 'link' | 'inline-math' | 'block-math' | 'break';
   content: string;
   /** URL for link segments */
   href?: string;
@@ -64,7 +64,7 @@ export function parseInlineMarkdown(text: string): MarkdownSegment[] {
  * Token for inline markdown parsing
  */
 interface InlineToken {
-  type: 'text' | 'bold' | 'italic' | 'link';
+  type: 'text' | 'bold' | 'italic' | 'strikethrough' | 'link';
   content: string;
   href?: string;
   start: number;
@@ -114,6 +114,22 @@ function parseInlineFormatting(text: string): MarkdownSegment[] {
       if (!overlaps) {
         tokens.push({
           type: 'bold',
+          content: match[1],
+          start: match.index,
+          end: match.index + match[0].length,
+        });
+      }
+    }
+
+    // Find strikethrough: ~~text~~
+    const strikethroughRegex = /~~(.+?)~~/g;
+    while ((match = strikethroughRegex.exec(part)) !== null) {
+      const overlaps = tokens.some(
+        (t) => match!.index < t.end && match!.index + match![0].length > t.start
+      );
+      if (!overlaps) {
+        tokens.push({
+          type: 'strikethrough',
           content: match[1],
           start: match.index,
           end: match.index + match[0].length,
@@ -244,6 +260,7 @@ export function stripMarkdown(text: string): string {
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, tex) => tex) // Inline math
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links - keep text, remove URL
     .replace(/\*\*(.*?)\*\*/g, '$1') // Bold
+    .replace(/~~(.*?)~~/g, '$1') // Strikethrough
     .replace(/(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g, '$1') // Italic (asterisk)
     .replace(/_([^_]+?)_/g, '$1') // Italic (underscore)
     .replace(/\n/g, ' '); // Line breaks

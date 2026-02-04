@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import type { ComposerMode } from '@/types/state/ui';
 
 /**
  * Client Component - Contenteditable input with text selection capture
@@ -17,6 +18,7 @@ interface PromptInputProps {
   placeholder?: string;
   disabled?: boolean;
   hasBlockSelected?: boolean;
+  composerMode?: ComposerMode;
 }
 
 export function PromptInput({
@@ -27,13 +29,20 @@ export function PromptInput({
   placeholder,
   disabled = false,
   hasBlockSelected = false,
+  composerMode = 'chat',
 }: PromptInputProps) {
-  // Set default placeholder based on block selection state
-  const defaultPlaceholder = hasBlockSelected
-    ? 'Ask about the selected block'
-    : 'Ask coo anything';
+  // Set default placeholder based on composer mode
+  const getDefaultPlaceholder = () => {
+    if (composerMode === 'edit') {
+      return 'Type new content to replace the selected block';
+    }
+    if (hasBlockSelected) {
+      return 'Ask about the selected block';
+    }
+    return 'Ask coo anything';
+  };
 
-  const finalPlaceholder = placeholder || defaultPlaceholder;
+  const finalPlaceholder = placeholder || getDefaultPlaceholder();
   const inputRef = useRef<HTMLDivElement>(null);
   const isUserInputRef = useRef<boolean>(false);
   // Track mouse drag state for selection capture (only drag creates chips, not clicks)
@@ -91,6 +100,44 @@ export function PromptInput({
       e.preventDefault();
       if (onSubmit) {
         onSubmit();
+      }
+      return;
+    }
+
+    // In edit mode: convert backspace/delete to strikethrough when ALL text is selected
+    if (composerMode === 'edit' && (e.key === 'Backspace' || e.key === 'Delete')) {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || !inputRef.current) return;
+
+      const selectedText = selection.toString();
+      const fullText = inputRef.current.textContent || '';
+
+      // Only apply strikethrough if ALL text is selected
+      if (!selectedText || selectedText.length !== fullText.length) return;
+
+      e.preventDefault();
+
+      // Wrap entire text in strikethrough
+      const newText = '~~' + fullText + '~~';
+
+      isUserInputRef.current = true;
+      onChange(newText.replace(/\u00a0/g, ' ').trim());
+
+      // Update DOM and position cursor at the end
+      inputRef.current.textContent = newText;
+
+      try {
+        const textNode = inputRef.current.firstChild;
+        if (textNode && selection) {
+          const newRange = document.createRange();
+          const maxOffset = (textNode.textContent || '').length;
+          newRange.setStart(textNode, maxOffset);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      } catch (err) {
+        // Ignore cursor positioning errors
       }
     }
   };

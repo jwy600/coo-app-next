@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MessageList } from './MessageList';
 import { Composer } from '@/components/composer/Composer';
 import { DeleteThreadButton } from './DeleteThreadButton';
@@ -74,6 +74,9 @@ export function ChatContainer({
     handleSubmit,
     isSubmitting,
     handleBlockAction,
+    composerMode,
+    setComposerMode,
+    populateWithBlockText,
   } = useComposer();
 
   // Error state from store (persists across navigation)
@@ -185,6 +188,18 @@ export function ChatContainer({
     handleSubmit();
   };
 
+  // Handle composer mode change (Ask/Edit toggle)
+  const handleComposerModeChange = useCallback((mode: 'ask' | 'edit') => {
+    setComposerMode(mode);
+    if (mode === 'edit') {
+      // Populate composer with block text when switching to edit mode
+      populateWithBlockText();
+    } else if (mode === 'ask') {
+      // Clear prompt when switching to ask mode
+      setPrompt('');
+    }
+  }, [setComposerMode, populateWithBlockText, setPrompt]);
+
   // Combined error (thread loading or composer)
   const error = threadError || composerError;
 
@@ -238,6 +253,8 @@ export function ChatContainer({
             onSubmit={handleSubmit}
             onSelectionCapture={captureSelection}
             onBlockAction={handleBlockAction}
+            composerMode={composerMode}
+            onComposerModeChange={handleComposerModeChange}
             disabled={isComposerDisabled}
           />
         </div>

@@ -20,14 +20,17 @@ export class ChatPage {
   readonly assistantMessages: Locator;
   readonly blocks: Locator;
 
+  readonly modeToggle: Locator;
+
   constructor(page: Page) {
     this.page = page;
     this.composer = page.locator('form.composer');
     this.promptInput = this.composer.locator('div#prompt, [role="textbox"]');
     this.sendButton = this.composer.locator('button[type="submit"]');
-    // Block controls wrapper (div with mt-2 class that contains the action badges)
+    // Block controls wrapper (div that contains the action badges)
     // Note: BlockControls uses Badge components which render as <div> elements, not buttons
-    this.blockControls = this.composer.locator('.mt-2').filter({ hasText: /Translate|ELI5|Example|Expand/ });
+    this.blockControls = this.composer.locator('div').filter({ hasText: /Translate|ELI5|Example|Expand/ }).first();
+    this.modeToggle = this.composer.locator('div').filter({ has: page.locator('button', { hasText: 'Ask' }) }).filter({ has: page.locator('button', { hasText: 'Edit' }) }).first();
     this.messages = page.locator('.user-message, .assistant-message');
     this.userMessages = page.locator('.user-message');
     this.assistantMessages = page.locator('.assistant-message');
@@ -503,5 +506,96 @@ export class ChatPage {
     await cancelButton.click();
     // Wait for dialog to close
     await this.page.waitForTimeout(100);
+  }
+
+  // ==================== Direct Edit Mode Methods ====================
+
+  /**
+   * Check if Ask/Edit toggle is visible
+   */
+  async isModeToggleVisible(): Promise<boolean> {
+    return await this.modeToggle.isVisible();
+  }
+
+  /**
+   * Click Ask mode in toggle
+   */
+  async clickAskMode(): Promise<void> {
+    const askButton = this.modeToggle.locator('button', { hasText: 'Ask' });
+    await askButton.click();
+    await this.page.waitForTimeout(100);
+  }
+
+  /**
+   * Click Edit mode in toggle
+   */
+  async clickEditMode(): Promise<void> {
+    const editButton = this.modeToggle.locator('button', { hasText: 'Edit' });
+    await editButton.click();
+    await this.page.waitForTimeout(100);
+  }
+
+  /**
+   * Check if currently in Edit mode (Edit button is active)
+   */
+  async isInEditMode(): Promise<boolean> {
+    const editButton = this.modeToggle.locator('button', { hasText: 'Edit' });
+    const className = await editButton.getAttribute('class');
+    // Active button has bg-background class
+    return className?.includes('bg-background') || false;
+  }
+
+  /**
+   * Check if currently in Ask mode (Ask button is active)
+   */
+  async isInAskMode(): Promise<boolean> {
+    const askButton = this.modeToggle.locator('button', { hasText: 'Ask' });
+    const className = await askButton.getAttribute('class');
+    return className?.includes('bg-background') || false;
+  }
+
+  /**
+   * Get submit button text (Send vs Replace)
+   */
+  async getSubmitButtonText(): Promise<string> {
+    return await this.sendButton.innerText();
+  }
+
+  /**
+   * Click Replace button (alias for sendButton.click in edit mode)
+   */
+  async clickReplace(): Promise<void> {
+    await this.sendButton.click();
+    await this.page.waitForTimeout(100);
+  }
+
+  /**
+   * Clear the prompt input
+   */
+  async clearPrompt(): Promise<void> {
+    await this.promptInput.evaluate((el) => {
+      el.textContent = '';
+      el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    });
+  }
+
+  /**
+   * Select all text in composer and press a key
+   */
+  async selectAllAndPress(key: string): Promise<void> {
+    await this.promptInput.click();
+    // Select all with Cmd/Ctrl+A
+    const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+    await this.page.keyboard.press(`${modifier}+a`);
+    await this.page.keyboard.press(key);
+    await this.page.waitForTimeout(100);
+  }
+
+  /**
+   * Get the undo button for a block (standalone, not in selection chips)
+   */
+  getUndoButton(blockIndex: number): Locator {
+    const block = this.getBlock(blockIndex);
+    return block.locator('.chip-undo');
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import type { ComposerMode } from '@/types/state/ui';
 
 /**
  * Client Component - Contenteditable input with text selection capture
@@ -17,6 +18,7 @@ interface PromptInputProps {
   placeholder?: string;
   disabled?: boolean;
   hasBlockSelected?: boolean;
+  composerMode?: ComposerMode;
 }
 
 export function PromptInput({
@@ -27,13 +29,20 @@ export function PromptInput({
   placeholder,
   disabled = false,
   hasBlockSelected = false,
+  composerMode = 'chat',
 }: PromptInputProps) {
-  // Set default placeholder based on block selection state
-  const defaultPlaceholder = hasBlockSelected
-    ? 'Ask about the selected block'
-    : 'Ask coo anything';
+  // Set default placeholder based on composer mode
+  const getDefaultPlaceholder = () => {
+    if (composerMode === 'edit') {
+      return 'Type new content to replace the selected block';
+    }
+    if (hasBlockSelected) {
+      return 'Ask about the selected block';
+    }
+    return 'Ask coo anything';
+  };
 
-  const finalPlaceholder = placeholder || defaultPlaceholder;
+  const finalPlaceholder = placeholder || getDefaultPlaceholder();
   const inputRef = useRef<HTMLDivElement>(null);
   const isUserInputRef = useRef<boolean>(false);
   // Track mouse drag state for selection capture (only drag creates chips, not clicks)

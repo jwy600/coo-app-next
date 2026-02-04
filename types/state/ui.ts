@@ -8,7 +8,10 @@
  */
 
 export type AppMode = 'landing' | 'thread';
-export type ComposerMode = 'chat' | 'block';
+export type ComposerMode = 'chat' | 'ask' | 'edit';
+// - 'chat': No block selected, normal chat mode
+// - 'ask': Block selected, asking about it (default when block selected)
+// - 'edit': Block selected, directly editing the block
 
 export interface UIState {
   mode: AppMode;

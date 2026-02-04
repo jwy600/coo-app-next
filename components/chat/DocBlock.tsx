@@ -116,14 +116,27 @@ function DocBlockComponent({
       <div className="doc-content">
         <BlockContent text={block.text} type={block.type} />
 
-        {/* Selection chips (only show when selected) */}
-        {isSelected && (
+        {/* Selection chips (only show when selected and has selections) */}
+        {isSelected && block.selections.length > 0 && (
           <SelectionChips
             block={block}
             onRemoveSelection={(index) => onRemoveSelection?.(block.id, index)}
             onRewrite={() => onRewrite?.(block.id)}
             onUndo={() => onUndo?.(block.id)}
           />
+        )}
+
+        {/* Standalone undo button (when selected, has prevText, but no selections) */}
+        {isSelected && block.prevText != null && block.selections.length === 0 && (
+          <div className="block-chips">
+            <button
+              type="button"
+              className="chip-undo"
+              onClick={() => onUndo?.(block.id)}
+            >
+              Undo
+            </button>
+          </div>
         )}
       </div>
     </div>

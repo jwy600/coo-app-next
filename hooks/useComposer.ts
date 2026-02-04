@@ -18,6 +18,7 @@ import { getLastAssistantResponseId } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { useStreaming } from './useStreaming';
 import type { BlockAction } from '@/types/api';
+import type { ComposerMode } from '@/types/state/ui';
 import { idFactory } from '@/lib/utils/idFactory';
 
 export interface UseComposerReturn {
@@ -28,14 +29,20 @@ export interface UseComposerReturn {
   error: string | null;
   clearPrompt: () => void;
   handleBlockAction: (action: BlockAction) => Promise<void>;
+  // Edit mode support
+  composerMode: ComposerMode;
+  setComposerMode: (mode: ComposerMode) => void;
+  populateWithBlockText: () => void;
 }
 
 export function useComposer(): UseComposerReturn {
   const [prompt, setPrompt] = useState('');
+  const [composerMode, setComposerMode] = useState<ComposerMode>('chat');
 
   // Store state
   const settings = useStore((state) => state.settings);
   const selectedBlockId = useStore((state) => state.selectedBlockId);
+  const rewriteBlock = useStore((state) => state.rewriteBlock);
 
   // Track previous selectedBlockId to detect block switches
   const prevSelectedBlockIdRef = useRef(selectedBlockId);
@@ -51,6 +58,17 @@ export function useComposer(): UseComposerReturn {
     }
 
     prevSelectedBlockIdRef.current = curr;
+  }, [selectedBlockId]);
+
+  // Manage composer mode based on block selection
+  useEffect(() => {
+    if (selectedBlockId) {
+      // Default to 'ask' when block is selected
+      setComposerMode('ask');
+    } else {
+      // Return to 'chat' when no block is selected
+      setComposerMode('chat');
+    }
   }, [selectedBlockId]);
 
   const selectedBlock = useStore(selectSelectedBlock);
@@ -78,6 +96,27 @@ export function useComposer(): UseComposerReturn {
     setPrompt('');
     setError(null);
   }, [setError]);
+
+  /**
+   * Populate composer with selected block's text (for edit mode)
+   */
+  const populateWithBlockText = useCallback(() => {
+    if (selectedBlock) {
+      setPrompt(selectedBlock.text);
+    }
+  }, [selectedBlock]);
+
+  /**
+   * Handle direct edit submission (replace block text)
+   * No API call - text comes directly from user input
+   * Keeps block selected so user can continue editing or undo
+   */
+  const handleDirectEdit = useCallback(() => {
+    if (!selectedBlockId || !prompt.trim()) return;
+
+    rewriteBlock(selectedBlockId, prompt.trim());
+    // Don't clear selection - keep block selected for further edits or undo
+  }, [selectedBlockId, prompt, rewriteBlock]);
 
   /**
    * Handle block action (ELI5, Translate, Expand, Example, Ask)
@@ -144,7 +183,13 @@ export function useComposer(): UseComposerReturn {
       if (isSubmitting) return;
       if (!trimmedPrompt) return;
 
-      // BLOCK MODE: Result goes to composer when a block is selected
+      // EDIT MODE: Direct block replacement (no API call)
+      if (composerMode === 'edit' && selectedBlockId) {
+        handleDirectEdit();
+        return;
+      }
+
+      // ASK MODE: Result goes to composer when a block is selected
       if (selectedBlockId && contentForTransform.length > 0) {
         await handleBlockAction('ask');
         return;
@@ -223,7 +268,9 @@ export function useComposer(): UseComposerReturn {
       selectedBlockId,
       contentForTransform,
       mode,
+      composerMode,
       handleBlockAction,
+      handleDirectEdit,
       createThread,
       setMode,
       addUserMessage,
@@ -244,5 +291,9 @@ export function useComposer(): UseComposerReturn {
     error,
     clearPrompt,
     handleBlockAction,
+    // Edit mode support
+    composerMode,
+    setComposerMode,
+    populateWithBlockText,
   };
 }

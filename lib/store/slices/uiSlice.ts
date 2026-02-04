@@ -26,6 +26,7 @@ export interface UISlice {
   clearSelection: () => void;
   setAwaitingResponse: (value: boolean) => void;
   setError: (error: string | null) => void;
+  reset: () => void;
 }
 
 // ============================================================================
@@ -108,5 +109,21 @@ export const uiSlice: StateCreator<
 
   setError: (error) => {
     set({ error });
+  },
+
+  reset: () => {
+    // Reset all state except settings (which are persisted separately)
+    // Using Partial to reset state from other slices
+    set({
+      threads: [],
+      blocks: [],
+      cards: [],
+      activeThreadId: null,
+      mode: 'landing',
+      selectedBlockId: null,
+      isAwaitingResponse: false,
+      error: null,
+      streamingMessage: null,
+    } as Partial<AppState & UISlice>);
   },
 });

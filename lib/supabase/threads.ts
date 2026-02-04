@@ -56,11 +56,18 @@ export const loadThreadFromSupabase = async (threadId: string): Promise<Thread |
 export const persistThreadSnapshot = async (data: ThreadPersistData): Promise<void> => {
   return withSupabaseClient(
     async (supabase) => {
+      // Get current user for RLS
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       // 1. Upsert thread
       const { error: threadError } = await supabase
         .from('threads')
         .upsert({
           id: data.threadId,
+          user_id: user.id,
           title: data.title,
           created_at: data.createdAt,
           updated_at: data.updatedAt,
@@ -73,6 +80,7 @@ export const persistThreadSnapshot = async (data: ThreadPersistData): Promise<vo
         .from('messages')
         .insert({
           id: data.message.id,
+          user_id: user.id,
           thread_id: data.threadId,
           role: data.message.role,
           created_at: new Date(data.message.createdAt).toISOString(),
@@ -85,6 +93,7 @@ export const persistThreadSnapshot = async (data: ThreadPersistData): Promise<vo
       if (data.blocks.length > 0) {
         const blocksToInsert = data.blocks.map((block, index) => ({
           id: block.id,
+          user_id: user.id,
           thread_id: data.threadId,
           message_id: block.messageId,
           position: index,

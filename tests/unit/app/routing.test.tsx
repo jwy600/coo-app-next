@@ -4,7 +4,7 @@
  * Verifies landing page and thread detail page work correctly with new AppLayout
  */
 
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import LandingPage from '@/app/page';
 import ThreadPage from '@/app/t/[threadId]/page';
@@ -36,6 +36,14 @@ vi.mock('@/lib/supabase/blocks', () => ({
   loadBlocksForThread: vi.fn(),
 }));
 
+// Mock server-side Supabase client
+const mockSupabaseFrom = vi.fn();
+vi.mock('@/lib/supabase/server', () => ({
+  createServerSupabaseClient: vi.fn(() => Promise.resolve({
+    from: mockSupabaseFrom,
+  })),
+}));
+
 // Mock AppLayout and related components
 vi.mock('@/components/layout/AppLayout', () => ({
   AppLayout: ({ children, threads }: { children: React.ReactNode; threads: Thread[] }) => (
@@ -61,17 +69,20 @@ describe('Landing Page', () => {
   });
 
   it('should render with thread list', async () => {
-    const { loadAllThreads } = await import('@/lib/supabase/threads');
-    const mockThreads: Thread[] = [
+    // Mock server-side Supabase query
+    const mockDbThreads = [
       {
         id: 'thread-1',
         title: 'Test Thread',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        messages: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
     ];
-    (loadAllThreads as Mock).mockResolvedValue(mockThreads);
+    mockSupabaseFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: mockDbThreads, error: null }),
+      }),
+    });
 
     const Component = await LandingPage();
     render(Component);
@@ -82,8 +93,12 @@ describe('Landing Page', () => {
   });
 
   it('should render with empty thread list', async () => {
-    const { loadAllThreads } = await import('@/lib/supabase/threads');
-    (loadAllThreads as Mock).mockResolvedValue([]);
+    // Mock empty result
+    mockSupabaseFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    });
 
     const Component = await LandingPage();
     render(Component);
@@ -99,17 +114,20 @@ describe('Thread Detail Page', () => {
   });
 
   it('should render thread page with correct threadId', async () => {
-    const { loadAllThreads } = await import('@/lib/supabase/threads');
-    const mockThreads: Thread[] = [
+    // Mock server-side Supabase query
+    const mockDbThreads = [
       {
         id: 'thread-1',
         title: 'Test Thread',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        messages: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
     ];
-    (loadAllThreads as Mock).mockResolvedValue(mockThreads);
+    mockSupabaseFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: mockDbThreads, error: null }),
+      }),
+    });
 
     const params = Promise.resolve({ threadId: 'thread-1' });
     const Component = await ThreadPage({ params });

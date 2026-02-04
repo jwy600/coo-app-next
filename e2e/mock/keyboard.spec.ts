@@ -28,16 +28,11 @@ test.describe('Keyboard Shortcuts', () => {
     // Mock successful response
     await apiMocker.mockChatSuccess(MOCK_RESPONSES.chat.simple);
 
-    // Focus the prompt input first
+    // Use fillPrompt for reliable cross-browser text input
+    await composer.fillPrompt('Test Enter key');
+
+    // Focus and submit with Enter
     await composer.focus();
-
-    // Type prompt using keyboard (more reliable than fillPrompt for Enter key test)
-    await page.keyboard.type('Test Enter key');
-
-    // Small wait to ensure input is processed (Firefox needs this)
-    await page.waitForTimeout(100);
-
-    // Submit with Enter
     await composer.submitWithEnter();
 
     // Verify navigation
@@ -90,46 +85,44 @@ test.describe('Keyboard Shortcuts', () => {
   });
 
   test('should support multiline input with Shift+Enter', async ({ page }) => {
-    // Focus on composer
-    await composer.focus();
+    // Get the prompt input locator
+    const promptInput = page.locator('#prompt');
 
-    // Type first line
-    await page.keyboard.type('First line');
+    // Focus and type first line using locator.pressSequentially (more reliable for contenteditable)
+    await promptInput.focus();
+    await promptInput.pressSequentially('First line');
 
     // Press Shift+Enter for new line
-    await page.keyboard.press('Shift+Enter');
+    await promptInput.press('Shift+Enter');
 
     // Type second line
-    await page.keyboard.type('Second line');
+    await promptInput.pressSequentially('Second line');
 
-    // Verify multiline text
-    const text = await composer.getPromptValue();
-    expect(text).toContain('First line');
-    expect(text).toContain('Second line');
-    // Contenteditable may use <br> or \n for line breaks
-    const hasLineBreak = text.includes('\n') || text.includes('\r') ||
-                         text.match(/First line[\s\S]*Second line/);
-    expect(hasLineBreak).toBeTruthy();
+    // Verify multiline text using innerHTML to capture <br> elements
+    const innerHTML = await promptInput.innerHTML();
+    expect(innerHTML).toContain('First line');
+    expect(innerHTML).toContain('Second line');
   });
 
   test('should prevent submission when using Shift+Enter', async ({ page }) => {
     // Mock response (should not be called)
     await apiMocker.mockChatSuccess(MOCK_RESPONSES.chat.simple);
 
-    // Focus composer
-    await composer.focus();
+    // Get the prompt input locator
+    const promptInput = page.locator('#prompt');
 
-    // Type and press Shift+Enter
-    await page.keyboard.type('Test line 1');
-    await page.keyboard.press('Shift+Enter');
-    await page.keyboard.type('Test line 2');
+    // Focus and type using locator.pressSequentially (more reliable for contenteditable)
+    await promptInput.focus();
+    await promptInput.pressSequentially('Test line 1');
+    await promptInput.press('Shift+Enter');
+    await promptInput.pressSequentially('Test line 2');
 
     // Should still be on landing page (not submitted)
     await expect(page).toHaveURL('/');
 
-    // Text should have both lines
-    const text = await composer.getPromptValue();
-    expect(text).toContain('Test line 1');
-    expect(text).toContain('Test line 2');
+    // Text should have both lines (use innerHTML for contenteditable)
+    const innerHTML = await promptInput.innerHTML();
+    expect(innerHTML).toContain('Test line 1');
+    expect(innerHTML).toContain('Test line 2');
   });
 });

@@ -28,7 +28,8 @@ export const getSupabaseClient = (): SupabaseClient | null => {
   // Create and cache client
   supabaseClient = createClient(supabaseUrl, supabaseKey, {
     auth: {
-      persistSession: false, // No auth for now
+      persistSession: true,
+      autoRefreshToken: true,
     },
   });
 

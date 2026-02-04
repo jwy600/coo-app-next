@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isLive = process.env.TEST_MODE === 'live';
+const authFile = path.join(__dirname, '.artifacts/auth-state.json');
 
 /**
  * Playwright configuration for E2E tests.
@@ -59,13 +63,24 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: isLive
     ? [
-        // Only Chromium for live tests to save time/cost
+        // Auth setup - runs first, saves auth state
+        {
+          name: 'auth-setup',
+          testMatch: /auth\.setup\.ts/,
+          testDir: './e2e',
+        },
+        // Live tests - use saved auth state
         {
           name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
+          use: {
+            ...devices['Desktop Chrome'],
+            storageState: authFile,
+          },
+          dependencies: ['auth-setup'],
         },
       ]
     : [
+        // Mock tests - no auth needed (test mode bypasses auth)
         {
           name: 'chromium',
           use: { ...devices['Desktop Chrome'] },

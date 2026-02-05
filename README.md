@@ -27,8 +27,12 @@ If you want a longer write-up, check out my blog post: *Are we really chatting w
   - Expand
   - Generate examples
   - Ask custom questions about the selected content
+- **Direct block editing**: toggle between Ask and Edit modes — Ask sends to AI, Edit lets you rewrite text directly
+- **Strikethrough**: in edit mode, select-all + backspace wraps text in ~~strikethrough~~ markup
 - **Text selection → focused rewriting**: highlight parts of follow-ups and request rewrites with that emphasis
 - **Cards**: collect blocks into cards as visual anchors, then export to your PKM system
+- **Response language**: set preferred response language (English or Chinese) for AI outputs
+- **Multi-user auth**: Supabase Auth with Row Level Security for data isolation
 - **Local-first or database-backed**: works with localStorage, or with Supabase for persistence
 
 ## Try Coo
@@ -130,12 +134,13 @@ npm run start
 
 Access settings via the gear icon in the sidebar:
 
-| Setting            | Options                           | Default |
-|--------------------|-----------------------------------|---------|
-| Model              | gpt-5.2, gpt-5-mini               | gpt-5.2 |
-| Reasoning Effort   | none, low, medium, high           | none    |
-| Web Search         | on/off                            | off     |
-| Translate Language | English, Chinese, Spanish, French | Chinese |
+| Setting             | Options                           | Default  |
+|---------------------|-----------------------------------|----------|
+| Model               | gpt-5.2, gpt-5-mini              | gpt-5.2  |
+| Reasoning Effort    | none, low, medium, high           | none     |
+| Web Search          | on/off                            | off      |
+| Response Language   | English, Chinese                  | English  |
+| Translate Language  | English, Chinese, Spanish, French | Chinese  |
 
 
 ## Usage
@@ -156,6 +161,14 @@ To work in context, enter **block mode** by single-clicking the gutter to the le
 - you can use shortcuts for **Expand / ELI5 / Translate / Examples**
 
 Only one block can be selected at a time.
+
+### Direct editing
+
+When a block is selected, use the **Ask/Edit toggle** above the composer:
+- **Ask mode** (default): your questions are sent to the AI, scoped to the selected block
+- **Edit mode**: the composer fills with the block's text, and you can edit it directly. Press **Replace** to update the block without an API call. An **Undo** button appears after replacement.
+
+In edit mode, pressing select-all + backspace wraps the text in ~~strikethrough~~ instead of deleting it.
 
 ### Notes
 
@@ -186,20 +199,28 @@ Each card has its own **export** and **clear** actions.
 ```
 coo-app-next/
 ├── app/                    # Next.js app directory
-│   ├── api/               # API routes (chat, block-action)
+│   ├── api/               # API routes (chat, block-action, config)
+│   ├── auth/login/        # Login page
 │   └── t/[threadId]/      # Thread detail pages
 ├── components/            # React components
+│   ├── auth/             # Login form
 │   ├── chat/             # Chat UI (messages, blocks, controls)
-│   ├── composer/         # Message input
+│   ├── composer/         # Message input + Ask/Edit toggle
+│   ├── content/          # Block content rendering (markdown, math)
+│   ├── sidebar/          # Thread list navigation
 │   ├── settings/         # Settings dialog
+│   ├── landing/          # Landing page
 │   └── ui/               # Radix UI wrappers
-├── hooks/                 # Custom React hooks
+├── hooks/                 # Custom React hooks (auth, composer, streaming)
 ├── lib/
-│   ├── store/            # Zustand state management
-│   ├── state/            # Pure state transformations
+│   ├── state/            # Pure state transformations (CRITICAL)
+│   ├── store/            # Zustand store + slices
 │   ├── api/              # API utilities
-│   ├── supabase/         # Database operations
-│   └── config/           # Configuration
+│   ├── supabase/         # Database operations + auth
+│   ├── rendering/        # Markdown + KaTeX rendering
+│   ├── export/           # Markdown export
+│   └── config/           # OpenAI settings + i18n prompts
+├── proxy.ts               # Auth middleware (session refresh)
 ├── types/                 # TypeScript definitions
 ├── tests/                 # Unit & integration tests
 └── e2e/                   # Playwright E2E tests

@@ -155,26 +155,26 @@ Access settings via the gear icon in the sidebar:
 
 When nothing is selected, the composer behaves like a normal chat input: each new prompt appends a new response at the bottom.
 
-To work in context, enter **block mode** by single-clicking the gutter to the left of a block. In block mode:
+To work in context, enter **block mode** by single-clicking the gutter to the left of a block. 
+
+When a block is selected, use the **Ask/Edit toggle** above the composer:
+
+In Ask mode (default):
 - your questions are scoped to the selected block
 - the answer appears in the same textarea (input + output share the space)
 - you can use shortcuts for **Expand / ELI5 / Translate / Examples**
 
-Only one block can be selected at a time.
-
-### Direct editing
-
-When a block is selected, use the **Ask/Edit toggle** above the composer:
-- **Ask mode** (default): your questions are sent to the AI, scoped to the selected block
-- **Edit mode**: the composer fills with the block's text, and you can edit it directly. Press **Replace** to update the block without an API call. An **Undo** button appears after replacement.
-
-In edit mode, pressing select-all + backspace wraps the text in ~~strikethrough~~ instead of deleting it.
-
-### Notes
-
 Because the block-mode textarea is used for both input and output, its content is intentionally ephemeral. When you find something worth keeping, you can select text in the textarea and save it as a piece of **Note** attached to the selected block. Hover a chip to preview the full text.
 
-Once a block has chips, you can ask the LLM to rewrite the block *with emphasis on those notes*. If the chip language differs from the original block, Coo tries to align it to the corresponding content automatically.
+In Edit mode:
+- the composer fills with the block's text, and you can edit it directly.
+- press **Replace** to update the block without an API call.
+- an **Undo** button appears after replacement.
+- pressing select-all + backspace wraps the text in ~~strikethrough~~ instead of deleting it.
+
+### AI Rewrite
+
+Once a block has **Notes**, you can ask the LLM to rewrite the block *with emphasis on those notes*. If the Note language differs from the original block, Coo tries to align it to the corresponding content automatically.
 
 Notes are ephemeral: they disappear when you exit block mode.
 

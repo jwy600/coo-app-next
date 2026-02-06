@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
 
   // Optimize bundle
   experimental: {
-    optimizePackageImports: ['katex', 'react-katex'],
+    optimizePackageImports: ['katex'],
   },
 };
 

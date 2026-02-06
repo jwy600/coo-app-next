@@ -28,7 +28,6 @@ If you want a longer write-up, check out my blog post: *Are we really chatting w
   - Generate examples
   - Ask custom questions about the selected content
 - **Direct block editing**: toggle between Ask and Edit modes — Ask sends to AI, Edit lets you rewrite text directly
-- **Strikethrough**: in edit mode, select-all + backspace wraps text in ~~strikethrough~~ markup
 - **Text selection → focused rewriting**: highlight parts of follow-ups and request rewrites with that emphasis
 - **Cards**: collect blocks into cards as visual anchors, then export to your PKM system
 - **Response language**: set preferred response language (English or Chinese) for AI outputs
@@ -192,7 +191,6 @@ Each card has its own **export** and **clear** actions.
 
 - If there are **no cards**, export defaults to the whole thread (all messages between user and LLM).
 - If there **are cards**, export defaults to merging all cards into a single `.md`.
-  - Exporting the whole thread via dropdown is planned (implementing).
 
 ## Project Structure
 

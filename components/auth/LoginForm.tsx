@@ -63,9 +63,10 @@ export function LoginForm() {
       return;
     }
 
-    // Redirect after successful login (already validated)
-    router.push(redirect);
+    // Refresh server components first (re-fetches with new auth cookies),
+    // then navigate to the target page
     router.refresh();
+    router.push(redirect);
   };
 
   return (

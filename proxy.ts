@@ -41,15 +41,15 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Refresh session if expired
+  // Refresh session — getUser() validates the token server-side (more reliable than getSession)
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
 
   // Redirect to home if authenticated and on auth page
-  if (session && isAuthPage) {
+  if (user && isAuthPage) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

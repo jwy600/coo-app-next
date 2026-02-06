@@ -1,8 +1,11 @@
 /**
  * Supabase client initialization
+ * Uses @supabase/ssr's createBrowserClient to store auth tokens in cookies,
+ * enabling server components and middleware to read the session.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -25,13 +28,9 @@ export const getSupabaseClient = (): SupabaseClient | null => {
     return null;
   }
 
-  // Create and cache client
-  supabaseClient = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
+  // createBrowserClient stores auth tokens in cookies (not localStorage),
+  // so server components and middleware can read the session
+  supabaseClient = createBrowserClient(supabaseUrl, supabaseKey);
 
   return supabaseClient;
 };

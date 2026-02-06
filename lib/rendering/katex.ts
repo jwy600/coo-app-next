@@ -1,54 +1,10 @@
 /**
- * KaTeX wrapper utilities for React
- * Provides hooks and components for math rendering
+ * KaTeX wrapper utilities for math rendering
  */
 
-'use client';
-
-import { useEffect, useRef } from 'react';
 import katex, { KatexOptions as KatexLibOptions } from 'katex';
 
 export type KatexOptions = KatexLibOptions;
-
-/**
- * Hook to typeset math expressions after component renders
- * Usage: const mathRef = useMathTypesetting([dependencies])
- *
- * Automatically finds all elements with [data-tex] attribute
- * and renders them with KaTeX
- */
-export function useMathTypesetting(deps: unknown[] = []) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const mathNodes = containerRef.current.querySelectorAll('[data-tex]');
-
-    mathNodes.forEach((node) => {
-      const tex = node.getAttribute('data-tex');
-      if (!tex) return;
-
-      const isBlock = node.classList.contains('math-block') ||
-                      node.classList.contains('doc-math-block');
-
-      try {
-        katex.render(tex, node as HTMLElement, {
-          displayMode: isBlock,
-          throwOnError: false,
-          errorColor: '#cc0000',
-        });
-      } catch (error) {
-        console.warn('KaTeX render error:', error);
-        // Fallback: show raw TeX
-        node.textContent = tex;
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- deps is passed dynamically by the caller
-  }, deps);
-
-  return containerRef;
-}
 
 /**
  * Render a single math expression to HTML string

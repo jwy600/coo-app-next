@@ -24,13 +24,6 @@ export const getOpenAiClient = (): OpenAI => {
 };
 
 /**
- * Check if OpenAI is configured
- */
-export const isOpenAiConfigured = (): boolean => {
-  return !!process.env.OPENAI_API_KEY;
-};
-
-/**
  * Parameters for creating a response using the Responses API
  */
 export interface CreateResponseParams {

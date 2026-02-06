@@ -47,16 +47,3 @@ export function Math({ tex, display = false, className = '' }: MathProps) {
   );
 }
 
-/**
- * Inline math component (convenience wrapper)
- */
-export function InlineMath({ tex, className }: Omit<MathProps, 'display'>) {
-  return <Math tex={tex} display={false} className={className} />;
-}
-
-/**
- * Block math component (convenience wrapper)
- */
-export function BlockMath({ tex, className }: Omit<MathProps, 'display'>) {
-  return <Math tex={tex} display={true} className={className} />;
-}

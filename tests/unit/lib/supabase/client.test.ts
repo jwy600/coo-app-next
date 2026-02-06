@@ -8,15 +8,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test.supabase.co');
 vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'test-key');
 
-// Mock @supabase/supabase-js
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
+// Mock @supabase/ssr (browser client uses createBrowserClient)
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: vi.fn(() => ({
     from: vi.fn(),
   })),
 }));
 
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 describe('Supabase Client', () => {
   beforeEach(() => {
@@ -27,15 +27,9 @@ describe('Supabase Client', () => {
     const client = getSupabaseClient();
 
     expect(client).toBeDefined();
-    expect(createClient).toHaveBeenCalledWith(
+    expect(createBrowserClient).toHaveBeenCalledWith(
       'https://test.supabase.co',
-      'test-key',
-      expect.objectContaining({
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-        },
-      })
+      'test-key'
     );
   });
 
@@ -44,7 +38,7 @@ describe('Supabase Client', () => {
     const client2 = getSupabaseClient();
 
     expect(client1).toBe(client2);
-    // createClient should only be called once (from previous test or this one)
+    // createBrowserClient should only be called once (from previous test or this one)
   });
 
   it('should report configuration status', () => {

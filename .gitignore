@@ -39,6 +39,7 @@ codemaps/
 next-env.d.ts
 futureimprovement.md
 scripts/import-markdown.js
+profile/
 
 # Pencil
 *.pen

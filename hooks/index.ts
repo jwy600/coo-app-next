@@ -10,4 +10,3 @@ export { useBlockSelection, type UseBlockSelectionReturn } from './useBlockSelec
 export { useTextSelection, type UseTextSelectionReturn } from './useTextSelection';
 export { useKeyboardShortcuts, type Shortcuts } from './useKeyboardShortcuts';
 export { useThreadSync, type UseThreadSyncReturn } from './useThreadSync';
-export { useAutoScroll, type UseAutoScrollReturn } from './useAutoScroll';

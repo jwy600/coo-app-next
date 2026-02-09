@@ -84,24 +84,6 @@ export const deleteCard = async (cardId: string): Promise<void> => {
 };
 
 /**
- * Delete all cards for a message (used when message is deleted)
- */
-export const deleteCardsForMessage = async (messageId: string): Promise<void> => {
-  return withSupabaseClient(
-    async (supabase) => {
-      const { error } = await supabase
-        .from('cards')
-        .delete()
-        .eq('message_id', messageId);
-
-      if (error) throw error;
-    },
-    undefined,
-    `deleting cards for message ${messageId}`
-  );
-};
-
-/**
  * Convert DB card to app card
  */
 const dbCardToCard = (dbCard: DbCard): Card => ({

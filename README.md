@@ -38,9 +38,9 @@ If you want a longer write-up, check out my blog post: *Are we really chatting w
 
 ### Hosted Version
 
-Visit **[coo-app-next.vercel.app](https://coo-app-next.vercel.app)** to try Coo for free.
-
 Sign-up is currently invite-only. If you'd like access, contact **jwy600@gmail.com**.
+
+Visit **[coo-app-next.vercel.app](https://coo-app-next.vercel.app)** to try Coo.
 
 ### Self-Hosted
 

@@ -96,8 +96,10 @@ export function createStoreMock(state: Partial<MockStoreState> = {}) {
   });
 
   // Attach setState for direct manipulation
-  (useStoreFn as Record<string, unknown>).setState = vi.fn();
-  (useStoreFn as Record<string, unknown>).getState = vi.fn(() => mockState);
+  (useStoreFn as unknown as Record<string, unknown>).setState = vi.fn();
+  (useStoreFn as unknown as Record<string, unknown>).getState = vi.fn(
+    () => mockState,
+  );
 
   return {
     useStore: useStoreFn,

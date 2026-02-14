@@ -1,14 +1,11 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import {
   getOpenAIModelConfig,
   getDeveloperPrompt,
   getBlockActionPrompt,
   calculateCost,
-  DEVELOPER_PROMPT,
-  DEVELOPER_PROMPT_ZH,
-  BLOCK_ACTION_PROMPT,
-  BLOCK_ACTION_PROMPT_ZH,
 } from "@/lib/config/openai";
+import { _clearPromptCache } from "@/lib/config/prompts";
 
 describe("getOpenAIModelConfig", () => {
   const originalModel = process.env.OPENAI_MODEL;
@@ -35,30 +32,62 @@ describe("getOpenAIModelConfig", () => {
 });
 
 describe("getDeveloperPrompt", () => {
+  beforeEach(() => {
+    _clearPromptCache();
+  });
+
   it("returns English prompt by default", () => {
-    expect(getDeveloperPrompt()).toBe(DEVELOPER_PROMPT);
+    const prompt = getDeveloperPrompt();
+    expect(prompt).toContain("knowledgeable assistant");
+    expect(prompt).toContain("<response_approach>");
+    expect(prompt).not.toContain("Simplified Chinese");
   });
 
   it("returns English prompt for 'en'", () => {
-    expect(getDeveloperPrompt("en")).toBe(DEVELOPER_PROMPT);
+    const prompt = getDeveloperPrompt("en");
+    expect(prompt).toContain("knowledgeable assistant");
+    expect(prompt).not.toContain("Simplified Chinese");
   });
 
   it("returns Chinese prompt for 'zh'", () => {
-    expect(getDeveloperPrompt("zh")).toBe(DEVELOPER_PROMPT_ZH);
+    const prompt = getDeveloperPrompt("zh");
+    expect(prompt).toContain("knowledgeable assistant");
+    expect(prompt).toContain("Simplified Chinese");
+  });
+
+  it("returns the same content on repeated calls (caching)", () => {
+    const first = getDeveloperPrompt("en");
+    const second = getDeveloperPrompt("en");
+    expect(first).toBe(second);
   });
 });
 
 describe("getBlockActionPrompt", () => {
+  beforeEach(() => {
+    _clearPromptCache();
+  });
+
   it("returns English prompt by default", () => {
-    expect(getBlockActionPrompt()).toBe(BLOCK_ACTION_PROMPT);
+    const prompt = getBlockActionPrompt();
+    expect(prompt).toContain("transform or answer questions");
+    expect(prompt).toContain("<rules>");
+    expect(prompt).not.toContain("Simplified Chinese");
   });
 
   it("returns English prompt for 'en'", () => {
-    expect(getBlockActionPrompt("en")).toBe(BLOCK_ACTION_PROMPT);
+    const prompt = getBlockActionPrompt("en");
+    expect(prompt).not.toContain("Simplified Chinese");
   });
 
   it("returns Chinese prompt for 'zh'", () => {
-    expect(getBlockActionPrompt("zh")).toBe(BLOCK_ACTION_PROMPT_ZH);
+    const prompt = getBlockActionPrompt("zh");
+    expect(prompt).toContain("Simplified Chinese");
+  });
+
+  it("returns the same content on repeated calls (caching)", () => {
+    const first = getBlockActionPrompt("en");
+    const second = getBlockActionPrompt("en");
+    expect(first).toBe(second);
   });
 });
 

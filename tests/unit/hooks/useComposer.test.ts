@@ -1,0 +1,512 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook, act, waitFor } from "@testing-library/react";
+
+// Hoist mock data
+const { mockActions, mockStreamChat, mockFetchBlockAction } = vi.hoisted(
+  () => ({
+    mockActions: {
+      settings: {
+        model: "gpt-4.1",
+        reasoningEffort: "medium",
+        responseLanguage: "en",
+        translateLanguage: "zh-TW",
+        webSearchEnabled: false,
+      },
+      selectedBlockId: null as string | null,
+      rewriteBlock: vi.fn(),
+      addUserMessage: vi.fn(),
+      addAssistantMessage: vi.fn(),
+      clearSelection: vi.fn(),
+      mode: "thread" as string,
+      setMode: vi.fn(),
+      createThread: vi.fn(),
+      activeThreadId: "t1" as string | null,
+      updateThreadTitle: vi.fn(),
+      isAwaitingResponse: false,
+      setAwaitingResponse: vi.fn(),
+      error: null as string | null,
+      setError: vi.fn(),
+    },
+    mockStreamChat: vi.fn(),
+    mockFetchBlockAction: vi.fn(),
+  }),
+);
+
+// Mock useStore with selector pattern
+vi.mock("@/lib/store/useStore", () => {
+  const useStoreFn = vi.fn((selector: (s: typeof mockActions) => unknown) =>
+    selector(mockActions),
+  );
+  (useStoreFn as Record<string, unknown>).getState = vi.fn(() => mockActions);
+
+  return {
+    useStore: useStoreFn,
+    selectSelectedBlock: (state: typeof mockActions) => {
+      if (!state.selectedBlockId) return null;
+      return { id: state.selectedBlockId, text: "Block text content" };
+    },
+    selectContentForTransform: (state: typeof mockActions) => {
+      if (!state.selectedBlockId) return [];
+      return [{ id: state.selectedBlockId, text: "Block text for transform" }];
+    },
+  };
+});
+
+vi.mock("zustand/react/shallow", () => ({
+  useShallow: (fn: unknown) => fn,
+}));
+
+vi.mock("@/hooks/useStreaming", () => ({
+  useStreaming: () => ({ streamChat: mockStreamChat }),
+}));
+
+vi.mock("@/lib/api", () => ({
+  fetchBlockAction: mockFetchBlockAction,
+}));
+
+vi.mock("@/lib/state", () => ({
+  getLastAssistantResponseId: () => "prev-resp-id",
+}));
+
+vi.mock("@/lib/utils/errorHandling", () => ({
+  getErrorMessage: (err: unknown, fallback: string) =>
+    err instanceof Error ? err.message : fallback,
+}));
+
+vi.mock("@/lib/utils/idFactory", () => ({
+  idFactory: () => "generated-id",
+}));
+
+import { useComposer } from "@/hooks/useComposer";
+
+describe("useComposer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockActions.selectedBlockId = null;
+    mockActions.mode = "thread";
+    mockActions.activeThreadId = "t1";
+    mockActions.isAwaitingResponse = false;
+    mockActions.error = null;
+  });
+
+  describe("initial state", () => {
+    it("returns empty prompt", () => {
+      const { result } = renderHook(() => useComposer());
+      expect(result.current.prompt).toBe("");
+    });
+
+    it("returns chat composer mode when no block selected", () => {
+      const { result } = renderHook(() => useComposer());
+      expect(result.current.composerMode).toBe("chat");
+    });
+
+    it("returns isSubmitting from store", () => {
+      const { result } = renderHook(() => useComposer());
+      expect(result.current.isSubmitting).toBe(false);
+    });
+
+    it("returns error from store", () => {
+      const { result } = renderHook(() => useComposer());
+      expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe("setPrompt", () => {
+    it("updates prompt value", () => {
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("Hello world");
+      });
+
+      expect(result.current.prompt).toBe("Hello world");
+    });
+  });
+
+  describe("clearPrompt", () => {
+    it("clears prompt and error", () => {
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("some text");
+      });
+
+      act(() => {
+        result.current.clearPrompt();
+      });
+
+      expect(result.current.prompt).toBe("");
+      expect(mockActions.setError).toHaveBeenCalledWith(null);
+    });
+  });
+
+  describe("composerMode", () => {
+    it("switches to ask mode when block is selected", async () => {
+      const { result, rerender } = renderHook(() => useComposer());
+
+      mockActions.selectedBlockId = "b1";
+      rerender();
+
+      await waitFor(() => {
+        expect(result.current.composerMode).toBe("ask");
+      });
+    });
+
+    it("switches back to chat mode when block is deselected", async () => {
+      mockActions.selectedBlockId = "b1";
+      const { result, rerender } = renderHook(() => useComposer());
+
+      await waitFor(() => {
+        expect(result.current.composerMode).toBe("ask");
+      });
+
+      mockActions.selectedBlockId = null;
+      rerender();
+
+      await waitFor(() => {
+        expect(result.current.composerMode).toBe("chat");
+      });
+    });
+
+    it("allows manual mode change via setComposerMode", () => {
+      mockActions.selectedBlockId = "b1";
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setComposerMode("edit");
+      });
+
+      expect(result.current.composerMode).toBe("edit");
+    });
+  });
+
+  describe("populateWithBlockText", () => {
+    it("sets prompt to selected block text", () => {
+      mockActions.selectedBlockId = "b1";
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.populateWithBlockText();
+      });
+
+      expect(result.current.prompt).toBe("Block text content");
+    });
+
+    it("does nothing when no block selected", () => {
+      mockActions.selectedBlockId = null;
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.populateWithBlockText();
+      });
+
+      expect(result.current.prompt).toBe("");
+    });
+  });
+
+  describe("handleSubmit", () => {
+    it("does nothing when prompt is empty", async () => {
+      const { result } = renderHook(() => useComposer());
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(mockActions.addUserMessage).not.toHaveBeenCalled();
+      expect(mockStreamChat).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when already submitting", async () => {
+      mockActions.isAwaitingResponse = true;
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("Hello");
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(mockActions.addUserMessage).not.toHaveBeenCalled();
+    });
+
+    it("prevents default on form event", async () => {
+      const { result } = renderHook(() => useComposer());
+      const preventDefault = vi.fn();
+
+      act(() => {
+        result.current.setPrompt("Hello");
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit({
+          preventDefault,
+        } as unknown as React.FormEvent);
+      });
+
+      expect(preventDefault).toHaveBeenCalled();
+    });
+
+    describe("chat mode", () => {
+      it("adds user message and streams response", async () => {
+        mockStreamChat.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useComposer());
+
+        act(() => {
+          result.current.setPrompt("Hello AI");
+        });
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(mockActions.setAwaitingResponse).toHaveBeenCalledWith(true);
+        expect(mockActions.addUserMessage).toHaveBeenCalledWith("Hello AI");
+        expect(mockStreamChat).toHaveBeenCalledWith(
+          expect.objectContaining({
+            prompt: "Hello AI",
+            threadId: "t1",
+            messageId: "generated-id",
+          }),
+          expect.any(Object),
+        );
+      });
+
+      it("creates thread when in landing mode", async () => {
+        mockActions.mode = "landing";
+        mockStreamChat.mockResolvedValue(undefined);
+
+        const { result } = renderHook(() => useComposer());
+
+        act(() => {
+          result.current.setPrompt("First message");
+        });
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(mockActions.createThread).toHaveBeenCalled();
+        expect(mockActions.setMode).toHaveBeenCalledWith("thread");
+        expect(mockActions.updateThreadTitle).toHaveBeenCalled();
+      });
+
+      it("truncates thread title to 50 chars", async () => {
+        mockActions.mode = "landing";
+        mockStreamChat.mockResolvedValue(undefined);
+
+        const { result } = renderHook(() => useComposer());
+        const longPrompt = "A".repeat(60);
+
+        act(() => {
+          result.current.setPrompt(longPrompt);
+        });
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(mockActions.updateThreadTitle).toHaveBeenCalledWith(
+          "t1",
+          "A".repeat(50) + "...",
+        );
+      });
+
+      it("clears prompt after submission", async () => {
+        mockStreamChat.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useComposer());
+
+        act(() => {
+          result.current.setPrompt("Hello");
+        });
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(result.current.prompt).toBe("");
+      });
+
+      it("sets error when no active thread", async () => {
+        mockActions.activeThreadId = null;
+        const { result } = renderHook(() => useComposer());
+
+        act(() => {
+          result.current.setPrompt("Hello");
+        });
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(mockActions.setError).toHaveBeenCalledWith("No active thread");
+        expect(mockActions.setAwaitingResponse).toHaveBeenCalledWith(false);
+      });
+    });
+
+    describe("edit mode", () => {
+      it("calls rewriteBlock with prompt text", async () => {
+        mockActions.selectedBlockId = "b1";
+        const { result } = renderHook(() => useComposer());
+
+        act(() => {
+          result.current.setComposerMode("edit");
+        });
+
+        act(() => {
+          result.current.setPrompt("New block text");
+        });
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(mockActions.rewriteBlock).toHaveBeenCalledWith(
+          "b1",
+          "New block text",
+        );
+        // Should NOT call streaming API
+        expect(mockStreamChat).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("ask mode (block selected)", () => {
+      it("delegates to handleBlockAction with ask", async () => {
+        mockActions.selectedBlockId = "b1";
+        mockFetchBlockAction.mockResolvedValue({
+          text: "AI response about block",
+        });
+
+        const { result } = renderHook(() => useComposer());
+
+        act(() => {
+          result.current.setPrompt("What does this mean?");
+        });
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(mockFetchBlockAction).toHaveBeenCalledWith(
+          "ask",
+          "Block text for transform",
+          "What does this mean?",
+          undefined,
+          expect.any(Object),
+        );
+        // Should NOT call streaming API
+        expect(mockStreamChat).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("handleBlockAction", () => {
+    it("sets error when no content selected", async () => {
+      mockActions.selectedBlockId = null;
+      const { result } = renderHook(() => useComposer());
+
+      await act(async () => {
+        await result.current.handleBlockAction("eli5");
+      });
+
+      expect(mockActions.setError).toHaveBeenCalledWith("No content selected");
+    });
+
+    it("sets error when ask action has no prompt", async () => {
+      mockActions.selectedBlockId = "b1";
+      const { result } = renderHook(() => useComposer());
+
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockActions.setError).toHaveBeenCalledWith(
+        "Please enter a question",
+      );
+    });
+
+    it("calls fetchBlockAction and sets prompt to result", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction.mockResolvedValue({ text: "Simplified version" });
+
+      const { result } = renderHook(() => useComposer());
+
+      await act(async () => {
+        await result.current.handleBlockAction("eli5");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenCalledWith(
+        "eli5",
+        "Block text for transform",
+        undefined,
+        undefined,
+        expect.any(Object),
+      );
+      expect(result.current.prompt).toBe("Simplified version");
+      expect(mockActions.setAwaitingResponse).toHaveBeenCalledWith(false);
+    });
+
+    it("passes translate language for translate action", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction.mockResolvedValue({ text: "Translated" });
+
+      const { result } = renderHook(() => useComposer());
+
+      await act(async () => {
+        await result.current.handleBlockAction("translate");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenCalledWith(
+        "translate",
+        "Block text for transform",
+        undefined,
+        "zh-TW",
+        expect.any(Object),
+      );
+    });
+
+    it("passes prompt for ask action", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction.mockResolvedValue({ text: "Answer" });
+
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("My question");
+      });
+
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenCalledWith(
+        "ask",
+        "Block text for transform",
+        "My question",
+        undefined,
+        expect.any(Object),
+      );
+    });
+
+    it("handles API error without clearing prompt", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction.mockRejectedValue(new Error("API failed"));
+
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("Keep this on error");
+      });
+
+      await act(async () => {
+        await result.current.handleBlockAction("eli5");
+      });
+
+      expect(mockActions.setError).toHaveBeenCalledWith("API failed");
+      // Prompt should NOT be cleared on error
+      expect(result.current.prompt).toBe("Keep this on error");
+      expect(mockActions.setAwaitingResponse).toHaveBeenCalledWith(false);
+    });
+  });
+});

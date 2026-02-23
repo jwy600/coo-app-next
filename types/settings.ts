@@ -45,18 +45,6 @@ export const TRANSLATE_TO_RESPONSE_MAP: Record<
   Japanese: "ja",
 };
 
-/** Maps ResponseLanguage codes to TranslateLanguage display names */
-export const RESPONSE_TO_TRANSLATE_MAP: Record<
-  ResponseLanguage,
-  TranslateLanguage
-> = {
-  en: "English",
-  es: "Spanish",
-  fr: "French",
-  zh: "Chinese",
-  ja: "Japanese",
-};
-
 /** Check if the response and translate languages are the same (a conflict) */
 export const isLanguageConflict = (
   responseLang: ResponseLanguage,

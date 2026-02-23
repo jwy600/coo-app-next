@@ -23,10 +23,11 @@ app/                    # Next.js App Router
 
 proxy.ts               # Auth middleware (session refresh, auth page redirect)
 
-prompts/                # System prompt templates (language-neutral .md files)
-├── developer.md        # Knowledge Assistant chat prompt (thorough explanations)
-├── atomic.md           # Atomic Notes chat prompt (brief, self-contained notes)
-└── block-action.md     # Block action system prompt (language injected at runtime)
+prompts/                        # System prompt templates (language-neutral .md files)
+├── developer.md                # Knowledge Assistant chat prompt (thorough explanations)
+├── chatgpt.md                  # ChatGPT-style chat prompt (warm, conversational)
+├── block-action.md             # Block action system prompt (ELI5, expand, etc.)
+└── block-action-translate.md   # Translate action system prompt (separate template)
 
 components/
 ├── ui/                 # shadcn/ui components
@@ -364,7 +365,7 @@ Key files:
 Users can switch between different system prompts that control the AI's response style:
 
 - **Knowledge Assistant** (`developer.md`) — Deep, thorough explanations with examples and context (default)
-- **Atomic Notes** (`atomic.md`) — Brief, self-contained notes focused on key insights
+- **ChatGPT** (`chatgpt.md`) — Warm, conversational style matching original ChatGPT
 
 The selected prompt file is stored in `settings.systemPromptFile` and sent with each chat request. Block-action prompts (`block-action.md`) are unaffected by this setting.
 
@@ -381,14 +382,22 @@ Key files:
 
 ## Response Language (i18n)
 
-Users can set their preferred response language (English or Chinese) in settings. This changes the system prompts sent to the AI.
+Users can set their preferred response language in settings. Language is injected into prompt templates at runtime via XML tags — templates remain language-neutral on disk.
 
-- `types/settings.ts` — `ResponseLanguage` type (`'en' | 'zh'`)
-- `prompts/*.md` — Language-specific system prompt files (`{name}.{lang}.md`)
-- `lib/config/prompts.ts` — Prompt file loader with caching
-- `lib/state/settings.ts` — Default settings with `responseLanguage`
+### How it works
+
+- **Chat & block-action prompts** use a `<language></language>` tag. For English, the tag is removed entirely. For other languages, it's filled with e.g. `<language>Always respond in Simplified Chinese.</language>`.
+- **Translate prompt** uses a separate `<translationlanguage></translationlanguage>` tag in its own template (`block-action-translate.md`). This injects the target language directly from the `TranslateLanguage` setting (e.g. "Chinese", "Japanese") without any mapping.
+
+This separation means the translate action uses the user's chosen *translation target* language, while all other actions use the *response language* setting.
+
+### Key files
+
+- `types/settings.ts` — `ResponseLanguage` (`'en' | 'es' | 'fr' | 'zh' | 'ja'`), `TranslateLanguage`, `LANGUAGE_MAP`
+- `lib/config/prompts.ts` — `replaceLanguageTag()`, `replaceTranslationLanguageTag()`, prompt loaders with caching
+- `lib/state/settings.ts` — Default settings with `responseLanguage` and `translateLanguage`
 - `components/settings/SettingsForm.tsx` — Language selector UI
-- `app/api/chat/route.ts` and `app/api/block-action/route.ts` — Use language-specific prompts
+- `app/api/chat/route.ts` and `app/api/block-action/route.ts` — Pass language settings to prompt loaders
 
 ## Card System
 

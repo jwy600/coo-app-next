@@ -1,6 +1,5 @@
 /**
  * Mock for next/navigation hooks
- * Use: vi.mock('next/navigation', () => createNavigationMock())
  */
 
 import { vi } from 'vitest';
@@ -21,12 +20,6 @@ export const mockSearchParams = {
   toString: vi.fn().mockReturnValue(''),
 };
 
-export let mockParams: Record<string, string> = {};
-
-export function setParams(params: Record<string, string>) {
-  mockParams = params;
-}
-
 export function resetNavigationMock() {
   mockRouter.push.mockReset();
   mockRouter.replace.mockReset();
@@ -35,12 +28,4 @@ export function resetNavigationMock() {
   mockRouter.forward.mockReset();
   mockRouter.prefetch.mockReset();
   mockSearchParams.get.mockReset().mockReturnValue(null);
-  mockParams = {};
 }
-
-export const createNavigationMock = () => ({
-  useRouter: vi.fn(() => mockRouter),
-  useSearchParams: vi.fn(() => mockSearchParams),
-  useParams: vi.fn(() => mockParams),
-  usePathname: vi.fn(() => '/'),
-});

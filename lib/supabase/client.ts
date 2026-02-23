@@ -4,8 +4,8 @@
  * enabling server components and middleware to read the session.
  */
 
-import { createBrowserClient } from '@supabase/ssr';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -20,11 +20,16 @@ export const getSupabaseClient = (): SupabaseClient | null => {
   }
 
   // Check environment variables
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.warn('Supabase configuration missing. Database operations will not work.');
+    console.warn(
+      "Supabase configuration missing. Database operations will not work.",
+    );
     return null;
   }
 
@@ -40,6 +45,20 @@ export const getSupabaseClient = (): SupabaseClient | null => {
  */
 export const isSupabaseConfigured = (): boolean => {
   return getSupabaseClient() !== null;
+};
+
+/**
+ * Check if the app is running in offline mode (no Supabase configured)
+ * This is the inverse of isSupabaseConfigured for semantic clarity in UI code.
+ */
+export const isOfflineMode = (): boolean => {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY;
+
+  return !supabaseUrl || !supabaseKey;
 };
 
 /**
@@ -64,7 +83,7 @@ export const isSupabaseConfigured = (): boolean => {
 export const withSupabaseClient = async <T>(
   operation: (client: SupabaseClient) => Promise<T>,
   fallbackValue: T,
-  errorContext: string
+  errorContext: string,
 ): Promise<T> => {
   const supabase = getSupabaseClient();
 
@@ -75,11 +94,12 @@ export const withSupabaseClient = async <T>(
   try {
     return await operation(supabase);
   } catch (error) {
-    const errorMessage = error instanceof Error
-      ? error.message
-      : typeof error === 'object' && error !== null
-        ? JSON.stringify(error)
-        : String(error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null
+          ? JSON.stringify(error)
+          : String(error);
     console.error(`Error ${errorContext}: ${errorMessage}`);
     return fallbackValue;
   }

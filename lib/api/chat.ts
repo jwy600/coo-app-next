@@ -1,47 +1,6 @@
-import { apiFetch } from './client';
-import type { ChatRequest, ChatResponse } from '@/types/api';
-import type { Settings } from '@/types/settings';
-import { validatePrompt } from '@/lib/utils/validation';
-
-/**
- * Fetch chat completion from OpenAI
- *
- * @param prompt - User prompt text
- * @param threadId - Optional thread ID for context
- * @param previousResponseId - Optional response ID for contextual chaining
- * @param settings - Optional settings for model, reasoning, and web search
- * @returns Promise with AI response text and response ID
- * @throws ApiClientError on validation or API errors
- */
-export async function fetchChatCompletion(
-  prompt: string,
-  threadId?: string,
-  previousResponseId?: string,
-  settings?: Settings
-): Promise<ChatResponse> {
-  // Validate prompt
-  const trimmedPrompt = prompt.trim();
-  const validation = validatePrompt(trimmedPrompt);
-
-  if (!validation.valid) {
-    throw new Error(validation.error || 'Invalid prompt');
-  }
-
-  // Build request
-  const requestBody: ChatRequest = {
-    prompt: trimmedPrompt,
-    threadId,
-    mode: 'thread',
-    previousResponseId,
-    settings,
-  };
-
-  // Call API
-  return apiFetch<ChatResponse>('/api/chat', {
-    method: 'POST',
-    body: JSON.stringify(requestBody),
-  });
-}
+import type { ChatRequest } from "@/types/api";
+import type { Settings } from "@/types/settings";
+import { validatePrompt } from "@/lib/utils/validation";
 
 /**
  * Callbacks for streaming chat completion
@@ -68,45 +27,47 @@ export async function fetchChatCompletionStream(
   callbacks: StreamChatCallbacks,
   threadId?: string,
   previousResponseId?: string,
-  settings?: Settings
+  settings?: Settings,
 ): Promise<void> {
   // Validate prompt
   const trimmedPrompt = prompt.trim();
   const validation = validatePrompt(trimmedPrompt);
 
   if (!validation.valid) {
-    throw new Error(validation.error || 'Invalid prompt');
+    throw new Error(validation.error || "Invalid prompt");
   }
 
   // Build request with streaming enabled
   const requestBody: ChatRequest = {
     prompt: trimmedPrompt,
     threadId,
-    mode: 'thread',
+    mode: "thread",
     previousResponseId,
     stream: true,
     settings,
   };
 
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(errorData.error || 'Request failed');
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Request failed" }));
+      throw new Error(errorData.error || "Request failed");
     }
 
     const reader = response.body?.getReader();
     if (!reader) {
-      throw new Error('No response body available');
+      throw new Error("No response body available");
     }
 
     const decoder = new TextDecoder();
-    let buffer = '';
+    let buffer = "";
     let consecutiveParseFailures = 0;
     const MAX_CONSECUTIVE_FAILURES = 10;
 
@@ -128,8 +89,8 @@ export async function fetchChatCompletionStream(
         buffer += decoder.decode(value, { stream: true });
 
         // Split on double newline (SSE separator)
-        const parts = buffer.split('\n\n');
-        buffer = parts.pop() || '';
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
 
         for (const part of parts) {
           const result = processStreamBuffer(part, callbacks);
@@ -137,7 +98,7 @@ export async function fetchChatCompletionStream(
             consecutiveParseFailures++;
             if (consecutiveParseFailures >= MAX_CONSECUTIVE_FAILURES) {
               throw new Error(
-                `Stream corrupted: ${MAX_CONSECUTIVE_FAILURES} consecutive parse failures`
+                `Stream corrupted: ${MAX_CONSECUTIVE_FAILURES} consecutive parse failures`,
               );
             }
           } else {
@@ -163,13 +124,13 @@ interface ProcessBufferResult {
  */
 function processStreamBuffer(
   data: string,
-  callbacks: StreamChatCallbacks
+  callbacks: StreamChatCallbacks,
 ): ProcessBufferResult {
-  const lines = data.split('\n');
+  const lines = data.split("\n");
   let hadParseError = false;
 
   for (const line of lines) {
-    if (!line.startsWith('data: ')) continue;
+    if (!line.startsWith("data: ")) continue;
 
     const jsonStr = line.slice(6);
     if (!jsonStr.trim()) continue;
@@ -177,14 +138,14 @@ function processStreamBuffer(
     try {
       const event = JSON.parse(jsonStr);
 
-      if (event.type === 'token' && event.content !== undefined) {
+      if (event.type === "token" && event.content !== undefined) {
         callbacks.onToken(event.content);
-      } else if (event.type === 'response_id' && event.responseId) {
+      } else if (event.type === "response_id" && event.responseId) {
         callbacks.onResponseId(event.responseId);
-      } else if (event.type === 'done') {
+      } else if (event.type === "done") {
         callbacks.onComplete();
-      } else if (event.type === 'error') {
-        callbacks.onError(new Error(event.error || 'Stream error'));
+      } else if (event.type === "error") {
+        callbacks.onError(new Error(event.error || "Stream error"));
       }
     } catch (e) {
       // Track parse errors for threshold detection

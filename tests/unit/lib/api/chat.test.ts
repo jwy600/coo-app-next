@@ -1,72 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Hoist mocks
-const { mockApiFetch } = vi.hoisted(() => ({
-  mockApiFetch: vi.fn(),
-}));
-
-vi.mock("@/lib/api/client", () => ({
-  apiFetch: mockApiFetch,
-}));
-
-import {
-  fetchChatCompletion,
-  fetchChatCompletionStream,
-} from "@/lib/api/chat";
+import { fetchChatCompletionStream } from "@/lib/api/chat";
 import type { StreamChatCallbacks } from "@/lib/api/chat";
-
-describe("fetchChatCompletion", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("calls apiFetch with correct request body", async () => {
-    mockApiFetch.mockResolvedValue({ text: "Hello!", responseId: "r1" });
-
-    const result = await fetchChatCompletion("Hello", "t1", "prev-resp");
-
-    expect(mockApiFetch).toHaveBeenCalledWith("/api/chat", {
-      method: "POST",
-      body: expect.stringContaining('"prompt":"Hello"'),
-    });
-    expect(result.text).toBe("Hello!");
-  });
-
-  it("trims prompt before sending", async () => {
-    mockApiFetch.mockResolvedValue({ text: "ok" });
-
-    await fetchChatCompletion("  Hello  ");
-
-    const body = JSON.parse(mockApiFetch.mock.calls[0][1].body);
-    expect(body.prompt).toBe("Hello");
-  });
-
-  it("throws on empty prompt", async () => {
-    await expect(fetchChatCompletion("   ")).rejects.toThrow();
-  });
-
-  it("throws on prompt exceeding max length", async () => {
-    const long = "a".repeat(4001);
-    await expect(fetchChatCompletion(long)).rejects.toThrow();
-  });
-
-  it("passes settings to request body", async () => {
-    mockApiFetch.mockResolvedValue({ text: "ok" });
-
-    const settings = {
-      model: "gpt-5.2" as const,
-      reasoningEffort: "high" as const,
-      responseLanguage: "en" as const,
-      translateLanguage: "English" as const,
-      webSearchEnabled: true,
-    };
-
-    await fetchChatCompletion("Hello", "t1", undefined, settings);
-
-    const body = JSON.parse(mockApiFetch.mock.calls[0][1].body);
-    expect(body.settings).toEqual(settings);
-  });
-});
 
 describe("fetchChatCompletionStream", () => {
   beforeEach(() => {
@@ -83,9 +18,7 @@ describe("fetchChatCompletionStream", () => {
 
   it("throws on empty prompt", async () => {
     const callbacks = makeCallbacks();
-    await expect(
-      fetchChatCompletionStream("   ", callbacks),
-    ).rejects.toThrow();
+    await expect(fetchChatCompletionStream("   ", callbacks)).rejects.toThrow();
   });
 
   it("calls onError when response is not ok", async () => {
@@ -190,9 +123,7 @@ describe("fetchChatCompletionStream", () => {
     const callbacks = makeCallbacks();
 
     const encoder = new TextEncoder();
-    const chunks = [
-      'data: {"type":"error","error":"Rate limited"}\n\n',
-    ];
+    const chunks = ['data: {"type":"error","error":"Rate limited"}\n\n'];
 
     let chunkIndex = 0;
     const mockReader = {
@@ -265,15 +196,11 @@ describe("fetchChatCompletionStream", () => {
       body: null,
     } as Response);
 
-    await fetchChatCompletionStream(
-      "Hello",
-      callbacks,
-      "t1",
-      "prev-resp",
-    );
+    await fetchChatCompletionStream("Hello", callbacks, "t1", "prev-resp");
 
     const body = JSON.parse(
-      (vi.mocked(globalThis.fetch).mock.calls[0][1] as RequestInit).body as string,
+      (vi.mocked(globalThis.fetch).mock.calls[0][1] as RequestInit)
+        .body as string,
     );
     expect(body.threadId).toBe("t1");
     expect(body.previousResponseId).toBe("prev-resp");

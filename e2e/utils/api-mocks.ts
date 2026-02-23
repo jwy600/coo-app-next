@@ -1,16 +1,11 @@
-import type { Page, Route } from '@playwright/test';
-import type {
-  ChatResponse,
-  BlockActionResponse,
-  ApiError,
-  BlockAction,
-} from '@/types/api';
+import type { Page, Route } from "@playwright/test";
+import type { ApiError, BlockAction } from "@/types/api";
 
-export interface MockChatResponse {
+interface MockChatResponse {
   text: string;
 }
 
-export interface MockBlockActionResponse {
+interface MockBlockActionResponse {
   text: string;
 }
 
@@ -19,7 +14,7 @@ export interface MockBlockActionResponse {
  */
 export const MOCK_RESPONSES = {
   chat: {
-    simple: { text: 'This is a test response from the AI.' },
+    simple: { text: "This is a test response from the AI." },
     markdown: {
       text: `# Introduction\n\nThis is a paragraph with **bold** and *italic* text.\n\n- Item 1\n- Item 2\n\n\`\`\`javascript\nconst foo = 'bar';\n\`\`\``,
     },
@@ -28,21 +23,33 @@ export const MOCK_RESPONSES = {
     },
   },
   blockAction: {
-    eli5: { text: 'Think of it like building with LEGO blocks. Each block is a piece that you can put together to make something cool!' },
-    translate: { text: '这是一个测试响应。' },
-    expand: {
-      text: 'React is a component-based, declarative JavaScript library. This concept is fundamental to modern software development. It involves creating modular, reusable components that can be combined in various ways to build complex applications.',
+    eli5: {
+      text: "Think of it like building with LEGO blocks. Each block is a piece that you can put together to make something cool!",
     },
-    example: { text: 'For example, imagine you have a shopping cart component that you can use on multiple pages of your website.' },
-    rewrite: { text: 'This is the rewritten version of the text with improved clarity and emphasis.' },
-    ask: { text: 'Based on the selected text, the answer to your question is: this refers to component-based architecture.' },
+    translate: { text: "这是一个测试响应。" },
+    expand: {
+      text: "React is a component-based, declarative JavaScript library. This concept is fundamental to modern software development. It involves creating modular, reusable components that can be combined in various ways to build complex applications.",
+    },
+    example: {
+      text: "For example, imagine you have a shopping cart component that you can use on multiple pages of your website.",
+    },
+    rewrite: {
+      text: "This is the rewritten version of the text with improved clarity and emphasis.",
+    },
+    ask: {
+      text: "Based on the selected text, the answer to your question is: this refers to component-based architecture.",
+    },
   },
   errors: {
-    missingApiKey: { error: 'Missing OpenAI API key configuration.' },
-    emptyPrompt: { error: 'Please provide a prompt.' },
-    tooLong: { error: 'That prompt is a bit too long. Please shorten it.' },
-    networkError: { error: "We couldn't reach the assistant. Please try again in a moment." },
-    genericError: { error: 'We ran into an issue generating a response. Please try again.' },
+    missingApiKey: { error: "Missing OpenAI API key configuration." },
+    emptyPrompt: { error: "Please provide a prompt." },
+    tooLong: { error: "That prompt is a bit too long. Please shorten it." },
+    networkError: {
+      error: "We couldn't reach the assistant. Please try again in a moment.",
+    },
+    genericError: {
+      error: "We ran into an issue generating a response. Please try again.",
+    },
   },
 };
 
@@ -65,38 +72,38 @@ export class ApiMocker {
    * Supports both streaming (SSE) and non-streaming (JSON) modes
    */
   async mockChatSuccess(response: MockChatResponse): Promise<void> {
-    await this.page.route('**/api/chat', async (route: Route) => {
+    await this.page.route("**/api/chat", async (route: Route) => {
       const request = route.request();
       const requestBody = request.postDataJSON();
 
       // Check if client requested streaming
       if (requestBody?.stream === true) {
         // Return Server-Sent Events format for streaming requests
-        const responseId = 'mock-response-id-' + Date.now();
+        const responseId = "mock-response-id-" + Date.now();
 
         // Build SSE response: send tokens, then response_id, then done
-        const tokens = response.text.split('');
-        let sseBody = '';
+        const tokens = response.text.split("");
+        let sseBody = "";
 
         // Send tokens (batch them for efficiency)
         const chunkSize = 10;
         for (let i = 0; i < tokens.length; i += chunkSize) {
-          const chunk = tokens.slice(i, i + chunkSize).join('');
-          sseBody += `data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`;
+          const chunk = tokens.slice(i, i + chunkSize).join("");
+          sseBody += `data: ${JSON.stringify({ type: "token", content: chunk })}\n\n`;
         }
 
         // Send response_id
-        sseBody += `data: ${JSON.stringify({ type: 'response_id', responseId })}\n\n`;
+        sseBody += `data: ${JSON.stringify({ type: "response_id", responseId })}\n\n`;
 
         // Send done signal
-        sseBody += `data: ${JSON.stringify({ type: 'done' })}\n\n`;
+        sseBody += `data: ${JSON.stringify({ type: "done" })}\n\n`;
 
         await route.fulfill({
           status: 200,
-          contentType: 'text/event-stream',
+          contentType: "text/event-stream",
           headers: {
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
           },
           body: sseBody,
         });
@@ -104,7 +111,7 @@ export class ApiMocker {
         // Return JSON for non-streaming requests
         await route.fulfill({
           status: 200,
-          contentType: 'application/json',
+          contentType: "application/json",
           body: JSON.stringify(response),
         });
       }
@@ -115,10 +122,10 @@ export class ApiMocker {
    * Mock /api/chat error response
    */
   async mockChatError(error: ApiError, status: number = 500): Promise<void> {
-    await this.page.route('**/api/chat', (route: Route) => {
+    await this.page.route("**/api/chat", (route: Route) => {
       route.fulfill({
         status,
-        contentType: 'application/json',
+        contentType: "application/json",
         body: JSON.stringify(error),
       });
     });
@@ -129,9 +136,9 @@ export class ApiMocker {
    */
   async mockBlockActionSuccess(
     action: BlockAction,
-    response: MockBlockActionResponse
+    response: MockBlockActionResponse,
   ): Promise<void> {
-    await this.page.route('**/api/block-action', async (route: Route) => {
+    await this.page.route("**/api/block-action", async (route: Route) => {
       const request = route.request();
       const requestBody = request.postDataJSON();
 
@@ -139,7 +146,7 @@ export class ApiMocker {
       if (requestBody?.action === action) {
         await route.fulfill({
           status: 200,
-          contentType: 'application/json',
+          contentType: "application/json",
           body: JSON.stringify(response),
         });
       } else {
@@ -152,11 +159,14 @@ export class ApiMocker {
   /**
    * Mock /api/block-action error response
    */
-  async mockBlockActionError(error: ApiError, status: number = 500): Promise<void> {
-    await this.page.route('**/api/block-action', (route: Route) => {
+  async mockBlockActionError(
+    error: ApiError,
+    status: number = 500,
+  ): Promise<void> {
+    await this.page.route("**/api/block-action", (route: Route) => {
       route.fulfill({
         status,
-        contentType: 'application/json',
+        contentType: "application/json",
         body: JSON.stringify(error),
       });
     });
@@ -166,7 +176,7 @@ export class ApiMocker {
    * Mock all block actions with predefined responses
    */
   async mockAllBlockActions(): Promise<void> {
-    await this.page.route('**/api/block-action', async (route: Route) => {
+    await this.page.route("**/api/block-action", async (route: Route) => {
       const request = route.request();
       const requestBody = request.postDataJSON();
       const action = requestBody?.action as BlockAction;
@@ -174,31 +184,31 @@ export class ApiMocker {
       let response: MockBlockActionResponse;
 
       switch (action) {
-        case 'eli5':
+        case "eli5":
           response = MOCK_RESPONSES.blockAction.eli5;
           break;
-        case 'translate':
+        case "translate":
           response = MOCK_RESPONSES.blockAction.translate;
           break;
-        case 'expand':
+        case "expand":
           response = MOCK_RESPONSES.blockAction.expand;
           break;
-        case 'example':
+        case "example":
           response = MOCK_RESPONSES.blockAction.example;
           break;
-        case 'rewrite':
+        case "rewrite":
           response = MOCK_RESPONSES.blockAction.rewrite;
           break;
-        case 'ask':
+        case "ask":
           response = MOCK_RESPONSES.blockAction.ask;
           break;
         default:
-          response = { text: 'Mock response for unknown action' };
+          response = { text: "Mock response for unknown action" };
       }
 
       await route.fulfill({
         status: 200,
-        contentType: 'application/json',
+        contentType: "application/json",
         body: JSON.stringify(response),
       });
     });
@@ -208,8 +218,8 @@ export class ApiMocker {
    * Clear all mocked routes
    */
   async clearMocks(): Promise<void> {
-    await this.page.unroute('**/api/chat');
-    await this.page.unroute('**/api/block-action');
+    await this.page.unroute("**/api/chat");
+    await this.page.unroute("**/api/block-action");
   }
 
   /**
@@ -217,10 +227,10 @@ export class ApiMocker {
    * Returns empty config to run in offline mode
    */
   async mockConfig(): Promise<void> {
-    await this.page.route('**/api/config', (route: Route) => {
+    await this.page.route("**/api/config", (route: Route) => {
       route.fulfill({
         status: 200,
-        contentType: 'application/json',
+        contentType: "application/json",
         body: JSON.stringify({
           supabaseUrl: null,
           supabaseAnonKey: null,
@@ -228,18 +238,4 @@ export class ApiMocker {
       });
     });
   }
-}
-
-/**
- * Helper to wait for API response
- */
-export async function waitForApiResponse(
-  page: Page,
-  endpoint: '/api/chat' | '/api/block-action',
-  timeout: number = 5000
-): Promise<void> {
-  await page.waitForResponse(
-    (response) => response.url().includes(endpoint) && response.status() === 200,
-    { timeout }
-  );
 }

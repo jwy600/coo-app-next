@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { isOfflineMode } from "@/lib/utils/offlineMode";
+import { isOfflineMode } from "@/lib/supabase/client";
 
 describe("isOfflineMode", () => {
   const originalEnv = { ...process.env };

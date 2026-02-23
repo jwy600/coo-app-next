@@ -114,7 +114,7 @@ lib/api/             # Frontend API client functions
 lib/export/          # Markdown export utilities
 lib/rendering/       # Markdown + KaTeX + strikethrough rendering
 lib/config/          # OpenAI model settings + prompt loader
-prompts/             # System prompt .md files (developer, block-action × en, zh)
+prompts/             # System prompt .md files (language-neutral, injected at runtime)
 types/state/         # State type definitions (CoreState, UIState)
 proxy.ts             # Next.js middleware (auth session refresh)
 tests/               # Vitest unit tests

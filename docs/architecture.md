@@ -23,11 +23,9 @@ app/                    # Next.js App Router
 
 proxy.ts               # Auth middleware (session refresh, auth page redirect)
 
-prompts/                # System prompt templates (.md files)
-├── developer.en.md     # Chat system prompt (English)
-├── developer.zh.md     # Chat system prompt (Chinese)
-├── block-action.en.md  # Block action system prompt (English)
-└── block-action.zh.md  # Block action system prompt (Chinese)
+prompts/                # System prompt templates (language-neutral .md files)
+├── developer.md        # Chat system prompt (language injected at runtime)
+└── block-action.md     # Block action system prompt (language injected at runtime)
 
 components/
 ├── ui/                 # shadcn/ui components

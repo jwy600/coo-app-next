@@ -4,7 +4,7 @@
  */
 
 import type { Settings, ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
-import { DEFAULT_SETTINGS } from '@/types/settings';
+import { DEFAULT_SETTINGS, isLanguageConflict, getDefaultTranslateLanguage } from '@/types/settings';
 
 /**
  * Create initial settings with default values
@@ -41,13 +41,18 @@ export const updateWebSearchEnabled = (
 };
 
 /**
- * Update the response language setting
+ * Update the response language setting.
+ * Auto-adjusts translateLanguage if it would conflict with the new response language.
  */
 export const updateResponseLanguage = (
   settings: Settings,
   responseLanguage: ResponseLanguage
 ): Settings => {
-  return { ...settings, responseLanguage };
+  let { translateLanguage } = settings;
+  if (isLanguageConflict(responseLanguage, translateLanguage)) {
+    translateLanguage = getDefaultTranslateLanguage(responseLanguage);
+  }
+  return { ...settings, responseLanguage, translateLanguage };
 };
 
 /**

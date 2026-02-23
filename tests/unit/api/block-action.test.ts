@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { POST } from "@/app/api/block-action/route";
 import { NextRequest } from "next/server";
 import { setupTestEnv, clearTestEnv, createMockCompletion } from "./setup";
-import { getBlockActionPrompt } from "@/lib/config/openai";
+import { getBlockActionPrompt, getTranslatePrompt } from "@/lib/config/openai";
 
 // Create mock function that can be imported
 const mockCreate = vi.fn();
@@ -54,7 +54,7 @@ describe("Block Action API Route", () => {
         expect.objectContaining({
           model: "gpt-5-mini",
           messages: [
-            { role: "system", content: getBlockActionPrompt() },
+            { role: "system", content: getTranslatePrompt("Chinese") },
             { role: "user", content: "Translate into Chinese:\n\nHello world" },
           ],
         }),

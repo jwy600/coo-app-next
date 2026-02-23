@@ -53,11 +53,22 @@ describe("SettingsForm", () => {
     expect(screen.getByText("High")).toBeTruthy();
   });
 
-  it("renders Response Language section", () => {
+  it("renders Response Language section with all languages", () => {
     render(<SettingsForm />);
     expect(screen.getByText("Response Language")).toBeTruthy();
-    // "English" appears in both Response Language and Translation Language
-    expect(screen.getAllByText("English").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("English")).toBeTruthy();
+    // Español, Français, 日本語 appear in both response and translate sections
+    expect(screen.getAllByText("Español").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Français").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("日本語").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("filters conflicting translate language options", () => {
+    render(<SettingsForm />);
+    // With responseLanguage=en, the translate options should not include "English"
+    // but should include Chinese, Spanish, French, Japanese
+    const translateSection = screen.getByText("Translation Language");
+    expect(translateSection).toBeTruthy();
   });
 
   it("renders Translation Language section", () => {

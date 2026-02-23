@@ -1,47 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
-import type { BlockActionRequest, BlockActionResponse, ApiError, BlockAction } from '@/types/api';
-import type { TranslateLanguage } from '@/types/settings';
-import { getOpenAiClient } from '@/lib/api/openAiClient';
-import { parseString, validatePrompt } from '@/lib/utils/validation';
-import { getOpenAIModelConfig, getBlockActionPrompt } from '@/lib/config/openai';
-import { handleApiError } from '@/lib/api/errorHandler';
+import { NextRequest, NextResponse } from "next/server";
+import type {
+  BlockActionRequest,
+  BlockActionResponse,
+  ApiError,
+  BlockAction,
+} from "@/types/api";
+import type { TranslateLanguage } from "@/types/settings";
+import { getOpenAiClient } from "@/lib/api/openAiClient";
+import { parseString, validatePrompt } from "@/lib/utils/validation";
+import {
+  getOpenAIModelConfig,
+  getBlockActionPrompt,
+  getTranslatePrompt,
+} from "@/lib/config/openai";
+import { handleApiError } from "@/lib/api/errorHandler";
 
 // Build action-specific prompt based on action type
 function buildActionPrompt(
   action: BlockAction,
   blockText: string,
   prompt?: string,
-  translateLanguage?: TranslateLanguage
+  translateLanguage?: TranslateLanguage,
 ): string {
   const trimmedBlock = blockText.trim();
 
   switch (action) {
-    case 'translate': {
-      const language = translateLanguage || 'Chinese';
+    case "translate": {
+      const language = translateLanguage || "Chinese";
       return `Translate into ${language}:\n\n${trimmedBlock}`;
     }
 
-    case 'example':
+    case "example":
       return `Give one concrete example of this:\n\n${trimmedBlock}`;
 
-    case 'expand':
+    case "expand":
       return `Expand on this with more detail:\n\n${trimmedBlock}`;
 
-    case 'eli5':
+    case "eli5":
       return `Explain this like I'm five:\n\n${trimmedBlock}`;
 
-    case 'rewrite': {
-      const highlightPrompt = prompt?.trim() || '';
+    case "rewrite": {
+      const highlightPrompt = prompt?.trim() || "";
       return `Rewrite this text, incorporating the highlighted phrases naturally. If a phrase is in a different language, INSERT each highlighted phrase in parentheses immediately after the most relevant word/phrase in the text. Prioritize natural integration, but if no coherent or logical placement exists for a phrase, append it at the end of the text rather than forcing an awkward insertion. Phrases to incorporate: ${highlightPrompt}. Text: ${trimmedBlock}`;
     }
 
-    case 'ask': {
-      const trimmedPrompt = prompt?.trim() || '';
+    case "ask": {
+      const trimmedPrompt = prompt?.trim() || "";
       return `Text: "${trimmedBlock}"\n\nQuestion: ${trimmedPrompt}`;
     }
 
     default:
-      return '';
+      return "";
   }
 }
 
@@ -58,26 +67,31 @@ export async function POST(request: NextRequest) {
     // Validation: Required fields
     if (!action || !blockText) {
       return NextResponse.json<ApiError>(
-        { error: 'Missing block action input.' },
-        { status: 400 }
+        { error: "Missing block action input." },
+        { status: 400 },
       );
     }
 
     // Validation: Actions that require prompt
-    if ((action === 'ask' || action === 'rewrite') && !prompt) {
+    if ((action === "ask" || action === "rewrite") && !prompt) {
       return NextResponse.json<ApiError>(
-        { error: 'Missing prompt for block action.' },
-        { status: 400 }
+        { error: "Missing prompt for block action." },
+        { status: 400 },
       );
     }
 
     // Build action-specific prompt
-    const actionPrompt = buildActionPrompt(action as BlockAction, blockText, prompt, translateLanguage);
+    const actionPrompt = buildActionPrompt(
+      action as BlockAction,
+      blockText,
+      prompt,
+      translateLanguage,
+    );
 
     if (!actionPrompt) {
       return NextResponse.json<ApiError>(
-        { error: 'Unsupported action.' },
-        { status: 400 }
+        { error: "Unsupported action." },
+        { status: 400 },
       );
     }
 
@@ -85,8 +99,8 @@ export async function POST(request: NextRequest) {
     const validation = validatePrompt(actionPrompt);
     if (!validation.valid) {
       return NextResponse.json<ApiError>(
-        { error: 'That request is a bit too long. Please shorten it.' },
-        { status: 400 }
+        { error: "That request is a bit too long. Please shorten it." },
+        { status: 400 },
       );
     }
 
@@ -96,12 +110,19 @@ export async function POST(request: NextRequest) {
     // Get model configuration
     const modelConfig = getOpenAIModelConfig();
 
+    // Pick system prompt: translate action uses the translate target language,
+    // all other actions use the response language
+    const systemPrompt =
+      action === "translate"
+        ? getTranslatePrompt(translateLanguage || "Chinese")
+        : getBlockActionPrompt(settings?.responseLanguage);
+
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: settings?.model || modelConfig.model,
       messages: [
-        { role: 'system', content: getBlockActionPrompt(settings?.responseLanguage) },
-        { role: 'user', content: actionPrompt },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: actionPrompt },
       ],
     });
 
@@ -111,13 +132,13 @@ export async function POST(request: NextRequest) {
     if (!text) {
       return NextResponse.json<ApiError>(
         { error: "The assistant didn't return any text." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Return successful response
     return NextResponse.json<BlockActionResponse>({ text });
   } catch (error) {
-    return handleApiError(error, 'Block action');
+    return handleApiError(error, "Block action");
   }
 }

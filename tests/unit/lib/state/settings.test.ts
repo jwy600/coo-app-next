@@ -166,11 +166,69 @@ describe("Settings State Functions", () => {
       expect(updated.responseLanguage).toBe("zh");
     });
 
+    it("should update response language to new languages (es, fr, ja)", () => {
+      const settings = createInitialSettings();
+      expect(updateResponseLanguage(settings, "es").responseLanguage).toBe(
+        "es",
+      );
+      expect(updateResponseLanguage(settings, "fr").responseLanguage).toBe(
+        "fr",
+      );
+      expect(updateResponseLanguage(settings, "ja").responseLanguage).toBe(
+        "ja",
+      );
+    });
+
     it("should maintain immutability", () => {
       const settings = createInitialSettings();
       const updated = updateResponseLanguage(settings, "zh");
       expect(updated).not.toBe(settings);
       expect(settings.responseLanguage).toBe("en");
+    });
+
+    it("should auto-adjust translateLanguage when it conflicts", () => {
+      // Default: responseLanguage=en, translateLanguage=Chinese
+      // Changing response to zh should conflict with Chinese → auto-adjust to English
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        responseLanguage: "en",
+        translateLanguage: "Chinese",
+      };
+      const updated = updateResponseLanguage(settings, "zh");
+      expect(updated.responseLanguage).toBe("zh");
+      expect(updated.translateLanguage).toBe("English");
+    });
+
+    it("should auto-adjust translateLanguage to Chinese when switching to English conflict", () => {
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        responseLanguage: "zh",
+        translateLanguage: "English",
+      };
+      const updated = updateResponseLanguage(settings, "en");
+      expect(updated.responseLanguage).toBe("en");
+      expect(updated.translateLanguage).toBe("Chinese");
+    });
+
+    it("should not change translateLanguage when no conflict", () => {
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        responseLanguage: "en",
+        translateLanguage: "Spanish",
+      };
+      const updated = updateResponseLanguage(settings, "zh");
+      expect(updated.translateLanguage).toBe("Spanish");
+    });
+
+    it("should handle Japanese conflict", () => {
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        responseLanguage: "en",
+        translateLanguage: "Japanese",
+      };
+      const updated = updateResponseLanguage(settings, "ja");
+      expect(updated.responseLanguage).toBe("ja");
+      expect(updated.translateLanguage).toBe("English");
     });
   });
 

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/lib/store/useStore';
 import { signOut } from '@/lib/supabase/auth';
+import { TRANSLATE_TO_RESPONSE_MAP } from '@/types/settings';
 import type { ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
 
 const MODEL_OPTIONS: { value: ModelType; label: string; description: string }[] = [
@@ -25,14 +26,18 @@ const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [
 
 const RESPONSE_LANGUAGE_OPTIONS: { value: ResponseLanguage; label: string }[] = [
   { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
   { value: 'zh', label: '中文' },
+  { value: 'ja', label: '日本語' },
 ];
 
-const LANGUAGE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
+const ALL_TRANSLATE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
   { value: 'English', label: 'English' },
   { value: 'Chinese', label: '中文' },
   { value: 'Spanish', label: 'Español' },
   { value: 'French', label: 'Français' },
+  { value: 'Japanese', label: '日本語' },
 ];
 
 export function SettingsForm() {
@@ -58,6 +63,11 @@ export function SettingsForm() {
     }
     setIsLoggingOut(false);
   };
+
+  // Filter translate options to exclude the current response language (prevents conflict)
+  const filteredTranslateOptions = ALL_TRANSLATE_OPTIONS.filter(
+    (opt) => TRANSLATE_TO_RESPONSE_MAP[opt.value] !== settings.responseLanguage,
+  );
 
   return (
     <div className="flex flex-col gap-6 py-4">
@@ -142,7 +152,7 @@ export function SettingsForm() {
           onValueChange={(value) => updateTranslateLanguage(value as TranslateLanguage)}
           className="grid grid-cols-2 gap-2"
         >
-          {LANGUAGE_OPTIONS.map((option) => (
+          {filteredTranslateOptions.map((option) => (
             <div key={option.value} className="flex items-center space-x-2">
               <RadioGroupItem value={option.value} id={`lang-${option.value}`} />
               <Label

@@ -4,19 +4,19 @@
  * Simplified version to prevent infinite loops
  */
 
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useStore } from '@/lib/store/useStore';
-import { loadThreadFromSupabase } from '@/lib/supabase/threads';
-import { loadMessagesForThread } from '@/lib/supabase/messages';
-import { loadBlocksForThread } from '@/lib/supabase/blocks';
-import { loadCardsForThread } from '@/lib/supabase/cards';
-import { getErrorMessage } from '@/lib/utils/errorHandling';
-import type { Thread } from '@/types/thread';
-import type { Message } from '@/types/message';
-import type { Block } from '@/types/block';
-import type { Card } from '@/types/card';
+import { useState, useEffect, useRef } from "react";
+import { useStore } from "@/lib/store/useStore";
+import { loadThreadFromSupabase } from "@/lib/supabase/threads";
+import { loadMessagesForThread } from "@/lib/supabase/messages";
+import { loadBlocksForThread } from "@/lib/supabase/blocks";
+import { loadCardsForThread } from "@/lib/supabase/cards";
+import { getErrorMessage } from "@/lib/utils/errorHandling";
+import type { Thread } from "@/types/thread";
+import type { Message } from "@/types/message";
+import type { Block } from "@/types/block";
+import type { Card } from "@/types/card";
 
 export interface UseThreadSyncReturn {
   isLoading: boolean;
@@ -33,7 +33,7 @@ export interface UseThreadSyncOptions {
 
 export function useThreadSync(
   threadId: string | null,
-  options: UseThreadSyncOptions = {}
+  options: UseThreadSyncOptions = {},
 ): UseThreadSyncReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +66,8 @@ export function useThreadSync(
     setIsLoading(true);
     setError(null);
 
+    let cancelled = false;
+
     const loadThread = async () => {
       const maxRetries = 5;
       const baseDelay = 500; // Start with 500ms
@@ -81,31 +83,35 @@ export function useThreadSync(
         if (error instanceof Error) {
           const message = error.message.toLowerCase();
           // Network errors
-          if (message.includes('network') || message.includes('fetch')) return true;
+          if (message.includes("network") || message.includes("fetch"))
+            return true;
           // Not found - may be replication lag for newly created threads
-          if (message.includes('not found')) return true;
+          if (message.includes("not found")) return true;
         }
         return true; // Default to retrying unknown errors
       };
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (cancelled) return;
+
         try {
           const threadData = await loadThreadFromSupabase(threadId);
+          if (cancelled) return;
 
           if (!threadData) {
-            const notFoundError = new Error('Thread not found');
-            if (attempt < maxRetries - 1 && isTransientError(notFoundError)) {
+            if (attempt < maxRetries - 1) {
               // Exponential backoff: 500ms, 1000ms, 2000ms, 4000ms
               const delay = baseDelay * Math.pow(2, attempt);
               await new Promise((resolve) => setTimeout(resolve, delay));
               continue;
             }
-            throw notFoundError;
+            throw new Error("Thread not found");
           }
 
           const messages = await loadMessagesForThread(threadId);
           const blocks = await loadBlocksForThread(threadId);
           const cards = await loadCardsForThread(threadId);
+          if (cancelled) return;
 
           const completeThread: Thread = {
             id: threadData.id,
@@ -125,7 +131,9 @@ export function useThreadSync(
           };
 
           // Merge into store
-          useStore.getState().mergeThreadFromSupabase(completeThread, messages, blocks);
+          useStore
+            .getState()
+            .mergeThreadFromSupabase(completeThread, messages, blocks);
           // Set cards for this thread
           useStore.getState().setCards(cards);
           setIsLoading(false);
@@ -133,9 +141,11 @@ export function useThreadSync(
           loadedThreadRef.current = threadId;
           return;
         } catch (err) {
+          if (cancelled) return;
+
           // Don't retry permanent errors
           if (!isTransientError(err)) {
-            const errorMessage = getErrorMessage(err, 'Failed to load thread');
+            const errorMessage = getErrorMessage(err, "Failed to load thread");
             setError(errorMessage);
             setIsLoading(false);
             loadingRef.current = false;
@@ -144,7 +154,7 @@ export function useThreadSync(
 
           if (attempt === maxRetries - 1) {
             // Final attempt failed
-            const errorMessage = getErrorMessage(err, 'Failed to load thread');
+            const errorMessage = getErrorMessage(err, "Failed to load thread");
             setError(errorMessage);
             setIsLoading(false);
             loadingRef.current = false;
@@ -158,11 +168,15 @@ export function useThreadSync(
     };
 
     loadThread();
+
+    return () => {
+      cancelled = true;
+    };
   }, [threadId]);
 
   // Get thread from store for return value
-  const thread = useStore((state) =>
-    state.threads.find((t) => t.id === threadId) || null
+  const thread = useStore(
+    (state) => state.threads.find((t) => t.id === threadId) || null,
   );
 
   return {

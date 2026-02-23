@@ -10,6 +10,7 @@ export const getOpenAIModelConfig = (): OpenAIModelConfig => {
 
 // System prompts loaded from .md files via lib/config/prompts.ts
 export {
+  getChatPrompt,
   getDeveloperPrompt,
   getBlockActionPrompt,
   getTranslatePrompt,

@@ -1,43 +1,61 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useStore } from '@/lib/store/useStore';
-import { signOut } from '@/lib/supabase/auth';
-import { TRANSLATE_TO_RESPONSE_MAP } from '@/types/settings';
-import type { ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { useStore } from "@/lib/store/useStore";
+import { signOut } from "@/lib/supabase/auth";
+import {
+  TRANSLATE_TO_RESPONSE_MAP,
+  SYSTEM_PROMPT_OPTIONS,
+} from "@/types/settings";
+import type {
+  SystemPromptFile,
+  ModelType,
+  ReasoningEffort,
+  ResponseLanguage,
+  TranslateLanguage,
+} from "@/types/settings";
 
-const MODEL_OPTIONS: { value: ModelType; label: string; description: string }[] = [
-  { value: 'gpt-5-mini', label: 'GPT-5-mini', description: 'Fast and efficient' },
-  { value: 'gpt-5.2', label: 'GPT-5.2', description: 'Most capable' },
+const MODEL_OPTIONS: {
+  value: ModelType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "gpt-5-mini",
+    label: "GPT-5-mini",
+    description: "Fast and efficient",
+  },
+  { value: "gpt-5.2", label: "GPT-5.2", description: "Most capable" },
 ];
 
 const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
+  { value: "none", label: "None" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
 ];
 
-const RESPONSE_LANGUAGE_OPTIONS: { value: ResponseLanguage; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Español' },
-  { value: 'fr', label: 'Français' },
-  { value: 'zh', label: '中文' },
-  { value: 'ja', label: '日本語' },
-];
+const RESPONSE_LANGUAGE_OPTIONS: { value: ResponseLanguage; label: string }[] =
+  [
+    { value: "en", label: "English" },
+    { value: "es", label: "Español" },
+    { value: "fr", label: "Français" },
+    { value: "zh", label: "中文" },
+    { value: "ja", label: "日本語" },
+  ];
 
 const ALL_TRANSLATE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
-  { value: 'English', label: 'English' },
-  { value: 'Chinese', label: '中文' },
-  { value: 'Spanish', label: 'Español' },
-  { value: 'French', label: 'Français' },
-  { value: 'Japanese', label: '日本語' },
+  { value: "English", label: "English" },
+  { value: "Chinese", label: "中文" },
+  { value: "Spanish", label: "Español" },
+  { value: "French", label: "Français" },
+  { value: "Japanese", label: "日本語" },
 ];
 
 export function SettingsForm() {
@@ -45,11 +63,22 @@ export function SettingsForm() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const settings = useStore((state) => state.settings);
+  const updateSystemPromptFile = useStore(
+    (state) => state.updateSystemPromptFile,
+  );
   const updateModel = useStore((state) => state.updateModel);
-  const updateReasoningEffort = useStore((state) => state.updateReasoningEffort);
-  const updateWebSearchEnabled = useStore((state) => state.updateWebSearchEnabled);
-  const updateResponseLanguage = useStore((state) => state.updateResponseLanguage);
-  const updateTranslateLanguage = useStore((state) => state.updateTranslateLanguage);
+  const updateReasoningEffort = useStore(
+    (state) => state.updateReasoningEffort,
+  );
+  const updateWebSearchEnabled = useStore(
+    (state) => state.updateWebSearchEnabled,
+  );
+  const updateResponseLanguage = useStore(
+    (state) => state.updateResponseLanguage,
+  );
+  const updateTranslateLanguage = useStore(
+    (state) => state.updateTranslateLanguage,
+  );
   const resetSettings = useStore((state) => state.resetSettings);
   const resetStore = useStore((state) => state.reset);
 
@@ -58,7 +87,7 @@ export function SettingsForm() {
     const result = await signOut();
     if (result.success) {
       resetStore();
-      router.push('/auth/login');
+      router.push("/auth/login");
       router.refresh();
     }
     setIsLoggingOut(false);
@@ -71,6 +100,35 @@ export function SettingsForm() {
 
   return (
     <div className="flex flex-col gap-6 py-4">
+      {/* System Prompt */}
+      <div className="space-y-3">
+        <Label className="text-sm font-semibold">System Prompt</Label>
+        <RadioGroup
+          value={settings.systemPromptFile}
+          onValueChange={(value) =>
+            updateSystemPromptFile(value as SystemPromptFile)
+          }
+          className="grid gap-2"
+        >
+          {Object.entries(SYSTEM_PROMPT_OPTIONS).map(([key, option]) => (
+            <div key={key} className="flex items-center space-x-3">
+              <RadioGroupItem value={key} id={`prompt-${key}`} />
+              <Label
+                htmlFor={`prompt-${key}`}
+                className="flex flex-col cursor-pointer font-normal"
+              >
+                <span>{option.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  {option.description}
+                </span>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+
+      <Separator />
+
       {/* Model Selection */}
       <div className="space-y-3">
         <Label className="text-sm font-semibold">Model</Label>
@@ -81,13 +139,18 @@ export function SettingsForm() {
         >
           {MODEL_OPTIONS.map((option) => (
             <div key={option.value} className="flex items-center space-x-3">
-              <RadioGroupItem value={option.value} id={`model-${option.value}`} />
+              <RadioGroupItem
+                value={option.value}
+                id={`model-${option.value}`}
+              />
               <Label
                 htmlFor={`model-${option.value}`}
                 className="flex flex-col cursor-pointer font-normal"
               >
                 <span>{option.label}</span>
-                <span className="text-xs text-muted-foreground">{option.description}</span>
+                <span className="text-xs text-muted-foreground">
+                  {option.description}
+                </span>
               </Label>
             </div>
           ))}
@@ -101,12 +164,17 @@ export function SettingsForm() {
         <Label className="text-sm font-semibold">Reasoning Effort</Label>
         <RadioGroup
           value={settings.reasoningEffort}
-          onValueChange={(value) => updateReasoningEffort(value as ReasoningEffort)}
+          onValueChange={(value) =>
+            updateReasoningEffort(value as ReasoningEffort)
+          }
           className="grid grid-cols-2 gap-2"
         >
           {REASONING_OPTIONS.map((option) => (
             <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem value={option.value} id={`reasoning-${option.value}`} />
+              <RadioGroupItem
+                value={option.value}
+                id={`reasoning-${option.value}`}
+              />
               <Label
                 htmlFor={`reasoning-${option.value}`}
                 className="cursor-pointer font-normal"
@@ -125,12 +193,17 @@ export function SettingsForm() {
         <Label className="text-sm font-semibold">Response Language</Label>
         <RadioGroup
           value={settings.responseLanguage}
-          onValueChange={(value) => updateResponseLanguage(value as ResponseLanguage)}
+          onValueChange={(value) =>
+            updateResponseLanguage(value as ResponseLanguage)
+          }
           className="grid grid-cols-2 gap-2"
         >
           {RESPONSE_LANGUAGE_OPTIONS.map((option) => (
             <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem value={option.value} id={`response-lang-${option.value}`} />
+              <RadioGroupItem
+                value={option.value}
+                id={`response-lang-${option.value}`}
+              />
               <Label
                 htmlFor={`response-lang-${option.value}`}
                 className="cursor-pointer font-normal"
@@ -149,12 +222,17 @@ export function SettingsForm() {
         <Label className="text-sm font-semibold">Translation Language</Label>
         <RadioGroup
           value={settings.translateLanguage}
-          onValueChange={(value) => updateTranslateLanguage(value as TranslateLanguage)}
+          onValueChange={(value) =>
+            updateTranslateLanguage(value as TranslateLanguage)
+          }
           className="grid grid-cols-2 gap-2"
         >
           {filteredTranslateOptions.map((option) => (
             <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem value={option.value} id={`lang-${option.value}`} />
+              <RadioGroupItem
+                value={option.value}
+                id={`lang-${option.value}`}
+              />
               <Label
                 htmlFor={`lang-${option.value}`}
                 className="cursor-pointer font-normal"
@@ -188,11 +266,7 @@ export function SettingsForm() {
       <Separator />
 
       {/* Reset Button */}
-      <Button
-        variant="outline"
-        onClick={resetSettings}
-        className="w-full"
-      >
+      <Button variant="outline" onClick={resetSettings} className="w-full">
         Reset to Defaults
       </Button>
 
@@ -205,7 +279,7 @@ export function SettingsForm() {
         disabled={isLoggingOut}
         className="w-full"
       >
-        {isLoggingOut ? 'Signing out...' : 'Sign out'}
+        {isLoggingOut ? "Signing out..." : "Sign out"}
       </Button>
     </div>
   );

@@ -2,14 +2,22 @@
  * Settings slice - Wraps pure settings state functions
  */
 
-import { StateCreator } from 'zustand';
-import * as settingsFns from '@/lib/state/settings';
-import type { Settings, ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
+import { StateCreator } from "zustand";
+import * as settingsFns from "@/lib/state/settings";
+import type {
+  Settings,
+  SystemPromptFile,
+  ModelType,
+  ReasoningEffort,
+  ResponseLanguage,
+  TranslateLanguage,
+} from "@/types/settings";
 
 export interface SettingsSlice {
   settings: Settings;
 
   // Actions that wrap pure functions
+  updateSystemPromptFile: (file: SystemPromptFile) => void;
   updateModel: (model: ModelType) => void;
   updateReasoningEffort: (effort: ReasoningEffort) => void;
   updateWebSearchEnabled: (enabled: boolean) => void;
@@ -25,6 +33,11 @@ export const settingsSlice: StateCreator<
   SettingsSlice
 > = (set, get) => ({
   settings: settingsFns.createInitialSettings(),
+
+  updateSystemPromptFile: (file) => {
+    const updated = settingsFns.updateSystemPromptFile(get().settings, file);
+    set({ settings: updated });
+  },
 
   updateModel: (model) => {
     const updated = settingsFns.updateModel(get().settings, model);
@@ -42,12 +55,18 @@ export const settingsSlice: StateCreator<
   },
 
   updateResponseLanguage: (language) => {
-    const updated = settingsFns.updateResponseLanguage(get().settings, language);
+    const updated = settingsFns.updateResponseLanguage(
+      get().settings,
+      language,
+    );
     set({ settings: updated });
   },
 
   updateTranslateLanguage: (language) => {
-    const updated = settingsFns.updateTranslateLanguage(get().settings, language);
+    const updated = settingsFns.updateTranslateLanguage(
+      get().settings,
+      language,
+    );
     set({ settings: updated });
   },
 

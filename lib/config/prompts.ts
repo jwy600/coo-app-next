@@ -1,10 +1,14 @@
 import { readFileSync } from "fs";
 import { join } from "path";
-import type { ResponseLanguage, TranslateLanguage } from "@/types/settings";
+import type {
+  ResponseLanguage,
+  TranslateLanguage,
+  SystemPromptFile,
+} from "@/types/settings";
 import { LANGUAGE_MAP, TRANSLATE_TO_RESPONSE_MAP } from "@/types/settings";
 
-/** Supported prompt names */
-type PromptName = "developer" | "block-action";
+/** Supported prompt names (chat prompts derived from SystemPromptFile + block-action) */
+type PromptName = SystemPromptFile | "block-action";
 
 /** Module-scope cache: each raw template is read from disk once */
 const templateCache = new Map<string, string>();
@@ -63,12 +67,20 @@ export const prependLanguageDirective = (
   return `Always respond in ${fullName}.\n\n${prompt}`;
 };
 
+/** Get the chat system prompt for the given prompt file and language. */
+export const getChatPrompt = (
+  promptFile: SystemPromptFile = "developer",
+  responseLanguage: ResponseLanguage = "en",
+): string => {
+  const template = loadTemplate(promptFile);
+  return replaceLanguageTag(template, responseLanguage);
+};
+
 /** Get the developer/chat system prompt for the given language. */
 export const getDeveloperPrompt = (
   responseLanguage: ResponseLanguage = "en",
 ): string => {
-  const template = loadTemplate("developer");
-  return replaceLanguageTag(template, responseLanguage);
+  return getChatPrompt("developer", responseLanguage);
 };
 
 /** Get the block action system prompt for the given language. */

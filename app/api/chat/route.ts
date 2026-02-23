@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import type { ChatRequest, ChatResponse, ApiError } from '@/types/api';
-import { createResponse, createResponseStream } from '@/lib/api/openAiClient';
-import { parseString, validatePrompt } from '@/lib/utils/validation';
-import { getOpenAIModelConfig, getDeveloperPrompt } from '@/lib/config/openai';
-import { handleApiError } from '@/lib/api/errorHandler';
+import { NextRequest, NextResponse } from "next/server";
+import type { ChatRequest, ChatResponse, ApiError } from "@/types/api";
+import { createResponse, createResponseStream } from "@/lib/api/openAiClient";
+import { parseString, validatePrompt } from "@/lib/utils/validation";
+import { getOpenAIModelConfig, getChatPrompt } from "@/lib/config/openai";
+import { handleApiError } from "@/lib/api/errorHandler";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
     const validation = validatePrompt(prompt);
     if (!validation.valid) {
       return NextResponse.json<ApiError>(
-        { error: validation.error || 'Invalid prompt.' },
-        { status: 400 }
+        { error: validation.error || "Invalid prompt." },
+        { status: 400 },
       );
     }
 
@@ -37,34 +37,49 @@ export async function POST(request: NextRequest) {
               {
                 model: settings?.model || modelConfig.model,
                 input: prompt,
-                instructions: getDeveloperPrompt(settings?.responseLanguage),
+                instructions: getChatPrompt(
+                  settings?.systemPromptFile,
+                  settings?.responseLanguage,
+                ),
                 previousResponseId,
                 reasoningEffort: settings?.reasoningEffort,
                 webSearchEnabled: settings?.webSearchEnabled,
               },
               {
                 onToken: (token) => {
-                  const data = JSON.stringify({ type: 'token', content: token });
+                  const data = JSON.stringify({
+                    type: "token",
+                    content: token,
+                  });
                   controller.enqueue(encoder.encode(`data: ${data}\n\n`));
                 },
                 onResponseId: (responseId) => {
-                  const data = JSON.stringify({ type: 'response_id', responseId });
+                  const data = JSON.stringify({
+                    type: "response_id",
+                    responseId,
+                  });
                   controller.enqueue(encoder.encode(`data: ${data}\n\n`));
                 },
                 onComplete: () => {
-                  const data = JSON.stringify({ type: 'done' });
+                  const data = JSON.stringify({ type: "done" });
                   controller.enqueue(encoder.encode(`data: ${data}\n\n`));
                   controller.close();
                 },
                 onError: (error) => {
-                  const data = JSON.stringify({ type: 'error', error: error.message });
+                  const data = JSON.stringify({
+                    type: "error",
+                    error: error.message,
+                  });
                   controller.enqueue(encoder.encode(`data: ${data}\n\n`));
                   controller.close();
                 },
-              }
+              },
             );
           } catch (error: any) {
-            const data = JSON.stringify({ type: 'error', error: error.message });
+            const data = JSON.stringify({
+              type: "error",
+              error: error.message,
+            });
             controller.enqueue(encoder.encode(`data: ${data}\n\n`));
             controller.close();
           }
@@ -73,9 +88,9 @@ export async function POST(request: NextRequest) {
 
       return new Response(readable, {
         headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
         },
       });
     }
@@ -84,7 +99,10 @@ export async function POST(request: NextRequest) {
     const result = await createResponse({
       model: settings?.model || modelConfig.model,
       input: prompt,
-      instructions: getDeveloperPrompt(settings?.responseLanguage),
+      instructions: getChatPrompt(
+        settings?.systemPromptFile,
+        settings?.responseLanguage,
+      ),
       previousResponseId,
       reasoningEffort: settings?.reasoningEffort,
       webSearchEnabled: settings?.webSearchEnabled,
@@ -93,7 +111,7 @@ export async function POST(request: NextRequest) {
     if (!result.text) {
       return NextResponse.json<ApiError>(
         { error: "The assistant didn't return any text." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -103,6 +121,6 @@ export async function POST(request: NextRequest) {
       responseId: result.responseId,
     });
   } catch (error) {
-    return handleApiError(error, 'Chat API');
+    return handleApiError(error, "Chat API");
   }
 }

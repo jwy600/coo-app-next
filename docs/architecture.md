@@ -24,7 +24,8 @@ app/                    # Next.js App Router
 proxy.ts               # Auth middleware (session refresh, auth page redirect)
 
 prompts/                # System prompt templates (language-neutral .md files)
-├── developer.md        # Chat system prompt (language injected at runtime)
+├── developer.md        # Knowledge Assistant chat prompt (thorough explanations)
+├── atomic.md           # Atomic Notes chat prompt (brief, self-contained notes)
 └── block-action.md     # Block action system prompt (language injected at runtime)
 
 components/
@@ -357,6 +358,26 @@ Key files:
 - `components/composer/PromptInput.tsx` — Strikethrough on select-all+backspace
 - `lib/rendering/markdown.ts` — Strikethrough parsing
 - `components/content/BlockContent.tsx` — `<del>` tag rendering
+
+## System Prompt Switching
+
+Users can switch between different system prompts that control the AI's response style:
+
+- **Knowledge Assistant** (`developer.md`) — Deep, thorough explanations with examples and context (default)
+- **Atomic Notes** (`atomic.md`) — Brief, self-contained notes focused on key insights
+
+The selected prompt file is stored in `settings.systemPromptFile` and sent with each chat request. Block-action prompts (`block-action.md`) are unaffected by this setting.
+
+**Adding a new system prompt** requires only 2 steps:
+1. Create `prompts/{name}.md` (include `<language></language>` tag for i18n)
+2. Add an entry to `SYSTEM_PROMPT_OPTIONS` in `types/settings.ts`
+
+The type, UI, and prompt loader all derive from `SYSTEM_PROMPT_OPTIONS` automatically.
+
+Key files:
+- `types/settings.ts` — `SYSTEM_PROMPT_OPTIONS` (single source of truth), `SystemPromptFile` type derived from it
+- `lib/config/prompts.ts` — `getChatPrompt(promptFile, lang)` loads the selected template
+- `components/settings/SettingsForm.tsx` — Auto-generates radio options from `SYSTEM_PROMPT_OPTIONS`
 
 ## Response Language (i18n)
 

@@ -3,14 +3,35 @@
  * These are pure functions with no side effects - testable and framework-agnostic
  */
 
-import type { Settings, ModelType, ReasoningEffort, ResponseLanguage, TranslateLanguage } from '@/types/settings';
-import { DEFAULT_SETTINGS, isLanguageConflict, getDefaultTranslateLanguage } from '@/types/settings';
+import type {
+  Settings,
+  SystemPromptFile,
+  ModelType,
+  ReasoningEffort,
+  ResponseLanguage,
+  TranslateLanguage,
+} from "@/types/settings";
+import {
+  DEFAULT_SETTINGS,
+  isLanguageConflict,
+  getDefaultTranslateLanguage,
+} from "@/types/settings";
 
 /**
  * Create initial settings with default values
  */
 export const createInitialSettings = (): Settings => {
   return { ...DEFAULT_SETTINGS };
+};
+
+/**
+ * Update the system prompt file
+ */
+export const updateSystemPromptFile = (
+  settings: Settings,
+  systemPromptFile: SystemPromptFile,
+): Settings => {
+  return { ...settings, systemPromptFile };
 };
 
 /**
@@ -25,7 +46,7 @@ export const updateModel = (settings: Settings, model: ModelType): Settings => {
  */
 export const updateReasoningEffort = (
   settings: Settings,
-  reasoningEffort: ReasoningEffort
+  reasoningEffort: ReasoningEffort,
 ): Settings => {
   return { ...settings, reasoningEffort };
 };
@@ -35,7 +56,7 @@ export const updateReasoningEffort = (
  */
 export const updateWebSearchEnabled = (
   settings: Settings,
-  webSearchEnabled: boolean
+  webSearchEnabled: boolean,
 ): Settings => {
   return { ...settings, webSearchEnabled };
 };
@@ -46,7 +67,7 @@ export const updateWebSearchEnabled = (
  */
 export const updateResponseLanguage = (
   settings: Settings,
-  responseLanguage: ResponseLanguage
+  responseLanguage: ResponseLanguage,
 ): Settings => {
   let { translateLanguage } = settings;
   if (isLanguageConflict(responseLanguage, translateLanguage)) {
@@ -60,7 +81,7 @@ export const updateResponseLanguage = (
  */
 export const updateTranslateLanguage = (
   settings: Settings,
-  translateLanguage: TranslateLanguage
+  translateLanguage: TranslateLanguage,
 ): Settings => {
   return { ...settings, translateLanguage };
 };

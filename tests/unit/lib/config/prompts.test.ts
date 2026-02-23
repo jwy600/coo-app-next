@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+  getChatPrompt,
   getDeveloperPrompt,
   getBlockActionPrompt,
   replaceLanguageTag,
@@ -59,6 +60,54 @@ describe("prompt loader", () => {
       const first = getDeveloperPrompt("en");
       const second = getDeveloperPrompt("en");
       expect(first).toBe(second);
+    });
+  });
+
+  describe("getChatPrompt", () => {
+    it("loads developer prompt by default", () => {
+      const prompt = getChatPrompt();
+      expect(prompt).toContain("knowledgeable assistant");
+    });
+
+    it("loads developer prompt explicitly", () => {
+      const prompt = getChatPrompt("developer", "en");
+      expect(prompt).toContain("knowledgeable assistant");
+    });
+
+    it("loads atomic prompt", () => {
+      const prompt = getChatPrompt("atomic", "en");
+      expect(prompt).toContain("concise assistant");
+      expect(prompt).toContain("atomic");
+    });
+
+    it("injects language into atomic prompt", () => {
+      const prompt = getChatPrompt("atomic", "zh");
+      expect(prompt).toContain("Always respond in Simplified Chinese.");
+      expect(prompt).toContain("concise assistant");
+    });
+
+    it("removes language tag for English in atomic prompt", () => {
+      const prompt = getChatPrompt("atomic", "en");
+      expect(prompt).not.toContain("<language>");
+      expect(prompt).not.toContain("</language>");
+    });
+
+    it("loads all prompt files for all languages without error", () => {
+      const files = ["developer", "atomic"] as const;
+      const languages: ResponseLanguage[] = ["en", "es", "fr", "zh", "ja"];
+      for (const file of files) {
+        for (const lang of languages) {
+          expect(() => getChatPrompt(file, lang)).not.toThrow();
+          expect(getChatPrompt(file, lang).length).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    it("returns same result as getDeveloperPrompt for developer file", () => {
+      const languages: ResponseLanguage[] = ["en", "es", "fr", "zh", "ja"];
+      for (const lang of languages) {
+        expect(getChatPrompt("developer", lang)).toBe(getDeveloperPrompt(lang));
+      }
     });
   });
 

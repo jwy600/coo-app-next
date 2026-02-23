@@ -1,33 +1,64 @@
-export type ModelType = 'gpt-5.2' | 'gpt-5-mini';
-export type ReasoningEffort = 'none' | 'low' | 'medium' | 'high';
-export type ResponseLanguage = 'en' | 'es' | 'fr' | 'zh' | 'ja';
-export type TranslateLanguage = 'English' | 'Chinese' | 'Spanish' | 'French' | 'Japanese';
+export type ModelType = "gpt-5.2" | "gpt-5-mini";
+export type ReasoningEffort = "none" | "low" | "medium" | "high";
+export type ResponseLanguage = "en" | "es" | "fr" | "zh" | "ja";
+export type TranslateLanguage =
+  | "English"
+  | "Chinese"
+  | "Spanish"
+  | "French"
+  | "Japanese";
+/**
+ * Single source of truth for system prompts.
+ * To add a new prompt: create prompts/{key}.md, then add an entry here.
+ */
+export const SYSTEM_PROMPT_OPTIONS = {
+  developer: {
+    label: "Knowledge Assistant",
+    description: "Thorough explanations with examples",
+  },
+  atomic: {
+    label: "Atomic Notes",
+    description: "Brief, self-contained notes",
+  },
+  chatgpt: {
+    label: "ChatGPT",
+    description: "Original ChatGPT style",
+  },
+} as const satisfies Record<string, { label: string; description: string }>;
+
+export type SystemPromptFile = keyof typeof SYSTEM_PROMPT_OPTIONS;
 
 /** Maps response language codes to full language names (for prompt injection) */
 export const LANGUAGE_MAP: Record<ResponseLanguage, string> = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  zh: 'Simplified Chinese',
-  ja: 'Japanese',
+  en: "English",
+  es: "Spanish",
+  fr: "French",
+  zh: "Simplified Chinese",
+  ja: "Japanese",
 };
 
 /** Maps TranslateLanguage display names to ResponseLanguage codes */
-export const TRANSLATE_TO_RESPONSE_MAP: Record<TranslateLanguage, ResponseLanguage> = {
-  English: 'en',
-  Spanish: 'es',
-  French: 'fr',
-  Chinese: 'zh',
-  Japanese: 'ja',
+export const TRANSLATE_TO_RESPONSE_MAP: Record<
+  TranslateLanguage,
+  ResponseLanguage
+> = {
+  English: "en",
+  Spanish: "es",
+  French: "fr",
+  Chinese: "zh",
+  Japanese: "ja",
 };
 
 /** Maps ResponseLanguage codes to TranslateLanguage display names */
-export const RESPONSE_TO_TRANSLATE_MAP: Record<ResponseLanguage, TranslateLanguage> = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  zh: 'Chinese',
-  ja: 'Japanese',
+export const RESPONSE_TO_TRANSLATE_MAP: Record<
+  ResponseLanguage,
+  TranslateLanguage
+> = {
+  en: "English",
+  es: "Spanish",
+  fr: "French",
+  zh: "Chinese",
+  ja: "Japanese",
 };
 
 /** Check if the response and translate languages are the same (a conflict) */
@@ -42,11 +73,12 @@ export const isLanguageConflict = (
 export const getDefaultTranslateLanguage = (
   responseLang: ResponseLanguage,
 ): TranslateLanguage => {
-  if (responseLang === 'en') return 'Chinese';
-  return 'English';
+  if (responseLang === "en") return "Chinese";
+  return "English";
 };
 
 export interface Settings {
+  systemPromptFile: SystemPromptFile;
   model: ModelType;
   reasoningEffort: ReasoningEffort;
   webSearchEnabled: boolean;
@@ -55,9 +87,10 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  model: 'gpt-5-mini',
-  reasoningEffort: 'none',
+  systemPromptFile: "developer",
+  model: "gpt-5-mini",
+  reasoningEffort: "none",
   webSearchEnabled: false,
-  responseLanguage: 'en',
-  translateLanguage: 'Chinese',
+  responseLanguage: "en",
+  translateLanguage: "Chinese",
 };

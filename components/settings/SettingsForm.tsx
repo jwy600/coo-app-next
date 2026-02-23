@@ -100,35 +100,6 @@ export function SettingsForm() {
 
   return (
     <div className="flex flex-col gap-6 py-4">
-      {/* System Prompt */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold">System Prompt</Label>
-        <RadioGroup
-          value={settings.systemPromptFile}
-          onValueChange={(value) =>
-            updateSystemPromptFile(value as SystemPromptFile)
-          }
-          className="grid gap-2"
-        >
-          {Object.entries(SYSTEM_PROMPT_OPTIONS).map(([key, option]) => (
-            <div key={key} className="flex items-center space-x-3">
-              <RadioGroupItem value={key} id={`prompt-${key}`} />
-              <Label
-                htmlFor={`prompt-${key}`}
-                className="flex flex-col cursor-pointer font-normal"
-              >
-                <span>{option.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {option.description}
-                </span>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-
-      <Separator />
-
       {/* Model Selection */}
       <div className="space-y-3">
         <Label className="text-sm font-semibold">Model</Label>
@@ -145,6 +116,35 @@ export function SettingsForm() {
               />
               <Label
                 htmlFor={`model-${option.value}`}
+                className="flex flex-col cursor-pointer font-normal"
+              >
+                <span>{option.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  {option.description}
+                </span>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+
+      <Separator />
+
+      {/* System Prompt */}
+      <div className="space-y-3">
+        <Label className="text-sm font-semibold">System Prompt</Label>
+        <RadioGroup
+          value={settings.systemPromptFile}
+          onValueChange={(value) =>
+            updateSystemPromptFile(value as SystemPromptFile)
+          }
+          className="grid gap-2"
+        >
+          {Object.entries(SYSTEM_PROMPT_OPTIONS).map(([key, option]) => (
+            <div key={key} className="flex items-center space-x-3">
+              <RadioGroupItem value={key} id={`prompt-${key}`} />
+              <Label
+                htmlFor={`prompt-${key}`}
                 className="flex flex-col cursor-pointer font-normal"
               >
                 <span>{option.label}</span>

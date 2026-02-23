@@ -16,10 +16,6 @@ export const SYSTEM_PROMPT_OPTIONS = {
     label: "Knowledge Assistant",
     description: "Thorough explanations with examples",
   },
-  atomic: {
-    label: "Atomic Notes",
-    description: "Brief, self-contained notes",
-  },
   chatgpt: {
     label: "ChatGPT",
     description: "Original ChatGPT style",

@@ -74,26 +74,25 @@ describe("prompt loader", () => {
       expect(prompt).toContain("knowledgeable assistant");
     });
 
-    it("loads atomic prompt", () => {
-      const prompt = getChatPrompt("atomic", "en");
-      expect(prompt).toContain("concise assistant");
-      expect(prompt).toContain("atomic");
+    it("loads chatgpt prompt", () => {
+      const prompt = getChatPrompt("chatgpt", "en");
+      expect(prompt).toContain("helpful, warm assistant");
     });
 
-    it("injects language into atomic prompt", () => {
-      const prompt = getChatPrompt("atomic", "zh");
+    it("injects language into chatgpt prompt", () => {
+      const prompt = getChatPrompt("chatgpt", "zh");
       expect(prompt).toContain("Always respond in Simplified Chinese.");
-      expect(prompt).toContain("concise assistant");
+      expect(prompt).toContain("helpful, warm assistant");
     });
 
-    it("removes language tag for English in atomic prompt", () => {
-      const prompt = getChatPrompt("atomic", "en");
+    it("removes language tag for English in chatgpt prompt", () => {
+      const prompt = getChatPrompt("chatgpt", "en");
       expect(prompt).not.toContain("<language>");
       expect(prompt).not.toContain("</language>");
     });
 
     it("loads all prompt files for all languages without error", () => {
-      const files = ["developer", "atomic"] as const;
+      const files = ["developer", "chatgpt"] as const;
       const languages: ResponseLanguage[] = ["en", "es", "fr", "zh", "ja"];
       for (const file of files) {
         for (const lang of languages) {

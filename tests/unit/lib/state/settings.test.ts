@@ -37,14 +37,14 @@ describe("Settings State Functions", () => {
   describe("updateSystemPromptFile", () => {
     it("should update to atomic", () => {
       const settings = createInitialSettings();
-      const updated = updateSystemPromptFile(settings, "atomic");
-      expect(updated.systemPromptFile).toBe("atomic");
+      const updated = updateSystemPromptFile(settings, "chatgpt");
+      expect(updated.systemPromptFile).toBe("chatgpt");
     });
 
     it("should update to developer", () => {
       const settings: Settings = {
         ...DEFAULT_SETTINGS,
-        systemPromptFile: "atomic",
+        systemPromptFile: "chatgpt",
       };
       const updated = updateSystemPromptFile(settings, "developer");
       expect(updated.systemPromptFile).toBe("developer");
@@ -52,7 +52,7 @@ describe("Settings State Functions", () => {
 
     it("should maintain immutability", () => {
       const settings = createInitialSettings();
-      const updated = updateSystemPromptFile(settings, "atomic");
+      const updated = updateSystemPromptFile(settings, "chatgpt");
       expect(updated).not.toBe(settings);
       expect(settings.systemPromptFile).toBe("developer");
     });
@@ -66,7 +66,7 @@ describe("Settings State Functions", () => {
         responseLanguage: "zh",
         translateLanguage: "Spanish",
       };
-      const updated = updateSystemPromptFile(settings, "atomic");
+      const updated = updateSystemPromptFile(settings, "chatgpt");
       expect(updated.model).toBe("gpt-5.2");
       expect(updated.reasoningEffort).toBe("high");
       expect(updated.webSearchEnabled).toBe(true);
@@ -97,7 +97,7 @@ describe("Settings State Functions", () => {
 
     it("should preserve other settings", () => {
       const settings: Settings = {
-        systemPromptFile: "atomic",
+        systemPromptFile: "chatgpt",
         model: "gpt-5-mini",
         reasoningEffort: "high",
         webSearchEnabled: true,
@@ -105,7 +105,7 @@ describe("Settings State Functions", () => {
         translateLanguage: "English",
       };
       const updated = updateModel(settings, "gpt-5.2");
-      expect(updated.systemPromptFile).toBe("atomic");
+      expect(updated.systemPromptFile).toBe("chatgpt");
       expect(updated.reasoningEffort).toBe("high");
       expect(updated.webSearchEnabled).toBe(true);
       expect(updated.responseLanguage).toBe("en");
@@ -150,7 +150,7 @@ describe("Settings State Functions", () => {
 
     it("should preserve other settings", () => {
       const settings: Settings = {
-        systemPromptFile: "atomic",
+        systemPromptFile: "chatgpt",
         model: "gpt-5.2",
         reasoningEffort: "none",
         webSearchEnabled: true,
@@ -158,7 +158,7 @@ describe("Settings State Functions", () => {
         translateLanguage: "Spanish",
       };
       const updated = updateReasoningEffort(settings, "medium");
-      expect(updated.systemPromptFile).toBe("atomic");
+      expect(updated.systemPromptFile).toBe("chatgpt");
       expect(updated.model).toBe("gpt-5.2");
       expect(updated.webSearchEnabled).toBe(true);
       expect(updated.responseLanguage).toBe("zh");
@@ -191,7 +191,7 @@ describe("Settings State Functions", () => {
 
     it("should preserve other settings", () => {
       const settings: Settings = {
-        systemPromptFile: "atomic",
+        systemPromptFile: "chatgpt",
         model: "gpt-5.2",
         reasoningEffort: "high",
         webSearchEnabled: false,
@@ -199,7 +199,7 @@ describe("Settings State Functions", () => {
         translateLanguage: "French",
       };
       const updated = updateWebSearchEnabled(settings, true);
-      expect(updated.systemPromptFile).toBe("atomic");
+      expect(updated.systemPromptFile).toBe("chatgpt");
       expect(updated.model).toBe("gpt-5.2");
       expect(updated.reasoningEffort).toBe("high");
       expect(updated.responseLanguage).toBe("en");

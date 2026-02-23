@@ -3,11 +3,12 @@ import {
   getChatPrompt,
   getDeveloperPrompt,
   getBlockActionPrompt,
+  getTranslatePrompt,
   replaceLanguageTag,
-  prependLanguageDirective,
+  replaceTranslationLanguageTag,
   _clearPromptCache,
 } from "@/lib/config/prompts";
-import type { ResponseLanguage } from "@/types/settings";
+import type { ResponseLanguage, TranslateLanguage } from "@/types/settings";
 
 describe("prompt loader", () => {
   beforeEach(() => {
@@ -119,16 +120,18 @@ describe("prompt loader", () => {
       }
     });
 
-    it("returns unmodified prompt for English", () => {
+    it("removes language tag for English", () => {
       const prompt = getBlockActionPrompt("en");
+      expect(prompt).not.toContain("<language>");
+      expect(prompt).not.toContain("</language>");
       expect(prompt).not.toContain("Always respond in");
       expect(prompt).toContain("You transform or answer questions");
     });
 
-    it("prepends language directive for non-English", () => {
+    it("injects language tag for non-English", () => {
       const prompt = getBlockActionPrompt("zh");
-      expect(prompt.startsWith("Always respond in Simplified Chinese.")).toBe(
-        true,
+      expect(prompt).toContain(
+        "<language>Always respond in Simplified Chinese.</language>",
       );
       expect(prompt).toContain("You transform or answer questions");
     });
@@ -152,16 +155,58 @@ describe("prompt loader", () => {
     });
   });
 
-  describe("prependLanguageDirective", () => {
-    const prompt = "Some prompt text.";
-
-    it("returns unchanged for English", () => {
-      expect(prependLanguageDirective(prompt, "en")).toBe(prompt);
+  describe("getTranslatePrompt", () => {
+    it("loads translate prompt for all supported languages", () => {
+      const languages: TranslateLanguage[] = [
+        "English",
+        "Chinese",
+        "Spanish",
+        "French",
+        "Japanese",
+      ];
+      for (const lang of languages) {
+        expect(() => getTranslatePrompt(lang)).not.toThrow();
+        expect(getTranslatePrompt(lang).length).toBeGreaterThan(0);
+      }
     });
 
-    it("prepends directive for non-English", () => {
-      const result = prependLanguageDirective(prompt, "fr");
-      expect(result).toBe("Always respond in French.\n\nSome prompt text.");
+    it("removes translation language tag for English", () => {
+      const prompt = getTranslatePrompt("English");
+      expect(prompt).not.toContain("<translationlanguage>");
+      expect(prompt).not.toContain("</translationlanguage>");
+      expect(prompt).toContain("You translate a given text block");
+    });
+
+    it("injects translation language tag for non-English", () => {
+      const prompt = getTranslatePrompt("Chinese");
+      expect(prompt).toContain(
+        "<translationlanguage>Translate into Chinese.</translationlanguage>",
+      );
+      expect(prompt).toContain("You translate a given text block");
+    });
+
+    it("uses TranslateLanguage value directly without mapping", () => {
+      const prompt = getTranslatePrompt("Japanese");
+      expect(prompt).toContain("Translate into Japanese.");
+    });
+  });
+
+  describe("replaceTranslationLanguageTag", () => {
+    const template =
+      "Translate.\n<translationlanguage></translationlanguage>\nRules.";
+
+    it("removes tag for English", () => {
+      const result = replaceTranslationLanguageTag(template, "English");
+      expect(result).not.toContain("<translationlanguage>");
+      expect(result).toContain("Translate.");
+      expect(result).toContain("Rules.");
+    });
+
+    it("fills tag for non-English", () => {
+      const result = replaceTranslationLanguageTag(template, "French");
+      expect(result).toContain(
+        "<translationlanguage>Translate into French.</translationlanguage>",
+      );
     });
   });
 

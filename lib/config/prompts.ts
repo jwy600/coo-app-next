@@ -5,10 +5,10 @@ import type {
   TranslateLanguage,
   SystemPromptFile,
 } from "@/types/settings";
-import { LANGUAGE_MAP, TRANSLATE_TO_RESPONSE_MAP } from "@/types/settings";
+import { LANGUAGE_MAP } from "@/types/settings";
 
-/** Supported prompt names (chat prompts derived from SystemPromptFile + block-action) */
-type PromptName = SystemPromptFile | "block-action";
+/** Supported prompt names (chat prompts derived from SystemPromptFile + block-action variants) */
+type PromptName = SystemPromptFile | "block-action" | "block-action-translate";
 
 /** Module-scope cache: each raw template is read from disk once */
 const templateCache = new Map<string, string>();
@@ -52,21 +52,6 @@ export const replaceLanguageTag = (
   );
 };
 
-/**
- * Prepend a language directive to a prompt (for templates without a <language> tag).
- * For English, returns the prompt unchanged.
- */
-export const prependLanguageDirective = (
-  prompt: string,
-  lang: ResponseLanguage,
-): string => {
-  if (lang === "en") {
-    return prompt;
-  }
-  const fullName = LANGUAGE_MAP[lang];
-  return `Always respond in ${fullName}.\n\n${prompt}`;
-};
-
 /** Get the chat system prompt for the given prompt file and language. */
 export const getChatPrompt = (
   promptFile: SystemPromptFile = "developer",
@@ -88,20 +73,35 @@ export const getBlockActionPrompt = (
   responseLanguage: ResponseLanguage = "en",
 ): string => {
   const template = loadTemplate("block-action");
-  return prependLanguageDirective(template, responseLanguage);
+  return replaceLanguageTag(template, responseLanguage);
 };
 
 /**
- * Get the system prompt for the translate action.
- * Uses the translate target language (not the response language) so the
- * system prompt doesn't conflict with the translation direction.
+ * Replace the <translationlanguage></translationlanguage> placeholder with
+ * the target language name. Removes the tag entirely for English.
  */
+export const replaceTranslationLanguageTag = (
+  template: string,
+  lang: TranslateLanguage,
+): string => {
+  if (lang === "English") {
+    return template.replace(
+      /\n?<translationlanguage><\/translationlanguage>\n?/,
+      "\n",
+    );
+  }
+  return template.replace(
+    "<translationlanguage></translationlanguage>",
+    `<translationlanguage>Translate into ${lang}.</translationlanguage>`,
+  );
+};
+
+/** Get the system prompt for the translate action. */
 export const getTranslatePrompt = (
   translateLanguage: TranslateLanguage,
 ): string => {
-  const template = loadTemplate("block-action");
-  const lang = TRANSLATE_TO_RESPONSE_MAP[translateLanguage];
-  return prependLanguageDirective(template, lang);
+  const template = loadTemplate("block-action-translate");
+  return replaceTranslationLanguageTag(template, translateLanguage);
 };
 
 /** Clear the template cache (for testing only). */

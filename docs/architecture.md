@@ -297,7 +297,7 @@ When Supabase is not configured (env vars missing), the app runs in "offline mod
 - Yellow warning banner shown at top
 - Export button remains functional for local backups
 
-Detection: `lib/utils/offlineMode.ts` — `isOfflineMode()` checks for env vars
+Detection: `lib/supabase/client.ts` — `isOfflineMode()` checks for env vars
 
 ## Thread Management
 

@@ -11,7 +11,7 @@ import { Card } from "@/types/card";
 import { Thread } from "@/types/thread";
 import { Message } from "@/types/message";
 
-export interface MockStoreState {
+interface MockStoreState {
   // Core state
   activeThreadId: string | null;
   threads: Thread[];
@@ -80,29 +80,5 @@ export function createMockStoreState(
     updateWebSearchEnabled: vi.fn(),
     resetSettings: vi.fn(),
     ...overrides,
-  };
-}
-
-/**
- * Create a vi.mock factory for useStore (Strategy B)
- * The mock function acts as a selector: useStore(selector) => selector(state)
- */
-export function createStoreMock(state: Partial<MockStoreState> = {}) {
-  const mockState = createMockStoreState(state);
-
-  const useStoreFn = vi.fn((selector?: (s: MockStoreState) => unknown) => {
-    if (selector) return selector(mockState);
-    return mockState;
-  });
-
-  // Attach setState for direct manipulation
-  (useStoreFn as unknown as Record<string, unknown>).setState = vi.fn();
-  (useStoreFn as unknown as Record<string, unknown>).getState = vi.fn(
-    () => mockState,
-  );
-
-  return {
-    useStore: useStoreFn,
-    __mockState: mockState,
   };
 }

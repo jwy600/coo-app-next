@@ -32,21 +32,6 @@ export async function login(page: Page): Promise<void> {
 }
 
 /**
- * Logout the current user
- * Opens settings sheet and clicks logout
- */
-export async function logout(page: Page): Promise<void> {
-  // Open settings sheet
-  await page.getByRole('button', { name: /settings/i }).click();
-
-  // Click sign out button
-  await page.getByRole('button', { name: /sign out/i }).click();
-
-  // Wait for redirect to login page
-  await expect(page).toHaveURL('/auth/login');
-}
-
-/**
  * Check if user is logged in by looking for "New chat" button
  */
 export async function isLoggedIn(page: Page): Promise<boolean> {
@@ -55,20 +40,5 @@ export async function isLoggedIn(page: Page): Promise<boolean> {
     return true;
   } catch {
     return false;
-  }
-}
-
-/**
- * Ensure user is logged in before test
- * Logs in if not already authenticated
- */
-export async function ensureLoggedIn(page: Page): Promise<void> {
-  await page.goto('/');
-
-  // Check if we're redirected to login or see login button
-  const loggedIn = await isLoggedIn(page);
-
-  if (!loggedIn) {
-    await login(page);
   }
 }

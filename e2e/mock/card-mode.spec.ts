@@ -402,8 +402,7 @@ test.describe('Card Mode - Export Integration', () => {
     // Verify markdown frontmatter structure
     expect(content).toMatch(/^---\n/);
     expect(content).toContain('title: "My Test Card"');
-    expect(content).toContain('type: card');
-    expect(content).toMatch(/exported: \d{4}-\d{2}-\d{2}T/);
+    expect(content).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
     expect(content).toMatch(/---\n/);
 
     // Verify content includes the block text

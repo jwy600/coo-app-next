@@ -30,6 +30,7 @@ If you want a longer write-up, check out my blog post: [ChatGPT, the Slot Machin
 - **Direct block editing**: toggle between Ask and Edit modes — Ask sends to AI, Edit lets you rewrite text directly
 - **Text selection → focused rewriting**: highlight parts of follow-ups and request rewrites with that emphasis
 - **Cards**: collect blocks into cards as visual anchors, then export to your PKM system
+- **Obsidian export**: save exports directly to an Obsidian vault folder on disk (or use browser download)
 - **Response language**: set preferred response language (English or Chinese) for AI outputs
 - **Multi-user auth**: Supabase Auth with Row Level Security for data isolation
 - **Local-first or database-backed**: works with localStorage, or with Supabase for persistence
@@ -133,13 +134,14 @@ npm run start
 
 Access settings via the gear icon in the sidebar:
 
-| Setting             | Options                           | Default  |
-|---------------------|-----------------------------------|----------|
-| Model               | gpt-5.2, gpt-5-mini              | gpt-5.2  |
-| Reasoning Effort    | none, low, medium, high           | none     |
-| Web Search          | on/off                            | off      |
-| Response Language   | English, Chinese                  | English  |
-| Translate Language  | English, Chinese, Spanish, French | Chinese  |
+| Setting              | Options                           | Default  |
+|----------------------|-----------------------------------|----------|
+| Model                | gpt-5.2, gpt-5-mini              | gpt-5.2  |
+| Reasoning Effort     | none, low, medium, high           | none     |
+| Web Search           | on/off                            | off      |
+| Response Language    | English, Chinese                  | English  |
+| Translate Language   | English, Chinese, Spanish, French | Chinese  |
+| Export Destination   | Local (browser), Obsidian (vault) | Local    |
 
 
 ## Usage
@@ -191,6 +193,7 @@ Each card has its own **export** and **clear** actions.
 
 - If there are **no cards**, export defaults to the whole thread (all messages between user and LLM).
 - If there **are cards**, export defaults to merging all cards into a single `.md`.
+- **Export destination**: choose between browser download (Local) or saving directly to an Obsidian vault. When Obsidian is selected, files are written to a `Coo/` subfolder inside your vault path.
 
 ## Project Structure
 

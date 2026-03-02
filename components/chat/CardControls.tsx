@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { X, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useStore, selectActiveThread } from '@/lib/store/useStore';
 import {
   blocksToCardMarkdown,
   generateCardFilename,
-  downloadMarkdown,
+  exportMarkdown,
 } from '@/lib/export';
 import { ExportCardDialog } from './ExportCardDialog';
 import { Block } from '@/types/block';
@@ -24,6 +25,7 @@ interface CardControlsProps {
  */
 export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps) {
   const activeThread = useStore(selectActiveThread);
+  const settings = useStore((state) => state.settings);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const blockCount = cardBlocks.length;
@@ -31,7 +33,7 @@ export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps
   /**
    * Export card blocks as markdown
    */
-  const handleExportCard = (title: string) => {
+  const handleExportCard = async (title: string) => {
     if (!activeThread) return;
 
     const markdown = blocksToCardMarkdown(
@@ -40,7 +42,14 @@ export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps
       cardBlocks
     );
     const filename = generateCardFilename(title);
-    downloadMarkdown(markdown, filename);
+    const result = await exportMarkdown(markdown, filename, settings);
+    if (settings.exportDestination === 'obsidian') {
+      if (result.success) {
+        toast.success('Saved to Obsidian vault');
+      } else {
+        toast.error(`Failed: ${result.error}`);
+      }
+    }
     setDialogOpen(false);
   };
 

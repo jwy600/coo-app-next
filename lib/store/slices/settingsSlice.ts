@@ -11,6 +11,7 @@ import type {
   ReasoningEffort,
   ResponseLanguage,
   TranslateLanguage,
+  ExportDestination,
 } from "@/types/settings";
 
 export interface SettingsSlice {
@@ -23,6 +24,8 @@ export interface SettingsSlice {
   updateWebSearchEnabled: (enabled: boolean) => void;
   updateResponseLanguage: (language: ResponseLanguage) => void;
   updateTranslateLanguage: (language: TranslateLanguage) => void;
+  updateExportDestination: (destination: ExportDestination) => void;
+  updateObsidianVaultPath: (path: string) => void;
   resetSettings: () => void;
 }
 
@@ -67,6 +70,19 @@ export const settingsSlice: StateCreator<
       get().settings,
       language,
     );
+    set({ settings: updated });
+  },
+
+  updateExportDestination: (destination) => {
+    const updated = settingsFns.updateExportDestination(
+      get().settings,
+      destination,
+    );
+    set({ settings: updated });
+  },
+
+  updateObsidianVaultPath: (path) => {
+    const updated = settingsFns.updateObsidianVaultPath(get().settings, path);
     set({ settings: updated });
   },
 

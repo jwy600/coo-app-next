@@ -17,12 +17,12 @@ vi.mock('@/lib/store/useStore', () => ({
 
 const mockBlocksToCardMarkdown = vi.fn().mockReturnValue('# Card\ncontent');
 const mockGenerateCardFilename = vi.fn().mockReturnValue('card.md');
-const mockDownloadMarkdown = vi.fn();
+const mockExportMarkdown = vi.fn().mockResolvedValue({ success: true });
 
 vi.mock('@/lib/export', () => ({
   blocksToCardMarkdown: (...args: unknown[]) => mockBlocksToCardMarkdown(...args),
   generateCardFilename: (...args: unknown[]) => mockGenerateCardFilename(...args),
-  downloadMarkdown: (...args: unknown[]) => mockDownloadMarkdown(...args),
+  exportMarkdown: (...args: unknown[]) => mockExportMarkdown(...args),
 }));
 
 // Stub ExportCardDialog to capture props
@@ -101,6 +101,6 @@ describe('CardControls', () => {
       blocks,
     );
     expect(mockGenerateCardFilename).toHaveBeenCalledWith('Test Title');
-    expect(mockDownloadMarkdown).toHaveBeenCalledWith('# Card\ncontent', 'card.md');
+    expect(mockExportMarkdown).toHaveBeenCalledWith('# Card\ncontent', 'card.md', mockState.settings);
   });
 });

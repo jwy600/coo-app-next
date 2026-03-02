@@ -288,7 +288,24 @@ Response with **markdown** preserved.
 Key files:
 - `lib/export/markdownExport.ts` — Pure function `threadToMarkdown(thread, messages, blocks)`
 - `lib/export/download.ts` — Browser download utility `downloadMarkdown(content, filename)`
+- `lib/export/exportMarkdown.ts` — Unified export dispatcher (local download or Obsidian vault)
+- `lib/export/saveToVault.ts` — Server action to save markdown to an Obsidian vault
 - `lib/export/index.ts` — Re-exports
+
+### Export Destination Setting
+
+Users can choose where exports are saved via Settings:
+
+- **Local** (default) — Browser file download
+- **Obsidian** — Saves markdown directly to `{vaultPath}/Coo/{filename}` on disk
+
+When Obsidian is selected, a text input appears for the vault path. The `Coo/` subfolder is auto-created if missing. Toast notifications (via `sonner`) report success or errors for vault exports.
+
+Key files:
+- `types/settings.ts` — `ExportDestination` type, `exportDestination` and `obsidianVaultPath` in `Settings`
+- `lib/state/settings.ts` — `updateExportDestination()`, `updateObsidianVaultPath()` pure functions
+- `lib/store/slices/settingsSlice.ts` — Zustand actions
+- `components/settings/SettingsForm.tsx` — Export destination radio + vault path input
 
 ### Offline Mode
 

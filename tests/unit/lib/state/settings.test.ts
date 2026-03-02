@@ -7,6 +7,8 @@ import {
   updateWebSearchEnabled,
   updateResponseLanguage,
   updateTranslateLanguage,
+  updateExportDestination,
+  updateObsidianVaultPath,
   resetSettings,
 } from "@/lib/state/settings";
 import { DEFAULT_SETTINGS } from "@/types/settings";
@@ -294,6 +296,76 @@ describe("Settings State Functions", () => {
     });
   });
 
+  describe("updateExportDestination", () => {
+    it("should update to obsidian", () => {
+      const settings = createInitialSettings();
+      const updated = updateExportDestination(settings, "obsidian");
+      expect(updated.exportDestination).toBe("obsidian");
+    });
+
+    it("should update to local", () => {
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        exportDestination: "obsidian",
+      };
+      const updated = updateExportDestination(settings, "local");
+      expect(updated.exportDestination).toBe("local");
+    });
+
+    it("should maintain immutability", () => {
+      const settings = createInitialSettings();
+      const updated = updateExportDestination(settings, "obsidian");
+      expect(updated).not.toBe(settings);
+      expect(settings.exportDestination).toBe("local");
+    });
+
+    it("should preserve other settings", () => {
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        model: "gpt-5.2",
+        webSearchEnabled: true,
+      };
+      const updated = updateExportDestination(settings, "obsidian");
+      expect(updated.model).toBe("gpt-5.2");
+      expect(updated.webSearchEnabled).toBe(true);
+    });
+  });
+
+  describe("updateObsidianVaultPath", () => {
+    it("should update vault path", () => {
+      const settings = createInitialSettings();
+      const updated = updateObsidianVaultPath(settings, "/Users/me/vault");
+      expect(updated.obsidianVaultPath).toBe("/Users/me/vault");
+    });
+
+    it("should clear vault path", () => {
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        obsidianVaultPath: "/old/path",
+      };
+      const updated = updateObsidianVaultPath(settings, "");
+      expect(updated.obsidianVaultPath).toBe("");
+    });
+
+    it("should maintain immutability", () => {
+      const settings = createInitialSettings();
+      const updated = updateObsidianVaultPath(settings, "/new/path");
+      expect(updated).not.toBe(settings);
+      expect(settings.obsidianVaultPath).toBe("");
+    });
+
+    it("should preserve other settings", () => {
+      const settings: Settings = {
+        ...DEFAULT_SETTINGS,
+        exportDestination: "obsidian",
+        model: "gpt-5.2",
+      };
+      const updated = updateObsidianVaultPath(settings, "/vault");
+      expect(updated.exportDestination).toBe("obsidian");
+      expect(updated.model).toBe("gpt-5.2");
+    });
+  });
+
   describe("resetSettings", () => {
     it("should reset to default settings", () => {
       const reset = resetSettings();
@@ -305,6 +377,12 @@ describe("Settings State Functions", () => {
       const reset2 = resetSettings();
       expect(reset1).not.toBe(reset2);
       expect(reset1).toEqual(reset2);
+    });
+
+    it("should reset export settings to defaults", () => {
+      const reset = resetSettings();
+      expect(reset.exportDestination).toBe("local");
+      expect(reset.obsidianVaultPath).toBe("");
     });
   });
 });

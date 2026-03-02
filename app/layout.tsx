@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import './globals.css';
 
@@ -23,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <Toaster position="bottom-right" />
         <ErrorBoundary>{children}</ErrorBoundary>
       </body>
     </html>

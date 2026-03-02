@@ -1,12 +1,12 @@
 # Coo
 
-Coo is a personalized wiki built on top of chat — a chatbot where you can **interact with LLM responses in context**.
+Coo brings locality to AI. It is a chatbot where you can **interact with LLM responses in context**.
 
-Instead of treating AI output as immutable chat bubbles, Coo breaks responses into semantic blocks you can work with directly: expand, translate, simplify (ELI5), rewrite, and export as cards.
+Instead of treating AI output as immutable chat bubbles, Coo breaks once-indivisible response into semantic blocks you can work with directly: expand, translate, simplify (ELI5), rewrite, and export as cards.
 
 ![Books are scattered around Shuji Terayama](https://blog.yitianshijie.net/wp-content/uploads/2017/07/fullsizeoutput_33bf.jpeg?w=550&h=862)
 
-*Source: Li Ruyi (Yi Tian Shi Jie); from ‎Kawade Shobo Shinsha: Terayama Shuji (Shin bungei-dokuhon, 1993)*
+*Source: Li Ruyi (Yi Tian Shi Jie); from Kawade Shobo Shinsha: Terayama Shuji (Shin bungei-dokuhon, 1993)*
 
 ## Why Coo?
 
@@ -16,7 +16,7 @@ That creates a “glass wall.” You can see the answer, but you can’t really 
 
 We’ve all felt the broken workflow: you hit a confusing sentence → you scroll down → ask in the composer → the app jumps to the bottom and appends more text, pulling you away from the exact context that triggered the question. Coo is built so the discussion happens *at the point of friction*, not at the end of the thread.
 
-If you want a longer write-up, check out my blog post: *Are we really chatting with AI chatbots?*
+If you want a longer write-up, check out my blog post: [ChatGPT, the Slot Machine](https://wenyi.blog/posts/chatgpt-the-slot-machine/)
 
 ## Features
 

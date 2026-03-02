@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store/useStore";
 import { signOut } from "@/lib/supabase/auth";
@@ -19,6 +20,7 @@ import type {
   ReasoningEffort,
   ResponseLanguage,
   TranslateLanguage,
+  ExportDestination,
 } from "@/types/settings";
 
 const MODEL_OPTIONS: {
@@ -78,6 +80,12 @@ export function SettingsForm() {
   );
   const updateTranslateLanguage = useStore(
     (state) => state.updateTranslateLanguage,
+  );
+  const updateExportDestination = useStore(
+    (state) => state.updateExportDestination,
+  );
+  const updateObsidianVaultPath = useStore(
+    (state) => state.updateObsidianVaultPath,
   );
   const resetSettings = useStore((state) => state.resetSettings);
   const resetStore = useStore((state) => state.reset);
@@ -261,6 +269,53 @@ export function SettingsForm() {
           checked={settings.webSearchEnabled}
           onCheckedChange={updateWebSearchEnabled}
         />
+      </div>
+
+      <Separator />
+
+      {/* Export Destination */}
+      <div className="space-y-3">
+        <Label className="text-sm font-semibold">Export Destination</Label>
+        <RadioGroup
+          value={settings.exportDestination}
+          onValueChange={(value) =>
+            updateExportDestination(value as ExportDestination)
+          }
+          className="grid gap-2"
+        >
+          <div className="flex items-center space-x-3">
+            <RadioGroupItem value="local" id="export-local" />
+            <Label
+              htmlFor="export-local"
+              className="flex flex-col cursor-pointer font-normal"
+            >
+              <span>Local</span>
+              <span className="text-xs text-muted-foreground">
+                Browser download
+              </span>
+            </Label>
+          </div>
+          <div className="flex items-center space-x-3">
+            <RadioGroupItem value="obsidian" id="export-obsidian" />
+            <Label
+              htmlFor="export-obsidian"
+              className="flex flex-col cursor-pointer font-normal"
+            >
+              <span>Obsidian</span>
+              <span className="text-xs text-muted-foreground">
+                Save to vault folder
+              </span>
+            </Label>
+          </div>
+        </RadioGroup>
+        {settings.exportDestination === "obsidian" && (
+          <Input
+            value={settings.obsidianVaultPath ?? ""}
+            onChange={(e) => updateObsidianVaultPath(e.target.value)}
+            placeholder="/Users/you/ObsidianVault"
+            className="mt-2"
+          />
+        )}
       </div>
 
       <Separator />

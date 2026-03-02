@@ -32,14 +32,14 @@ const mockThreadToMarkdown = vi.fn().mockReturnValue('# Thread');
 const mockGenerateExportFilename = vi.fn().mockReturnValue('thread.md');
 const mockBlocksToCardMarkdown = vi.fn().mockReturnValue('# Cards');
 const mockGenerateCardFilename = vi.fn().mockReturnValue('cards.md');
-const mockDownloadMarkdown = vi.fn();
+const mockExportMarkdown = vi.fn().mockResolvedValue({ success: true });
 
 vi.mock('@/lib/export', () => ({
   threadToMarkdown: (...args: unknown[]) => mockThreadToMarkdown(...args),
   generateExportFilename: (...args: unknown[]) => mockGenerateExportFilename(...args),
   blocksToCardMarkdown: (...args: unknown[]) => mockBlocksToCardMarkdown(...args),
   generateCardFilename: (...args: unknown[]) => mockGenerateCardFilename(...args),
-  downloadMarkdown: (...args: unknown[]) => mockDownloadMarkdown(...args),
+  exportMarkdown: (...args: unknown[]) => mockExportMarkdown(...args),
 }));
 
 // Stub ExportCardDialog
@@ -104,7 +104,7 @@ describe('ExportButton', () => {
       fireEvent.click(screen.getByLabelText('Export thread'));
 
       expect(mockThreadToMarkdown).toHaveBeenCalled();
-      expect(mockDownloadMarkdown).toHaveBeenCalled();
+      expect(mockExportMarkdown).toHaveBeenCalled();
     });
   });
 
@@ -153,7 +153,7 @@ describe('ExportButton', () => {
       fireEvent.click(screen.getByText('Confirm'));
 
       expect(mockBlocksToCardMarkdown).toHaveBeenCalled();
-      expect(mockDownloadMarkdown).toHaveBeenCalled();
+      expect(mockExportMarkdown).toHaveBeenCalled();
     });
   });
 });

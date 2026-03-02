@@ -61,6 +61,8 @@ export const getDefaultTranslateLanguage = (
   return "English";
 };
 
+export type ExportDestination = "local" | "obsidian";
+
 export interface Settings {
   systemPromptFile: SystemPromptFile;
   model: ModelType;
@@ -68,6 +70,8 @@ export interface Settings {
   webSearchEnabled: boolean;
   responseLanguage: ResponseLanguage;
   translateLanguage: TranslateLanguage;
+  exportDestination: ExportDestination;
+  obsidianVaultPath: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -77,4 +81,6 @@ export const DEFAULT_SETTINGS: Settings = {
   webSearchEnabled: false,
   responseLanguage: "en",
   translateLanguage: "Chinese",
+  exportDestination: "local",
+  obsidianVaultPath: "",
 };

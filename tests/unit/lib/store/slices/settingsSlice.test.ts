@@ -29,6 +29,8 @@ describe("settingsSlice", () => {
     expect(settings.webSearchEnabled).toBe(false);
     expect(settings.responseLanguage).toBe("en");
     expect(settings.translateLanguage).toBe("Chinese");
+    expect(settings.exportDestination).toBe("local");
+    expect(settings.obsidianVaultPath).toBe("");
   });
 
   describe("updateModel", () => {
@@ -97,6 +99,34 @@ describe("settingsSlice", () => {
     });
   });
 
+  describe("updateExportDestination", () => {
+    it("should update export destination to obsidian", () => {
+      useStore.getState().updateExportDestination("obsidian");
+      expect(useStore.getState().settings.exportDestination).toBe("obsidian");
+    });
+
+    it("should update export destination to local", () => {
+      useStore.getState().updateExportDestination("obsidian");
+      useStore.getState().updateExportDestination("local");
+      expect(useStore.getState().settings.exportDestination).toBe("local");
+    });
+  });
+
+  describe("updateObsidianVaultPath", () => {
+    it("should update vault path", () => {
+      useStore.getState().updateObsidianVaultPath("/Users/me/vault");
+      expect(useStore.getState().settings.obsidianVaultPath).toBe(
+        "/Users/me/vault",
+      );
+    });
+
+    it("should clear vault path", () => {
+      useStore.getState().updateObsidianVaultPath("/some/path");
+      useStore.getState().updateObsidianVaultPath("");
+      expect(useStore.getState().settings.obsidianVaultPath).toBe("");
+    });
+  });
+
   describe("resetSettings", () => {
     it("should reset all settings to defaults", () => {
       useStore.getState().updateModel("gpt-5.2");
@@ -104,6 +134,8 @@ describe("settingsSlice", () => {
       useStore.getState().updateWebSearchEnabled(true);
       useStore.getState().updateResponseLanguage("zh");
       useStore.getState().updateTranslateLanguage("French");
+      useStore.getState().updateExportDestination("obsidian");
+      useStore.getState().updateObsidianVaultPath("/vault");
 
       useStore.getState().resetSettings();
 
@@ -113,6 +145,8 @@ describe("settingsSlice", () => {
       expect(settings.webSearchEnabled).toBe(false);
       expect(settings.responseLanguage).toBe("en");
       expect(settings.translateLanguage).toBe("Chinese");
+      expect(settings.exportDestination).toBe("local");
+      expect(settings.obsidianVaultPath).toBe("");
     });
   });
 });

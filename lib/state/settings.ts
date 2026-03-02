@@ -10,6 +10,7 @@ import type {
   ReasoningEffort,
   ResponseLanguage,
   TranslateLanguage,
+  ExportDestination,
 } from "@/types/settings";
 import {
   DEFAULT_SETTINGS,
@@ -84,6 +85,26 @@ export const updateTranslateLanguage = (
   translateLanguage: TranslateLanguage,
 ): Settings => {
   return { ...settings, translateLanguage };
+};
+
+/**
+ * Update the export destination setting
+ */
+export const updateExportDestination = (
+  settings: Settings,
+  exportDestination: ExportDestination,
+): Settings => {
+  return { ...settings, exportDestination };
+};
+
+/**
+ * Update the Obsidian vault path setting
+ */
+export const updateObsidianVaultPath = (
+  settings: Settings,
+  obsidianVaultPath: string,
+): Settings => {
+  return { ...settings, obsidianVaultPath };
 };
 
 /**

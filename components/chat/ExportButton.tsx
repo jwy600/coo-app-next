@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Download, ChevronDown, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +23,7 @@ import {
   generateExportFilename,
   blocksToCardMarkdown,
   generateCardFilename,
-  downloadMarkdown,
+  exportMarkdown,
 } from '@/lib/export';
 import { ExportCardDialog } from './ExportCardDialog';
 
@@ -37,6 +38,7 @@ export function ExportButton() {
   const allBlocks = useStore(useShallow(selectActiveThreadBlocks));
   const cards = useStore(selectCards);
   const allCardBlocks = useStore(useShallow(selectAllCardBlocks));
+  const settings = useStore((state) => state.settings);
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -44,9 +46,21 @@ export function ExportButton() {
   const hasCards = cards.length > 0;
 
   /**
+   * Handle the result of an export (show toast for Obsidian)
+   */
+  const handleExportResult = (result: { success: boolean; error?: string }) => {
+    if (settings.exportDestination !== 'obsidian') return;
+    if (result.success) {
+      toast.success('Saved to Obsidian vault');
+    } else {
+      toast.error(`Failed: ${result.error}`);
+    }
+  };
+
+  /**
    * Export entire thread as markdown
    */
-  const handleExportThread = () => {
+  const handleExportThread = async () => {
     if (!activeThread) return;
 
     const markdown = threadToMarkdown(
@@ -55,13 +69,14 @@ export function ExportButton() {
       allBlocks
     );
     const filename = generateExportFilename(activeThread.title);
-    downloadMarkdown(markdown, filename);
+    const result = await exportMarkdown(markdown, filename, settings);
+    handleExportResult(result);
   };
 
   /**
    * Export all cards as a combined markdown file
    */
-  const handleExportAllCards = (title: string) => {
+  const handleExportAllCards = async (title: string) => {
     if (!activeThread) return;
 
     const markdown = blocksToCardMarkdown(
@@ -70,7 +85,8 @@ export function ExportButton() {
       allCardBlocks
     );
     const filename = generateCardFilename(title);
-    downloadMarkdown(markdown, filename);
+    const result = await exportMarkdown(markdown, filename, settings);
+    handleExportResult(result);
   };
 
   // Block count for display

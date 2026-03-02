@@ -19,13 +19,13 @@ export const threadToMarkdown = (
   messages: Message[],
   blocks: Block[]
 ): string => {
-  const exportDate = new Date().toISOString();
+  const createdDate = new Date().toISOString().split('T')[0];
 
   // Build YAML frontmatter
   const frontmatter = [
     '---',
     `title: "${escapeYamlString(thread.title)}"`,
-    `exported: ${exportDate}`,
+    `created: ${createdDate}`,
     '---',
     '',
   ].join('\n');
@@ -101,15 +101,14 @@ export const blocksToCardMarkdown = (
   originalQuestion: string,
   blocks: Block[]
 ): string => {
-  const exportDate = new Date().toISOString();
+  const createdDate = new Date().toISOString().split('T')[0];
 
   // Build YAML frontmatter
   const frontmatter = [
     '---',
     `title: "${escapeYamlString(title)}"`,
     `original question: "${escapeYamlString(originalQuestion)}"`,
-    `exported: ${exportDate}`,
-    `type: card`,
+    `created: ${createdDate}`,
     '---',
     '',
   ].join('\n');

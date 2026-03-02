@@ -66,7 +66,7 @@ describe('markdownExport', () => {
       // Check frontmatter
       expect(result).toMatch(/^---\n/);
       expect(result).toContain('title: "Test Thread"');
-      expect(result).toMatch(/exported: \d{4}-\d{2}-\d{2}T/);
+      expect(result).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
       expect(result).toMatch(/---\n## User/);
 
       // Check message structure
@@ -247,8 +247,8 @@ describe('markdownExport', () => {
       expect(result).toMatch(/^---\n/);
       expect(result).toContain('title: "My Card"');
       expect(result).toContain('original question: "What is React?"');
-      expect(result).toMatch(/exported: \d{4}-\d{2}-\d{2}T/);
-      expect(result).toContain('type: card');
+      expect(result).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
+      expect(result).not.toContain('type:');
       expect(result).not.toContain('blocks:');
 
       // Check content

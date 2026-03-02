@@ -2,7 +2,7 @@
 
 Coo brings locality to AI. It is a chatbot where you can **interact with LLM responses in context**.
 
-![](https://wenyi.blog/files/coo_ask.mp4)
+<video src="https://wenyi.blog/files/coo_ask.mp4" autoplay loop muted playsinline></video>
 
 Instead of treating AI output as immutable chat bubbles, Coo breaks once-indivisible response into semantic blocks you can work with directly: expand, translate, simplify (ELI5), rewrite, and export as cards.
 

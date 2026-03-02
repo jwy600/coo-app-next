@@ -36,7 +36,7 @@ import { ExportCardDialog } from './ExportCardDialog';
 export function ExportButton() {
   const activeThread = useStore(selectActiveThread);
   const allBlocks = useStore(useShallow(selectActiveThreadBlocks));
-  const cards = useStore(selectCards);
+  const cards = useStore(useShallow(selectCards));
   const allCardBlocks = useStore(useShallow(selectAllCardBlocks));
   const settings = useStore((state) => state.settings);
 

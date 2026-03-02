@@ -95,16 +95,24 @@ export const selectContentForTransform = (state: StoreState): Block[] => {
 };
 
 /**
- * Select all cards
+ * Select cards for the active thread only
+ * Cards are scoped via messageId → thread's messages
  */
-export const selectCards = (state: StoreState): Card[] => state.cards;
+export const selectCards = (state: StoreState): Card[] => {
+  const activeThread = selectActiveThread(state);
+  if (!activeThread) return [];
+
+  const messageIds = new Set(activeThread.messages.map((m) => m.id));
+  return state.cards.filter((c) => messageIds.has(c.messageId));
+};
 
 /**
- * Select all blocks that are in any card (for export all cards)
+ * Select all blocks that are in any card for the active thread (for export all cards)
  * Returns blocks in document order, grouped by card
  */
 export const selectAllCardBlocks = (state: StoreState): Block[] => {
-  const allCardBlockIds = new Set(state.cards.flatMap((c) => c.blockIds));
+  const activeCards = selectCards(state);
+  const allCardBlockIds = new Set(activeCards.flatMap((c) => c.blockIds));
   return state.blocks.filter((b) => allCardBlockIds.has(b.id));
 };
 

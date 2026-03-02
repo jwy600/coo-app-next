@@ -71,11 +71,20 @@ describe("Store Selectors", () => {
   });
 
   describe("selectCards", () => {
-    it("should return all cards", () => {
+    it("should return cards belonging to the active thread", () => {
+      useStore.getState().createThread("thread-1");
+      useStore.getState().addAssistantMessage([
+        { text: "Block 1", type: "paragraph" },
+      ]);
+
+      const state = useStore.getState();
+      const messageId = state.threads.find((t) => t.id === "thread-1")!
+        .messages[0].id;
+
       const cards = [
         {
           id: "card-1",
-          messageId: "msg-1",
+          messageId,
           anchorBlockId: "b1",
           blockIds: ["b1"],
           createdAt: Date.now(),
@@ -83,8 +92,8 @@ describe("Store Selectors", () => {
       ];
       useStore.setState({ cards });
 
-      const state = useStore.getState() as StoreState;
-      expect(selectCards(state)).toEqual(cards);
+      const result = selectCards(useStore.getState() as StoreState);
+      expect(result).toEqual(cards);
     });
 
     it("should return empty array when no cards", () => {
@@ -102,13 +111,16 @@ describe("Store Selectors", () => {
         { text: "Block 3", type: "paragraph" },
       ]);
 
-      const blocks = useStore.getState().blocks;
+      const state = useStore.getState();
+      const blocks = state.blocks;
+      const messageId = state.threads.find((t) => t.id === "thread-1")!
+        .messages[0].id;
       // Manually set cards referencing block IDs
       useStore.setState({
         cards: [
           {
             id: "card-1",
-            messageId: "msg-1",
+            messageId,
             anchorBlockId: blocks[0].id,
             blockIds: [blocks[0].id, blocks[1].id],
             createdAt: Date.now(),
@@ -116,8 +128,8 @@ describe("Store Selectors", () => {
         ],
       });
 
-      const state = useStore.getState() as StoreState;
-      const cardBlocks = selectAllCardBlocks(state);
+      const updatedState = useStore.getState() as StoreState;
+      const cardBlocks = selectAllCardBlocks(updatedState);
       expect(cardBlocks).toHaveLength(2);
       expect(cardBlocks.map((b) => b.id)).toContain(blocks[0].id);
       expect(cardBlocks.map((b) => b.id)).toContain(blocks[1].id);

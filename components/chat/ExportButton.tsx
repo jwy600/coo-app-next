@@ -51,7 +51,7 @@ export function ExportButton() {
   const handleExportResult = (result: { success: boolean; error?: string }) => {
     if (settings.exportDestination !== 'obsidian') return;
     if (result.success) {
-      toast.success('Saved to Obsidian vault');
+      toast.success('Opened in Obsidian');
     } else {
       toast.error(`Failed: ${result.error}`);
     }

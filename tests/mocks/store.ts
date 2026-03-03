@@ -40,7 +40,7 @@ interface MockStoreState {
     translateLanguage: string;
     webSearchEnabled: boolean;
     exportDestination: string;
-    obsidianVaultPath: string;
+    obsidianVaultName: string;
   };
   updateModel: ReturnType<typeof vi.fn>;
   updateReasoningEffort: ReturnType<typeof vi.fn>;
@@ -48,7 +48,7 @@ interface MockStoreState {
   updateTranslateLanguage: ReturnType<typeof vi.fn>;
   updateWebSearchEnabled: ReturnType<typeof vi.fn>;
   updateExportDestination: ReturnType<typeof vi.fn>;
-  updateObsidianVaultPath: ReturnType<typeof vi.fn>;
+  updateObsidianVaultName: ReturnType<typeof vi.fn>;
   resetSettings: ReturnType<typeof vi.fn>;
 }
 
@@ -77,7 +77,7 @@ export function createMockStoreState(
       translateLanguage: "zh-TW",
       webSearchEnabled: false,
       exportDestination: "local",
-      obsidianVaultPath: "",
+      obsidianVaultName: "",
     },
     updateModel: vi.fn(),
     updateReasoningEffort: vi.fn(),
@@ -85,7 +85,7 @@ export function createMockStoreState(
     updateTranslateLanguage: vi.fn(),
     updateWebSearchEnabled: vi.fn(),
     updateExportDestination: vi.fn(),
-    updateObsidianVaultPath: vi.fn(),
+    updateObsidianVaultName: vi.fn(),
     resetSettings: vi.fn(),
     ...overrides,
   };

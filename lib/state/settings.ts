@@ -98,13 +98,13 @@ export const updateExportDestination = (
 };
 
 /**
- * Update the Obsidian vault path setting
+ * Update the Obsidian vault name setting
  */
-export const updateObsidianVaultPath = (
+export const updateObsidianVaultName = (
   settings: Settings,
-  obsidianVaultPath: string,
+  obsidianVaultName: string,
 ): Settings => {
-  return { ...settings, obsidianVaultPath };
+  return { ...settings, obsidianVaultName };
 };
 
 /**

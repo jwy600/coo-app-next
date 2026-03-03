@@ -12,5 +12,5 @@ export {
 
 export { downloadMarkdown } from './download';
 
-export { saveToVault } from './saveToVault';
+export { openInObsidian } from './openInObsidian';
 export { exportMarkdown } from './exportMarkdown';

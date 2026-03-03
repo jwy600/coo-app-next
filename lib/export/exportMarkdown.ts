@@ -1,6 +1,6 @@
 import type { Settings } from "@/types/settings";
 import { downloadMarkdown } from "./download";
-import { saveToVault, type SaveToVaultResult } from "./saveToVault";
+import { openInObsidian } from "./openInObsidian";
 
 export interface ExportResult {
   success: boolean;
@@ -11,20 +11,15 @@ export interface ExportResult {
  * Unified export function that dispatches to the configured destination.
  *
  * - `local`: triggers a browser download (always succeeds)
- * - `obsidian`: saves to vault via server action, returns result for toast
+ * - `obsidian`: opens in Obsidian via URI scheme, returns result for toast
  */
-export async function exportMarkdown(
+export function exportMarkdown(
   content: string,
   filename: string,
-  settings: Settings
-): Promise<ExportResult> {
+  settings: Settings,
+): ExportResult {
   if (settings.exportDestination === "obsidian") {
-    const result: SaveToVaultResult = await saveToVault(
-      content,
-      filename,
-      settings.obsidianVaultPath
-    );
-    return result;
+    return openInObsidian(content, filename, settings.obsidianVaultName);
   }
 
   // Local download (browser-side, always succeeds)

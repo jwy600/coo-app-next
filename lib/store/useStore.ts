@@ -50,10 +50,24 @@ export const useStore = create<StoreState>()(
           }
         : {
             name: 'coo-settings-storage',
+            version: 1,
             // In production, only persist settings to localStorage
             partialize: (state) => ({
               settings: state.settings,
             }),
+            migrate: (persisted: unknown, version: number) => {
+              const state = persisted as Record<string, unknown>;
+              if (version === 0) {
+                // v0 → v1: obsidianVaultPath renamed to obsidianVaultName
+                // A filesystem path can't be auto-converted to a vault name, so clear it
+                const settings = state.settings as Record<string, unknown> | undefined;
+                if (settings && 'obsidianVaultPath' in settings) {
+                  delete settings.obsidianVaultPath;
+                  settings.obsidianVaultName = '';
+                }
+              }
+              return state as unknown as StoreState;
+            },
           }
     ),
     {

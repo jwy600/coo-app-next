@@ -40,6 +40,7 @@ export const useStore = create<StoreState>()(
       isTestMode()
         ? {
             name: 'coo-test-storage',
+            version: 1,
             // In test mode, persist critical data for navigation tests
             partialize: (state) => ({
               threads: state.threads,
@@ -47,13 +48,16 @@ export const useStore = create<StoreState>()(
               activeThreadId: state.activeThreadId,
               settings: state.settings,
             }),
+            migrate: (persisted: unknown) => persisted as StoreState,
           }
         : {
             name: 'coo-settings-storage',
+            version: 1,
             // In production, only persist settings to localStorage
             partialize: (state) => ({
               settings: state.settings,
             }),
+            migrate: (persisted: unknown) => persisted as StoreState,
           }
     ),
     {

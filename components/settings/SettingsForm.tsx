@@ -66,10 +66,6 @@ const ALL_TRANSLATE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
   { value: "Japanese", label: "日本語" },
 ];
 
-/** Coo brand green — matches the logo feather */
-const ACCENT = "#67DE42";
-const ACCENT_BG = "rgba(103, 222, 66, 0.10)";
-const ACCENT_BG_HOVER = "rgba(103, 222, 66, 0.15)";
 
 export function SettingsForm() {
   const settings = useStore((state) => state.settings);
@@ -156,8 +152,7 @@ export function SettingsForm() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="flex-1 justify-start"
-                  style={selected ? { backgroundColor: ACCENT_BG } : undefined}
+                  className={`flex-1 justify-start ${selected ? "bg-accent" : ""}`}
                   onClick={() => updateModel(option.value)}
                 >
                   {option.label}
@@ -178,8 +173,7 @@ export function SettingsForm() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="flex-1 justify-start"
-                  style={selected ? { backgroundColor: ACCENT_BG } : undefined}
+                  className={`flex-1 justify-start ${selected ? "bg-accent" : ""}`}
                   onClick={() => updateReasoningEffort(option.value)}
                 >
                   {option.label}
@@ -196,8 +190,7 @@ export function SettingsForm() {
               type="button"
               size="sm"
               variant="ghost"
-              className="flex-1 justify-start"
-              style={!settings.webSearchEnabled ? { backgroundColor: ACCENT_BG } : undefined}
+              className={`flex-1 justify-start ${!settings.webSearchEnabled ? "bg-accent" : ""}`}
               onClick={() => updateWebSearchEnabled(false)}
             >
               Off
@@ -206,8 +199,7 @@ export function SettingsForm() {
               type="button"
               size="sm"
               variant="ghost"
-              className="flex-1 justify-start"
-              style={settings.webSearchEnabled ? { backgroundColor: ACCENT_BG } : undefined}
+              className={`flex-1 justify-start ${settings.webSearchEnabled ? "bg-accent" : ""}`}
               onClick={() => updateWebSearchEnabled(true)}
             >
               On
@@ -230,7 +222,7 @@ export function SettingsForm() {
                 htmlFor={`prompt-${key}`}
                 className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
                   settings.systemPromptFile === key
-                    ? "border-[#67DE42] bg-[rgba(103,222,66,0.10)]"
+                    ? "border-foreground/20 bg-accent"
                     : "border-border hover:bg-muted/50"
                 }`}
               >
@@ -259,7 +251,7 @@ export function SettingsForm() {
               htmlFor="export-local"
               className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
                 settings.exportDestination === "local"
-                  ? "border-[#67DE42] bg-[rgba(103,222,66,0.10)]"
+                  ? "border-foreground/20 bg-accent"
                   : "border-border hover:bg-muted/50"
               }`}
             >
@@ -275,7 +267,7 @@ export function SettingsForm() {
               htmlFor="export-obsidian"
               className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
                 settings.exportDestination === "obsidian"
-                  ? "border-[#67DE42] bg-[rgba(103,222,66,0.10)]"
+                  ? "border-foreground/20 bg-accent"
                   : "border-border hover:bg-muted/50"
               }`}
             >
@@ -326,7 +318,7 @@ export function SettingsFooter() {
           Reset to Defaults
         </Button>
         <Button
-          variant="destructive"
+          variant="outline"
           onClick={handleLogout}
           disabled={isLoggingOut}
           className="w-full"

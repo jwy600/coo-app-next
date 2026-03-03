@@ -80,18 +80,27 @@ export default defineConfig({
         },
       ]
     : [
-        // Mock tests - no auth needed (test mode bypasses auth)
+        // Auth setup - logs in once (real login or test-mode passthrough)
+        {
+          name: 'auth-setup',
+          testMatch: /auth\.setup\.ts/,
+          testDir: './e2e',
+        },
+        // Mock tests - use saved auth state from setup
         {
           name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
+          use: { ...devices['Desktop Chrome'], storageState: authFile },
+          dependencies: ['auth-setup'],
         },
         {
           name: 'firefox',
-          use: { ...devices['Desktop Firefox'] },
+          use: { ...devices['Desktop Firefox'], storageState: authFile },
+          dependencies: ['auth-setup'],
         },
         {
           name: 'webkit',
-          use: { ...devices['Desktop Safari'] },
+          use: { ...devices['Desktop Safari'], storageState: authFile },
+          dependencies: ['auth-setup'],
         },
       ],
 

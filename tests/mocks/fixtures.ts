@@ -11,10 +11,6 @@ import { Card } from '@/types/card';
 let counter = 0;
 const nextId = () => `test-${++counter}`;
 
-export function resetFixtureCounter() {
-  counter = 0;
-}
-
 export function createBlock(overrides: Partial<Block> = {}): Block {
   const id = overrides.id ?? nextId();
   return {

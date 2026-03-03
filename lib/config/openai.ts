@@ -17,7 +17,7 @@ export {
 } from "./prompts";
 
 // Model pricing per 1M tokens (January 2026)
-export const MODEL_PRICING: Record<
+const MODEL_PRICING: Record<
   string,
   { input: number; cachedInput: number; output: number }
 > = {

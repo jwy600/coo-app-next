@@ -3,11 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useStore } from "@/lib/store/useStore";
 import { signOut } from "@/lib/supabase/auth";
 import {
@@ -60,10 +66,12 @@ const ALL_TRANSLATE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
   { value: "Japanese", label: "日本語" },
 ];
 
-export function SettingsForm() {
-  const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+/** Coo brand green — matches the logo feather */
+const ACCENT = "#67DE42";
+const ACCENT_BG = "rgba(103, 222, 66, 0.10)";
+const ACCENT_BG_HOVER = "rgba(103, 222, 66, 0.15)";
 
+export function SettingsForm() {
   const settings = useStore((state) => state.settings);
   const updateSystemPromptFile = useStore(
     (state) => state.updateSystemPromptFile,
@@ -87,6 +95,215 @@ export function SettingsForm() {
   const updateObsidianVaultPath = useStore(
     (state) => state.updateObsidianVaultPath,
   );
+
+  // Filter translate options to exclude the current response language (prevents conflict)
+  const filteredTranslateOptions = ALL_TRANSLATE_OPTIONS.filter(
+    (opt) => TRANSLATE_TO_RESPONSE_MAP[opt.value] !== settings.responseLanguage,
+  );
+
+  return (
+    <div className="flex flex-col gap-5 py-4">
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Response Language</Label>
+          <Select
+            value={settings.responseLanguage}
+            onValueChange={(value) =>
+              updateResponseLanguage(value as ResponseLanguage)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RESPONSE_LANGUAGE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Translation Language</Label>
+          <Select
+            value={settings.translateLanguage}
+            onValueChange={(value) =>
+              updateTranslateLanguage(value as TranslateLanguage)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredTranslateOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Model</Label>
+          <div className="flex gap-1">
+            {MODEL_OPTIONS.map((option) => {
+              const selected = settings.model === option.value;
+              return (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="flex-1 justify-start"
+                  style={selected ? { backgroundColor: ACCENT_BG } : undefined}
+                  onClick={() => updateModel(option.value)}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
+          </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Reasoning</Label>
+          <div className="flex gap-1">
+            {REASONING_OPTIONS.map((option) => {
+              const selected = settings.reasoningEffort === option.value;
+              return (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="flex-1 justify-start"
+                  style={selected ? { backgroundColor: ACCENT_BG } : undefined}
+                  onClick={() => updateReasoningEffort(option.value)}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
+          </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Web Search</Label>
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="flex-1 justify-start"
+              style={!settings.webSearchEnabled ? { backgroundColor: ACCENT_BG } : undefined}
+              onClick={() => updateWebSearchEnabled(false)}
+            >
+              Off
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="flex-1 justify-start"
+              style={settings.webSearchEnabled ? { backgroundColor: ACCENT_BG } : undefined}
+              onClick={() => updateWebSearchEnabled(true)}
+            >
+              On
+            </Button>
+          </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">System Prompt</Label>
+          <RadioGroup
+            value={settings.systemPromptFile}
+            onValueChange={(value) =>
+              updateSystemPromptFile(value as SystemPromptFile)
+            }
+            className="grid gap-2"
+          >
+            {Object.entries(SYSTEM_PROMPT_OPTIONS).map(([key, option]) => (
+              <label
+                key={key}
+                htmlFor={`prompt-${key}`}
+                className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                  settings.systemPromptFile === key
+                    ? "border-[#67DE42] bg-[rgba(103,222,66,0.10)]"
+                    : "border-border hover:bg-muted/50"
+                }`}
+              >
+                <RadioGroupItem value={key} id={`prompt-${key}`} />
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{option.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {option.description}
+                  </span>
+                </div>
+              </label>
+            ))}
+          </RadioGroup>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Export Destination</Label>
+          <RadioGroup
+            value={settings.exportDestination}
+            onValueChange={(value) =>
+              updateExportDestination(value as ExportDestination)
+            }
+            className="grid gap-2"
+          >
+            <label
+              htmlFor="export-local"
+              className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                settings.exportDestination === "local"
+                  ? "border-[#67DE42] bg-[rgba(103,222,66,0.10)]"
+                  : "border-border hover:bg-muted/50"
+              }`}
+            >
+              <RadioGroupItem value="local" id="export-local" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Local</span>
+                <span className="text-xs text-muted-foreground">
+                  Browser download
+                </span>
+              </div>
+            </label>
+            <label
+              htmlFor="export-obsidian"
+              className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                settings.exportDestination === "obsidian"
+                  ? "border-[#67DE42] bg-[rgba(103,222,66,0.10)]"
+                  : "border-border hover:bg-muted/50"
+              }`}
+            >
+              <RadioGroupItem value="obsidian" id="export-obsidian" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Obsidian</span>
+                <span className="text-xs text-muted-foreground">
+                  Save to vault folder
+                </span>
+              </div>
+            </label>
+          </RadioGroup>
+          {settings.exportDestination === "obsidian" && (
+            <Input
+              value={settings.obsidianVaultPath ?? ""}
+              onChange={(e) => updateObsidianVaultPath(e.target.value)}
+              placeholder="/Users/you/ObsidianVault"
+              className="mt-2"
+            />
+          )}
+      </div>
+    </div>
+  );
+}
+
+export function SettingsFooter() {
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const resetSettings = useStore((state) => state.resetSettings);
   const resetStore = useStore((state) => state.reset);
 
@@ -101,241 +318,22 @@ export function SettingsForm() {
     setIsLoggingOut(false);
   };
 
-  // Filter translate options to exclude the current response language (prevents conflict)
-  const filteredTranslateOptions = ALL_TRANSLATE_OPTIONS.filter(
-    (opt) => TRANSLATE_TO_RESPONSE_MAP[opt.value] !== settings.responseLanguage,
-  );
-
   return (
-    <div className="flex flex-col gap-6 py-4">
-      {/* Model Selection */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold">Model</Label>
-        <RadioGroup
-          value={settings.model}
-          onValueChange={(value) => updateModel(value as ModelType)}
-          className="grid gap-2"
+    <div className="space-y-3 pt-3">
+      <Separator />
+      <div className="flex flex-col gap-2 px-1">
+        <Button variant="outline" onClick={resetSettings} className="w-full">
+          Reset to Defaults
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="w-full"
         >
-          {MODEL_OPTIONS.map((option) => (
-            <div key={option.value} className="flex items-center space-x-3">
-              <RadioGroupItem
-                value={option.value}
-                id={`model-${option.value}`}
-              />
-              <Label
-                htmlFor={`model-${option.value}`}
-                className="flex flex-col cursor-pointer font-normal"
-              >
-                <span>{option.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {option.description}
-                </span>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
+          {isLoggingOut ? "Signing out..." : "Sign out"}
+        </Button>
       </div>
-
-      <Separator />
-
-      {/* System Prompt */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold">System Prompt</Label>
-        <RadioGroup
-          value={settings.systemPromptFile}
-          onValueChange={(value) =>
-            updateSystemPromptFile(value as SystemPromptFile)
-          }
-          className="grid gap-2"
-        >
-          {Object.entries(SYSTEM_PROMPT_OPTIONS).map(([key, option]) => (
-            <div key={key} className="flex items-center space-x-3">
-              <RadioGroupItem value={key} id={`prompt-${key}`} />
-              <Label
-                htmlFor={`prompt-${key}`}
-                className="flex flex-col cursor-pointer font-normal"
-              >
-                <span>{option.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {option.description}
-                </span>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-
-      <Separator />
-
-      {/* Reasoning Effort */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold">Reasoning Effort</Label>
-        <RadioGroup
-          value={settings.reasoningEffort}
-          onValueChange={(value) =>
-            updateReasoningEffort(value as ReasoningEffort)
-          }
-          className="grid grid-cols-2 gap-2"
-        >
-          {REASONING_OPTIONS.map((option) => (
-            <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem
-                value={option.value}
-                id={`reasoning-${option.value}`}
-              />
-              <Label
-                htmlFor={`reasoning-${option.value}`}
-                className="cursor-pointer font-normal"
-              >
-                {option.label}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-
-      <Separator />
-
-      {/* Response Language */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold">Response Language</Label>
-        <RadioGroup
-          value={settings.responseLanguage}
-          onValueChange={(value) =>
-            updateResponseLanguage(value as ResponseLanguage)
-          }
-          className="grid grid-cols-2 gap-2"
-        >
-          {RESPONSE_LANGUAGE_OPTIONS.map((option) => (
-            <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem
-                value={option.value}
-                id={`response-lang-${option.value}`}
-              />
-              <Label
-                htmlFor={`response-lang-${option.value}`}
-                className="cursor-pointer font-normal"
-              >
-                {option.label}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-
-      <Separator />
-
-      {/* Translation Language */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold">Translation Language</Label>
-        <RadioGroup
-          value={settings.translateLanguage}
-          onValueChange={(value) =>
-            updateTranslateLanguage(value as TranslateLanguage)
-          }
-          className="grid grid-cols-2 gap-2"
-        >
-          {filteredTranslateOptions.map((option) => (
-            <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem
-                value={option.value}
-                id={`lang-${option.value}`}
-              />
-              <Label
-                htmlFor={`lang-${option.value}`}
-                className="cursor-pointer font-normal"
-              >
-                {option.label}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-
-      <Separator />
-
-      {/* Web Search Toggle */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label htmlFor="web-search" className="text-sm font-semibold">
-            Web Search
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            Allow AI to search the web
-          </p>
-        </div>
-        <Switch
-          id="web-search"
-          checked={settings.webSearchEnabled}
-          onCheckedChange={updateWebSearchEnabled}
-        />
-      </div>
-
-      <Separator />
-
-      {/* Export Destination */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold">Export Destination</Label>
-        <RadioGroup
-          value={settings.exportDestination}
-          onValueChange={(value) =>
-            updateExportDestination(value as ExportDestination)
-          }
-          className="grid gap-2"
-        >
-          <div className="flex items-center space-x-3">
-            <RadioGroupItem value="local" id="export-local" />
-            <Label
-              htmlFor="export-local"
-              className="flex flex-col cursor-pointer font-normal"
-            >
-              <span>Local</span>
-              <span className="text-xs text-muted-foreground">
-                Browser download
-              </span>
-            </Label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <RadioGroupItem value="obsidian" id="export-obsidian" />
-            <Label
-              htmlFor="export-obsidian"
-              className="flex flex-col cursor-pointer font-normal"
-            >
-              <span>Obsidian</span>
-              <span className="text-xs text-muted-foreground">
-                Save to vault folder
-              </span>
-            </Label>
-          </div>
-        </RadioGroup>
-        {settings.exportDestination === "obsidian" && (
-          <Input
-            value={settings.obsidianVaultPath ?? ""}
-            onChange={(e) => updateObsidianVaultPath(e.target.value)}
-            placeholder="/Users/you/ObsidianVault"
-            className="mt-2"
-          />
-        )}
-      </div>
-
-      <Separator />
-
-      {/* Reset Button */}
-      <Button variant="outline" onClick={resetSettings} className="w-full">
-        Reset to Defaults
-      </Button>
-
-      <Separator />
-
-      {/* Logout Button */}
-      <Button
-        variant="destructive"
-        onClick={handleLogout}
-        disabled={isLoggingOut}
-        className="w-full"
-      >
-        {isLoggingOut ? "Signing out..." : "Sign out"}
-      </Button>
     </div>
   );
 }

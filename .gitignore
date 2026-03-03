@@ -41,6 +41,7 @@ futureimprovement.md
 scripts/import-markdown.js
 profile/
 coo-app-next.code-workspace
+assets/
 
 # Pencil
 *.pen

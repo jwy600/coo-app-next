@@ -25,6 +25,9 @@ tsconfig.tsbuildinfo
 *.log
 npm-debug.log*
 
+# Assets (large binary files)
+assets/
+
 # OS
 .DS_Store
 Thumbs.db

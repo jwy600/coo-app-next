@@ -1,4 +1,4 @@
-import type { Page, Locator } from '@playwright/test';
+import { type Page, type Locator, expect } from '@playwright/test';
 
 /**
  * Page Object Model for Landing Page
@@ -33,10 +33,21 @@ export class LandingPage {
   }
 
   /**
+   * Wait for auth to complete and composer to become interactive
+   */
+  async waitForReady(): Promise<void> {
+    await this.sendButton.waitFor({ state: 'attached' });
+    // Wait for auth loading to finish (button becomes enabled)
+    await expect(this.sendButton).toBeEnabled({ timeout: 10000 });
+  }
+
+  /**
    * Submit a prompt from the landing page
    * This creates a new thread and navigates to the thread page
    */
   async submitFirstPrompt(text: string): Promise<void> {
+    // Wait for composer to be interactive (auth loaded)
+    await this.waitForReady();
     // Use pressSequentially for cross-browser compatibility (especially WebKit)
     await this.promptInput.click();
     await this.promptInput.pressSequentially(text, { delay: 5 });

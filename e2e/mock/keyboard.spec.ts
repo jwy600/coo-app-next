@@ -22,6 +22,8 @@ test.describe('Keyboard Shortcuts', () => {
     });
 
     await landingPage.goto();
+    // Wait for auth to load and composer to become interactive
+    await landingPage.waitForReady();
   });
 
   test('should submit prompt with Enter key on landing page', async ({ page }) => {

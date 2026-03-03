@@ -57,7 +57,19 @@ export const useStore = create<StoreState>()(
             partialize: (state) => ({
               settings: state.settings,
             }),
-            migrate: (persisted: unknown) => persisted as StoreState,
+            migrate: (persisted: unknown, version: number) => {
+              const state = persisted as Record<string, unknown>;
+              if (version === 0) {
+                // v0 → v1: obsidianVaultPath renamed to obsidianVaultName
+                // A filesystem path can't be auto-converted to a vault name, so clear it
+                const settings = state.settings as Record<string, unknown> | undefined;
+                if (settings && 'obsidianVaultPath' in settings) {
+                  delete settings.obsidianVaultPath;
+                  settings.obsidianVaultName = '';
+                }
+              }
+              return state as unknown as StoreState;
+            },
           }
     ),
     {

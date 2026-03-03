@@ -15,6 +15,8 @@ const mockState = createMockStoreState({
     responseLanguage: "en",
     translateLanguage: "Chinese",
     webSearchEnabled: false,
+    exportDestination: "local",
+    obsidianVaultName: "",
   },
 });
 

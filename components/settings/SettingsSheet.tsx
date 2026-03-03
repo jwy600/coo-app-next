@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SettingsForm } from './SettingsForm';
+import { SettingsForm, SettingsFooter } from './SettingsForm';
 import { useAuth } from '@/hooks/useAuth';
 
 export function SettingsSheet() {
@@ -30,16 +30,19 @@ export function SettingsSheet() {
           </SheetTrigger>
         </SidebarMenuItem>
       </SidebarMenu>
-      <SheetContent side="right" className="w-[320px] sm:w-[400px]">
+      <SheetContent side="right" className="w-[320px] sm:w-[400px] flex flex-col">
         <SheetHeader>
           <SheetTitle>Settings</SheetTitle>
           <SheetDescription>
             Configure model, reasoning, and search options.
           </SheetDescription>
         </SheetHeader>
-        <ScrollArea className="h-[calc(100vh-120px)] pr-4">
-          <SettingsForm />
+        <ScrollArea className="flex-1 pr-4">
+          <div className="px-1">
+            <SettingsForm />
+          </div>
         </ScrollArea>
+        <SettingsFooter />
       </SheetContent>
     </Sheet>
   );

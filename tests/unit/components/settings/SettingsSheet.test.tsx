@@ -63,10 +63,12 @@ vi.mock("@/components/ui/scroll-area", () => ({
     React.createElement("div", null, children),
 }));
 
-// Stub SettingsForm
+// Stub SettingsForm and SettingsFooter
 vi.mock("@/components/settings/SettingsForm", () => ({
   SettingsForm: () =>
     React.createElement("div", { "data-testid": "settings-form" }, "Form"),
+  SettingsFooter: () =>
+    React.createElement("div", { "data-testid": "settings-footer" }, "Footer"),
 }));
 
 describe("SettingsSheet", () => {

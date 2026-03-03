@@ -1,6 +1,6 @@
 # Coo
 
-Coo brings locality to AI. It is a chatbot where you can **interact with LLM responses in context**.
+Coo brings locality to AI. It’s a chatbot that lets you edit, transform, and reuse LLM output directly in place.
 
 [Watch demo video](https://wenyi.blog/files/coo_ask.mp4)
 

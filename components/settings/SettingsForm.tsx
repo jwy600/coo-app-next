@@ -84,8 +84,8 @@ export function SettingsForm() {
   const updateExportDestination = useStore(
     (state) => state.updateExportDestination,
   );
-  const updateObsidianVaultPath = useStore(
-    (state) => state.updateObsidianVaultPath,
+  const updateObsidianVaultName = useStore(
+    (state) => state.updateObsidianVaultName,
   );
   const resetSettings = useStore((state) => state.resetSettings);
   const resetStore = useStore((state) => state.reset);
@@ -303,16 +303,16 @@ export function SettingsForm() {
             >
               <span>Obsidian</span>
               <span className="text-xs text-muted-foreground">
-                Save to vault folder
+                Open in Obsidian via URI
               </span>
             </Label>
           </div>
         </RadioGroup>
         {settings.exportDestination === "obsidian" && (
           <Input
-            value={settings.obsidianVaultPath ?? ""}
-            onChange={(e) => updateObsidianVaultPath(e.target.value)}
-            placeholder="/Users/you/ObsidianVault"
+            value={settings.obsidianVaultName ?? ""}
+            onChange={(e) => updateObsidianVaultName(e.target.value)}
+            placeholder="MyVault"
             className="mt-2"
           />
         )}

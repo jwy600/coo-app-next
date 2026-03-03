@@ -25,7 +25,7 @@ export interface SettingsSlice {
   updateResponseLanguage: (language: ResponseLanguage) => void;
   updateTranslateLanguage: (language: TranslateLanguage) => void;
   updateExportDestination: (destination: ExportDestination) => void;
-  updateObsidianVaultPath: (path: string) => void;
+  updateObsidianVaultName: (name: string) => void;
   resetSettings: () => void;
 }
 
@@ -81,8 +81,8 @@ export const settingsSlice: StateCreator<
     set({ settings: updated });
   },
 
-  updateObsidianVaultPath: (path) => {
-    const updated = settingsFns.updateObsidianVaultPath(get().settings, path);
+  updateObsidianVaultName: (name) => {
+    const updated = settingsFns.updateObsidianVaultName(get().settings, name);
     set({ settings: updated });
   },
 

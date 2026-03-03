@@ -30,7 +30,7 @@ describe("settingsSlice", () => {
     expect(settings.responseLanguage).toBe("en");
     expect(settings.translateLanguage).toBe("Chinese");
     expect(settings.exportDestination).toBe("local");
-    expect(settings.obsidianVaultPath).toBe("");
+    expect(settings.obsidianVaultName).toBe("");
   });
 
   describe("updateModel", () => {
@@ -112,18 +112,16 @@ describe("settingsSlice", () => {
     });
   });
 
-  describe("updateObsidianVaultPath", () => {
-    it("should update vault path", () => {
-      useStore.getState().updateObsidianVaultPath("/Users/me/vault");
-      expect(useStore.getState().settings.obsidianVaultPath).toBe(
-        "/Users/me/vault",
-      );
+  describe("updateObsidianVaultName", () => {
+    it("should update vault name", () => {
+      useStore.getState().updateObsidianVaultName("MyVault");
+      expect(useStore.getState().settings.obsidianVaultName).toBe("MyVault");
     });
 
-    it("should clear vault path", () => {
-      useStore.getState().updateObsidianVaultPath("/some/path");
-      useStore.getState().updateObsidianVaultPath("");
-      expect(useStore.getState().settings.obsidianVaultPath).toBe("");
+    it("should clear vault name", () => {
+      useStore.getState().updateObsidianVaultName("SomeVault");
+      useStore.getState().updateObsidianVaultName("");
+      expect(useStore.getState().settings.obsidianVaultName).toBe("");
     });
   });
 
@@ -135,7 +133,7 @@ describe("settingsSlice", () => {
       useStore.getState().updateResponseLanguage("zh");
       useStore.getState().updateTranslateLanguage("French");
       useStore.getState().updateExportDestination("obsidian");
-      useStore.getState().updateObsidianVaultPath("/vault");
+      useStore.getState().updateObsidianVaultName("MyVault");
 
       useStore.getState().resetSettings();
 
@@ -146,7 +144,7 @@ describe("settingsSlice", () => {
       expect(settings.responseLanguage).toBe("en");
       expect(settings.translateLanguage).toBe("Chinese");
       expect(settings.exportDestination).toBe("local");
-      expect(settings.obsidianVaultPath).toBe("");
+      expect(settings.obsidianVaultName).toBe("");
     });
   });
 });

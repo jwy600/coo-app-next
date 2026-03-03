@@ -45,7 +45,7 @@ export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps
     const result = await exportMarkdown(markdown, filename, settings);
     if (settings.exportDestination === 'obsidian') {
       if (result.success) {
-        toast.success('Saved to Obsidian vault');
+        toast.success('Opened in Obsidian');
       } else {
         toast.error(`Failed: ${result.error}`);
       }

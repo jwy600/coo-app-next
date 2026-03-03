@@ -71,7 +71,7 @@ export interface Settings {
   responseLanguage: ResponseLanguage;
   translateLanguage: TranslateLanguage;
   exportDestination: ExportDestination;
-  obsidianVaultPath: string;
+  obsidianVaultName: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -82,5 +82,5 @@ export const DEFAULT_SETTINGS: Settings = {
   responseLanguage: "en",
   translateLanguage: "Chinese",
   exportDestination: "local",
-  obsidianVaultPath: "",
+  obsidianVaultName: "",
 };

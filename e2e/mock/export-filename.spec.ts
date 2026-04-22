@@ -108,6 +108,32 @@ test.describe('Export Card Dialog - auto-populated filename', () => {
     expect(await chatPage.cards.getCardCount()).toBe(1);
   });
 
+  test('truncates heading text longer than 80 characters', async ({
+    page,
+  }) => {
+    const longHeading =
+      'This is a very long heading that exceeds the eighty character limit set in defaultCardTitle';
+    expect(longHeading.length).toBeGreaterThan(80);
+
+    // Re-create the thread with a long-heading response.
+    await page.goto('/');
+    await apiMocker.mockChatSuccess({
+      text: `## ${longHeading}\n\nA paragraph under the long heading.`,
+    });
+    await landingPage.submitFirstPrompt('long heading thread');
+    await page.waitForURL(/\/t\/.+/);
+    await chatPage.waitForResponse();
+
+    await chatPage.cards.createCard(0);
+    await chatPage.cards.clickExport(0);
+
+    const title = await chatPage.exportDialog.getTitleValue();
+    const [headingPart] = title.split(' - ');
+    expect(headingPart.length).toBeLessThanOrEqual(80);
+    expect(longHeading.startsWith(headingPart)).toBe(true);
+    expect(title.endsWith(' - long heading thread')).toBe(true);
+  });
+
   test('re-opening the dialog re-reads the default from current state', async () => {
     await chatPage.cards.createCard(0);
 

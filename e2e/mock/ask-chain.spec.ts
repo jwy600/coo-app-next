@@ -160,4 +160,41 @@ React uses a component-based architecture.`,
     expect(asks).toHaveLength(2);
     expect(asks[1].previous_response_id ?? null).toBeNull();
   });
+
+  test('rewriting the block invalidates the chain', async () => {
+    await chatPage.selectBlock(0);
+    await ask('Initial question');
+
+    // Select text in the composer (holds the answer A1) to create a chip,
+    // then click Rewrite — this mutates the block's text, which should null
+    // askChainRef via the grounding-change effect.
+    await chatPage.selection.selectInComposer('follow-up');
+    await chatPage.selection.clickRewrite(0);
+
+    await ask('Question after rewrite');
+
+    const asks = askRequests();
+    expect(asks).toHaveLength(2);
+    expect(asks[1].previous_response_id ?? null).toBeNull();
+    expect(asks[1].input).toContain(ASK_PREAMBLE);
+  });
+
+  test('direct-editing the block invalidates the chain', async () => {
+    await chatPage.selectBlock(0);
+    await ask('Initial question');
+
+    // Switch to Edit mode, type replacement text, click Replace.
+    await chatPage.editMode.clickEdit();
+    await chatPage.clearPrompt();
+    await chatPage.typePrompt('Edited block content');
+    await chatPage.editMode.clickReplace();
+
+    // Back to Ask mode for the follow-up.
+    await chatPage.editMode.clickAsk();
+    await ask('Question after edit');
+
+    const asks = askRequests();
+    expect(asks).toHaveLength(2);
+    expect(asks[1].previous_response_id ?? null).toBeNull();
+  });
 });

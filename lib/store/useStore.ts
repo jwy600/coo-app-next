@@ -72,7 +72,10 @@ export const useStore = create<StoreState>()(
     ),
     {
       name: "coo-store",
-      enabled: process.env.NODE_ENV === "development",
+      // Explicit opt-in. NODE_ENV alone is unsafe: any non-production build
+      // (staging, preview) would otherwise expose the full store —
+      // including settings.apiKey — to the Redux DevTools browser extension.
+      enabled: process.env.NEXT_PUBLIC_DEVTOOLS_ENABLED === "true",
     },
   ),
 );

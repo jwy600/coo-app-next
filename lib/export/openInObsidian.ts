@@ -3,8 +3,11 @@ import type { ExportResult } from "./exportMarkdown";
 /**
  * Open markdown content in Obsidian via the `obsidian://new` URI scheme.
  *
- * This works on any deployment (localhost or Vercel) because the browser
- * hands off to the OS, which launches Obsidian and creates the note.
+ * Triggers the navigation by programmatically clicking a hidden anchor. On
+ * HTTPS origins (Vercel), Chrome silently drops `window.open(..., "_self")`
+ * navigations to custom schemes unless they come from an anchor-click
+ * dispatch. The anchor-click path is the same one the browser uses for real
+ * link clicks, so the external-protocol handler always fires.
  *
  * @param content  - Markdown content for the note
  * @param filename - Filename ending in .md (the .md suffix is stripped for the note path)
@@ -28,7 +31,13 @@ export function openInObsidian(
     `&content=${encodeURIComponent(content)}` +
     `&overwrite=true`;
 
-  window.open(uri, "_self");
+  const anchor = document.createElement("a");
+  anchor.href = uri;
+  anchor.rel = "noopener";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 
   return { success: true };
 }

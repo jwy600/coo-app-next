@@ -62,10 +62,12 @@ vi.mock("@/hooks/useStreaming", () => ({
 
 vi.mock("@/lib/api", () => ({
   fetchBlockAction: mockFetchBlockAction,
+  generateThreadTitle: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/state", () => ({
   getLastAssistantResponseId: () => "prev-resp-id",
+  getThreadById: vi.fn(() => ({ id: "t1", title: "fallback" })),
 }));
 
 vi.mock("@/lib/utils/errorHandling", () => ({

@@ -76,11 +76,19 @@ const getBlocksForMessage = (message: Message, blocks: Block[]): Block[] => {
 };
 
 /**
- * Escape special characters for YAML string values
+ * Escape special characters for YAML double-quoted string values.
+ *
+ * Order matters: backslashes must be escaped first, otherwise escaping
+ * quotes would double-escape any user-supplied backslash. Newlines would
+ * break out of the quoted string and allow arbitrary frontmatter
+ * injection, so they are normalized to spaces (and stray CRs dropped).
  */
 const escapeYamlString = (str: string): string => {
-  // Replace double quotes with escaped quotes
-  return str.replace(/"/g, '\\"');
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, '')
+    .replace(/\n/g, ' ');
 };
 
 /**

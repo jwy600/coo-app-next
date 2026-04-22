@@ -16,6 +16,7 @@ import {
   isOrderedListItem,
 } from '@/lib/rendering/blocks';
 import { Math as MathComponent } from './Math';
+import { sanitizeHref } from '@/lib/utils/safeHref';
 
 export interface BlockContentProps {
   text: string;
@@ -87,7 +88,7 @@ function parseNestedFormatting(text: string, excludeType?: 'bold' | 'italic'): R
       nodes.push(
         <a
           key={keyIndex++}
-          href={match[2]}
+          href={sanitizeHref(match[2])}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 hover:underline dark:text-blue-400"
@@ -127,7 +128,7 @@ function renderSegment(segment: MarkdownSegment, index: number): React.ReactNode
       return (
         <a
           key={index}
-          href={segment.href}
+          href={sanitizeHref(segment.href)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 hover:underline dark:text-blue-400"

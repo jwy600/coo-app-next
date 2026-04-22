@@ -45,7 +45,10 @@ export interface ResponseResult {
   responseId: string;
 }
 
-const logRequest = (params: CreateResponseParams, streaming: boolean) => {
+const logRequest = (
+  params: Omit<CreateResponseParams, "apiKey">,
+  streaming: boolean,
+) => {
   if (!isDev) return;
   const inputPreview =
     params.input.length > 100

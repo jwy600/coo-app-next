@@ -21,6 +21,7 @@ export function renderMathToString(
       throwOnError: false,
       errorColor: '#cc0000',
       ...options,
+      trust: false,
     });
   } catch (error) {
     console.warn('KaTeX renderToString error:', error);
@@ -44,6 +45,7 @@ export function renderMath(
       throwOnError: false,
       errorColor: '#cc0000',
       ...options,
+      trust: false,
     });
   } catch (error) {
     console.warn('KaTeX render error:', error);

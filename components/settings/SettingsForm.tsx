@@ -23,7 +23,6 @@ import type {
   ReasoningEffort,
   ResponseLanguage,
   TranslateLanguage,
-  ExportDestination,
 } from "@/types/settings";
 
 const MODEL_OPTIONS: {
@@ -94,6 +93,11 @@ export function SettingsForm() {
     (opt) => TRANSLATE_TO_RESPONSE_MAP[opt.value] !== settings.responseLanguage,
   );
 
+  const handleVaultNameChange = (value: string) => {
+    updateObsidianVaultName(value);
+    updateExportDestination(value.trim() ? "obsidian" : "local");
+  };
+
   return (
     <div className="flex flex-col gap-5 py-4">
       <div className="space-y-2">
@@ -110,6 +114,25 @@ export function SettingsForm() {
         />
         <p className="text-xs text-muted-foreground">
           Stored locally in your browser. Never sent to any server besides OpenAI.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="obsidian-vault" className="text-sm font-medium">
+          Obsidian Vault Name
+        </Label>
+        <Input
+          id="obsidian-vault"
+          type="text"
+          autoComplete="off"
+          value={settings.obsidianVaultName ?? ""}
+          onChange={(e) => handleVaultNameChange(e.target.value)}
+          placeholder="MyVault"
+        />
+        <p className="text-xs text-muted-foreground">
+          Fill this in to send exported threads and cards straight to your
+          Obsidian vault. Leave empty to download them as Markdown files
+          instead.
         </p>
       </div>
 
@@ -252,57 +275,6 @@ export function SettingsForm() {
           </RadioGroup>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Export Destination</Label>
-          <RadioGroup
-            value={settings.exportDestination}
-            onValueChange={(value) =>
-              updateExportDestination(value as ExportDestination)
-            }
-            className="grid gap-2"
-          >
-            <label
-              htmlFor="export-local"
-              className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                settings.exportDestination === "local"
-                  ? "border-foreground/20 bg-accent"
-                  : "border-border hover:bg-muted/50"
-              }`}
-            >
-              <RadioGroupItem value="local" id="export-local" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Local</span>
-                <span className="text-xs text-muted-foreground">
-                  Browser download
-                </span>
-              </div>
-            </label>
-            <label
-              htmlFor="export-obsidian"
-              className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                settings.exportDestination === "obsidian"
-                  ? "border-foreground/20 bg-accent"
-                  : "border-border hover:bg-muted/50"
-              }`}
-            >
-              <RadioGroupItem value="obsidian" id="export-obsidian" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Obsidian</span>
-                <span className="text-xs text-muted-foreground">
-                  Open in Obsidian via URI
-                </span>
-              </div>
-            </label>
-          </RadioGroup>
-          {settings.exportDestination === "obsidian" && (
-            <Input
-              value={settings.obsidianVaultName ?? ""}
-              onChange={(e) => updateObsidianVaultName(e.target.value)}
-              placeholder="MyVault"
-              className="mt-2"
-            />
-          )}
-      </div>
     </div>
   );
 }

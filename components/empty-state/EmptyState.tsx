@@ -8,7 +8,6 @@ interface EmptyStateProps {
   onPromptChange: (value: string) => void;
   onSubmit: (e: FormEvent) => void;
   disabled?: boolean;
-  needsApiKey?: boolean;
 }
 
 export function EmptyState({
@@ -16,7 +15,6 @@ export function EmptyState({
   onPromptChange,
   onSubmit,
   disabled = false,
-  needsApiKey = false,
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-6">
@@ -31,11 +29,6 @@ export function EmptyState({
       </div>
 
       <div className="w-full max-w-2xl">
-        {needsApiKey && (
-          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground text-center">
-            Add your OpenAI API key in <span className="font-medium">Settings</span> to start chatting.
-          </div>
-        )}
         <Composer
           selectedBlockId={null}
           prompt={prompt}

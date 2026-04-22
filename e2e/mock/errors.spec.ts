@@ -16,11 +16,6 @@ test.describe('Error Handling', () => {
     composer = new Composer(page);
     apiMocker = new ApiMocker(page);
 
-    // Set test mode
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
   });
 

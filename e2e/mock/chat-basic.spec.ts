@@ -13,11 +13,6 @@ test.describe('Basic Chat Flow', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    // Set test mode environment variable
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
   });
 
@@ -127,5 +122,23 @@ test.describe('Basic Chat Flow', () => {
     await expect(chatPage.composer).toBeVisible();
     await expect(chatPage.promptInput).toBeVisible();
     await expect(chatPage.sendButton).toBeVisible();
+  });
+
+  test('should handle Unicode and emoji in prompt and response', async ({
+    page,
+  }) => {
+    const prompt = '解释一下 React ⚛️ — 中文回答';
+    const responseText = 'React 是一个 JavaScript 库 🚀 用于构建用户界面。';
+
+    await apiMocker.mockChatSuccess({ text: responseText });
+    await landingPage.submitFirstPrompt(prompt);
+    await expect(page).toHaveURL(/\/t\/.+/);
+    await chatPage.waitForResponse();
+
+    // User message renders the prompt verbatim.
+    await expect(chatPage.getUserMessages().first()).toContainText(prompt);
+
+    // Response parses into at least one block carrying the response text.
+    await expect(chatPage.getBlock(0)).toContainText('React 是一个 JavaScript 库');
   });
 });

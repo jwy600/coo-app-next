@@ -37,10 +37,6 @@ test.describe('Block Selection - Basic Behavior', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
     await apiMocker.mockChatSuccess(BLOCK_RESPONSE);
     await landingPage.submitFirstPrompt('Explain something');
@@ -95,10 +91,6 @@ test.describe('Composer States - Block Selection Impact', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
     await apiMocker.mockChatSuccess(BLOCK_RESPONSE);
     await landingPage.submitFirstPrompt('Explain something');
@@ -138,10 +130,6 @@ test.describe('Click Outside Deselection', () => {
     landingPage = new LandingPage(page);
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
-
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
 
     await landingPage.goto();
     await apiMocker.mockChatSuccess(BLOCK_RESPONSE);

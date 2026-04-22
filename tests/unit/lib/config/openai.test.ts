@@ -1,11 +1,10 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { getOpenAIModelConfig, calculateCost } from "@/lib/config/openai";
 import {
-  getOpenAIModelConfig,
+  _clearPromptCache,
   getDeveloperPrompt,
   getBlockActionPrompt,
-  calculateCost,
-} from "@/lib/config/openai";
-import { _clearPromptCache } from "@/lib/config/prompts";
+} from "@/lib/config/prompts";
 
 describe("getOpenAIModelConfig", () => {
   const originalModel = process.env.OPENAI_MODEL;

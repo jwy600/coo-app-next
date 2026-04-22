@@ -1,8 +1,5 @@
-import {
-  getOpenAIModelConfig,
-  calculateCost,
-  getDeveloperPrompt,
-} from "@/lib/config/openai";
+import { getOpenAIModelConfig, calculateCost } from "@/lib/config/openai";
+import { getDeveloperPrompt } from "@/lib/config/prompts";
 import {
   testReporter,
   analyzeResponseQuality,

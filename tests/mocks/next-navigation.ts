@@ -13,7 +13,7 @@ export const mockRouter = {
   prefetch: vi.fn(),
 };
 
-export const mockSearchParams = {
+const mockSearchParams = {
   get: vi.fn().mockReturnValue(null),
   getAll: vi.fn().mockReturnValue([]),
   has: vi.fn().mockReturnValue(false),

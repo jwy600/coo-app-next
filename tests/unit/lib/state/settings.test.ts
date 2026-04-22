@@ -18,7 +18,7 @@ describe("Settings State Functions", () => {
   describe("createInitialSettings", () => {
     it("should create settings with default values", () => {
       const settings = createInitialSettings();
-      expect(settings.model).toBe("gpt-5-mini");
+      expect(settings.model).toBe("gpt-5.4-mini");
       expect(settings.reasoningEffort).toBe("none");
       expect(settings.webSearchEnabled).toBe(false);
     });
@@ -62,14 +62,14 @@ describe("Settings State Functions", () => {
     it("should preserve other settings", () => {
       const settings: Settings = {
         systemPromptFile: "developer",
-        model: "gpt-5.2",
+        model: "gpt-5.4",
         reasoningEffort: "high",
         webSearchEnabled: true,
         responseLanguage: "zh",
         translateLanguage: "Spanish",
       };
       const updated = updateSystemPromptFile(settings, "chatgpt");
-      expect(updated.model).toBe("gpt-5.2");
+      expect(updated.model).toBe("gpt-5.4");
       expect(updated.reasoningEffort).toBe("high");
       expect(updated.webSearchEnabled).toBe(true);
       expect(updated.responseLanguage).toBe("zh");
@@ -78,35 +78,35 @@ describe("Settings State Functions", () => {
   });
 
   describe("updateModel", () => {
-    it("should update model to gpt-5.2", () => {
+    it("should update model to gpt-5.4", () => {
       const settings = createInitialSettings();
-      const updated = updateModel(settings, "gpt-5.2");
-      expect(updated.model).toBe("gpt-5.2");
+      const updated = updateModel(settings, "gpt-5.4");
+      expect(updated.model).toBe("gpt-5.4");
     });
 
-    it("should update model to gpt-5-mini", () => {
-      const settings: Settings = { ...DEFAULT_SETTINGS, model: "gpt-5.2" };
-      const updated = updateModel(settings, "gpt-5-mini");
-      expect(updated.model).toBe("gpt-5-mini");
+    it("should update model to gpt-5.4-mini", () => {
+      const settings: Settings = { ...DEFAULT_SETTINGS, model: "gpt-5.4" };
+      const updated = updateModel(settings, "gpt-5.4-mini");
+      expect(updated.model).toBe("gpt-5.4-mini");
     });
 
     it("should maintain immutability", () => {
       const settings = createInitialSettings();
-      const updated = updateModel(settings, "gpt-5.2");
+      const updated = updateModel(settings, "gpt-5.4");
       expect(updated).not.toBe(settings);
-      expect(settings.model).toBe("gpt-5-mini");
+      expect(settings.model).toBe("gpt-5.4-mini");
     });
 
     it("should preserve other settings", () => {
       const settings: Settings = {
         systemPromptFile: "chatgpt",
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         reasoningEffort: "high",
         webSearchEnabled: true,
         responseLanguage: "en",
         translateLanguage: "English",
       };
-      const updated = updateModel(settings, "gpt-5.2");
+      const updated = updateModel(settings, "gpt-5.4");
       expect(updated.systemPromptFile).toBe("chatgpt");
       expect(updated.reasoningEffort).toBe("high");
       expect(updated.webSearchEnabled).toBe(true);
@@ -153,7 +153,7 @@ describe("Settings State Functions", () => {
     it("should preserve other settings", () => {
       const settings: Settings = {
         systemPromptFile: "chatgpt",
-        model: "gpt-5.2",
+        model: "gpt-5.4",
         reasoningEffort: "none",
         webSearchEnabled: true,
         responseLanguage: "zh",
@@ -161,7 +161,7 @@ describe("Settings State Functions", () => {
       };
       const updated = updateReasoningEffort(settings, "medium");
       expect(updated.systemPromptFile).toBe("chatgpt");
-      expect(updated.model).toBe("gpt-5.2");
+      expect(updated.model).toBe("gpt-5.4");
       expect(updated.webSearchEnabled).toBe(true);
       expect(updated.responseLanguage).toBe("zh");
       expect(updated.translateLanguage).toBe("Spanish");
@@ -194,7 +194,7 @@ describe("Settings State Functions", () => {
     it("should preserve other settings", () => {
       const settings: Settings = {
         systemPromptFile: "chatgpt",
-        model: "gpt-5.2",
+        model: "gpt-5.4",
         reasoningEffort: "high",
         webSearchEnabled: false,
         responseLanguage: "en",
@@ -202,7 +202,7 @@ describe("Settings State Functions", () => {
       };
       const updated = updateWebSearchEnabled(settings, true);
       expect(updated.systemPromptFile).toBe("chatgpt");
-      expect(updated.model).toBe("gpt-5.2");
+      expect(updated.model).toBe("gpt-5.4");
       expect(updated.reasoningEffort).toBe("high");
       expect(updated.responseLanguage).toBe("en");
       expect(updated.translateLanguage).toBe("French");
@@ -322,11 +322,11 @@ describe("Settings State Functions", () => {
     it("should preserve other settings", () => {
       const settings: Settings = {
         ...DEFAULT_SETTINGS,
-        model: "gpt-5.2",
+        model: "gpt-5.4",
         webSearchEnabled: true,
       };
       const updated = updateExportDestination(settings, "obsidian");
-      expect(updated.model).toBe("gpt-5.2");
+      expect(updated.model).toBe("gpt-5.4");
       expect(updated.webSearchEnabled).toBe(true);
     });
   });
@@ -358,11 +358,11 @@ describe("Settings State Functions", () => {
       const settings: Settings = {
         ...DEFAULT_SETTINGS,
         exportDestination: "obsidian",
-        model: "gpt-5.2",
+        model: "gpt-5.4",
       };
       const updated = updateObsidianVaultName(settings, "Vault");
       expect(updated.exportDestination).toBe("obsidian");
-      expect(updated.model).toBe("gpt-5.2");
+      expect(updated.model).toBe("gpt-5.4");
     });
   });
 

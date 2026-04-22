@@ -103,7 +103,7 @@ describe("uiSlice", () => {
       ]);
       useStore.getState().setAwaitingResponse(true);
       useStore.getState().setError("error");
-      useStore.getState().updateModel("gpt-5.2");
+      useStore.getState().updateModel("gpt-5.4");
 
       // Reset
       useStore.getState().reset();
@@ -120,7 +120,7 @@ describe("uiSlice", () => {
       expect(state.streamingMessage).toBeNull();
 
       // Settings should be preserved
-      expect(state.settings.model).toBe("gpt-5.2");
+      expect(state.settings.model).toBe("gpt-5.4");
     });
   });
 });

@@ -35,11 +35,11 @@ const MODEL_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: "gpt-5-mini",
-    label: "GPT-5-mini",
+    value: "gpt-5.4-mini",
+    label: "GPT-5.4-mini",
     description: "Fast and efficient",
   },
-  { value: "gpt-5.2", label: "GPT-5.2", description: "Most capable" },
+  { value: "gpt-5.4", label: "GPT-5.4", description: "Most capable" },
 ];
 
 const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [

@@ -138,7 +138,7 @@ Access settings via the gear icon in the sidebar:
 
 | Setting              | Options                           | Default  |
 |----------------------|-----------------------------------|----------|
-| Model                | gpt-5.2, gpt-5-mini              | gpt-5.2  |
+| Model                | gpt-5.4, gpt-5.4-mini            | gpt-5.4  |
 | Reasoning Effort     | none, low, medium, high           | none     |
 | Web Search           | on/off                            | off      |
 | Response Language    | English, Chinese                  | English  |

@@ -1,4 +1,4 @@
-export type ModelType = "gpt-5.2" | "gpt-5-mini";
+export type ModelType = "gpt-5.4" | "gpt-5.4-mini";
 export type ReasoningEffort = "none" | "low" | "medium" | "high";
 export type ResponseLanguage = "en" | "es" | "fr" | "zh" | "ja";
 export type TranslateLanguage =
@@ -76,7 +76,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   systemPromptFile: "developer",
-  model: "gpt-5-mini",
+  model: "gpt-5.4-mini",
   reasoningEffort: "none",
   webSearchEnabled: false,
   responseLanguage: "en",

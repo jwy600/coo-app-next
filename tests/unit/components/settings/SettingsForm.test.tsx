@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
 
 const mockState = createMockStoreState({
   settings: {
-    model: "gpt-5-mini",
+    model: "gpt-5.4-mini",
     reasoningEffort: "none",
     responseLanguage: "en",
     translateLanguage: "Chinese",
@@ -43,8 +43,8 @@ describe("SettingsForm", () => {
     render(<SettingsForm />);
     // "Model" appears as section header and label
     expect(screen.getAllByText("Model").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("GPT-5-mini")).toBeTruthy();
-    expect(screen.getByText("GPT-5.2")).toBeTruthy();
+    expect(screen.getByText("GPT-5.4-mini")).toBeTruthy();
+    expect(screen.getByText("GPT-5.4")).toBeTruthy();
   });
 
   it("renders Reasoning section", () => {
@@ -83,7 +83,7 @@ describe("SettingsForm", () => {
 
   it("calls updateModel when model button is clicked", () => {
     render(<SettingsForm />);
-    fireEvent.click(screen.getByText("GPT-5.2"));
+    fireEvent.click(screen.getByText("GPT-5.4"));
     expect(mockState.updateModel).toHaveBeenCalled();
   });
 });

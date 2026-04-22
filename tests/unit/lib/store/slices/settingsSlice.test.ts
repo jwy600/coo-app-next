@@ -24,7 +24,7 @@ describe("settingsSlice", () => {
 
   it("should have default settings on initialization", () => {
     const { settings } = useStore.getState();
-    expect(settings.model).toBe("gpt-5-mini");
+    expect(settings.model).toBe("gpt-5.4-mini");
     expect(settings.reasoningEffort).toBe("none");
     expect(settings.webSearchEnabled).toBe(false);
     expect(settings.responseLanguage).toBe("en");
@@ -34,18 +34,18 @@ describe("settingsSlice", () => {
   });
 
   describe("updateModel", () => {
-    it("should update model to gpt-5.2", () => {
-      useStore.getState().updateModel("gpt-5.2");
-      expect(useStore.getState().settings.model).toBe("gpt-5.2");
+    it("should update model to gpt-5.4", () => {
+      useStore.getState().updateModel("gpt-5.4");
+      expect(useStore.getState().settings.model).toBe("gpt-5.4");
     });
 
     it("should preserve other settings when updating model", () => {
       useStore.getState().updateReasoningEffort("high");
       useStore.getState().updateWebSearchEnabled(true);
-      useStore.getState().updateModel("gpt-5.2");
+      useStore.getState().updateModel("gpt-5.4");
 
       const { settings } = useStore.getState();
-      expect(settings.model).toBe("gpt-5.2");
+      expect(settings.model).toBe("gpt-5.4");
       expect(settings.reasoningEffort).toBe("high");
       expect(settings.webSearchEnabled).toBe(true);
     });
@@ -127,7 +127,7 @@ describe("settingsSlice", () => {
 
   describe("resetSettings", () => {
     it("should reset all settings to defaults", () => {
-      useStore.getState().updateModel("gpt-5.2");
+      useStore.getState().updateModel("gpt-5.4");
       useStore.getState().updateReasoningEffort("high");
       useStore.getState().updateWebSearchEnabled(true);
       useStore.getState().updateResponseLanguage("zh");
@@ -138,7 +138,7 @@ describe("settingsSlice", () => {
       useStore.getState().resetSettings();
 
       const { settings } = useStore.getState();
-      expect(settings.model).toBe("gpt-5-mini");
+      expect(settings.model).toBe("gpt-5.4-mini");
       expect(settings.reasoningEffort).toBe("none");
       expect(settings.webSearchEnabled).toBe(false);
       expect(settings.responseLanguage).toBe("en");

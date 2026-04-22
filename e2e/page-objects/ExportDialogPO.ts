@@ -42,17 +42,17 @@ export class ExportDialogPO {
   async confirm(title: string): Promise<void> {
     await this.setTitle(title);
     await this.confirmButton.click();
-    await this.page.waitForTimeout(100);
+    await this.dialog.waitFor({ state: 'hidden' });
   }
 
   /** Click Export without changing the filename (accepts the default). */
   async confirmDefault(): Promise<void> {
     await this.confirmButton.click();
-    await this.page.waitForTimeout(100);
+    await this.dialog.waitFor({ state: 'hidden' });
   }
 
   async cancel(): Promise<void> {
     await this.cancelButton.click();
-    await this.page.waitForTimeout(100);
+    await this.dialog.waitFor({ state: 'hidden' });
   }
 }

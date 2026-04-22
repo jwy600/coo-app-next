@@ -53,11 +53,17 @@ export class CardModePO {
    * Uses dispatchEvent for WebKit compatibility (pointer-event interception).
    */
   async clickClear(cardIndex: number = 0): Promise<void> {
+    const beforeCount = await this.getCardCount();
     const card = this.getCards().nth(cardIndex);
     await card.waitFor({ state: 'visible' });
     const clearButton = card.locator('button[aria-label="Remove card"]');
     await clearButton.dispatchEvent('click');
-    await this.page.waitForTimeout(200);
+    // Wait for the card count to decrement (semantic, replaces 200ms sleep).
+    await this.page.waitForFunction(
+      (prev) => document.querySelectorAll('.block-card').length < prev,
+      beforeCount,
+      { timeout: 5000 },
+    );
   }
 
   /**
@@ -69,6 +75,9 @@ export class CardModePO {
     await card.waitFor({ state: 'visible' });
     const exportButton = card.locator('button[aria-label="Export card"]');
     await exportButton.dispatchEvent('click');
-    await this.page.waitForTimeout(200);
+    // Wait for the export dialog to render (semantic, replaces 200ms sleep).
+    await this.page
+      .locator('[role="dialog"]')
+      .waitFor({ state: 'visible', timeout: 5000 });
   }
 }

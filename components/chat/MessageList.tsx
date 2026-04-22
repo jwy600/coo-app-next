@@ -21,6 +21,7 @@ interface StreamingMessageData {
 // Stable empty array so AssistantMessage's `cards` prop keeps identity
 // across streaming re-renders (new [] per render would defeat memo).
 const EMPTY_CARDS: Card[] = [];
+const EMPTY_BLOCKS: Block[] = [];
 
 /**
  * Client Component - Container for all messages in a thread
@@ -92,6 +93,22 @@ export function MessageList({
     [blocks]
   );
 
+  // Per-message block arrays, keyed by messageId. Recomputed only when the
+  // messages array or the block lookup changes — so `AssistantMessage` sees
+  // the same `blocks` reference across streaming tokens for every finished
+  // message.
+  const blocksByMessage = useMemo(() => {
+    const map = new Map<string, Block[]>();
+    for (const message of messages) {
+      if (message.role !== 'assistant') continue;
+      const messageBlocks = message.content
+        .map((item) => blockLookup.get(item.blockId))
+        .filter((block): block is Block => block !== undefined);
+      map.set(message.id, messageBlocks);
+    }
+    return map;
+  }, [messages, blockLookup]);
+
   // Streaming message + its synthesized blocks change identity on every
   // token otherwise, forcing AssistantMessage + BlockStack to re-render
   // even for unchanged blocks.
@@ -134,10 +151,9 @@ export function MessageList({
           return <UserMessage key={message.id} message={message} block={block} />;
         }
 
-        // Assistant message - collect all blocks for this message
-        const messageBlocks = message.content
-          .map((item) => blockLookup.get(item.blockId))
-          .filter((block): block is Block => block !== undefined);
+        // Assistant message — use the memoized per-message block array so
+        // AssistantMessage's `blocks` prop stays referentially stable.
+        const messageBlocks = blocksByMessage.get(message.id) ?? EMPTY_BLOCKS;
 
         return (
           <AssistantMessage

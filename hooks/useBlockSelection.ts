@@ -17,6 +17,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/lib/store/useStore';
 import { Card } from '@/types/card';
 
@@ -39,7 +40,7 @@ export interface UseBlockSelectionReturn {
 export function useBlockSelection(): UseBlockSelectionReturn {
   // Store state
   const selectedBlockId = useStore((state) => state.selectedBlockId);
-  const cards = useStore((state) => state.cards);
+  const cards = useStore(useShallow((state) => state.cards));
   const selectBlockAction = useStore((state) => state.selectBlock);
   const clearSelectionAction = useStore((state) => state.clearSelection);
   const addCardAction = useStore((state) => state.addCard);

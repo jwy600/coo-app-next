@@ -60,10 +60,19 @@ export async function fetchBlockAction(
       ? getTranslatePrompt(translateLanguage)
       : getBlockActionPrompt(settings.responseLanguage);
 
+  // Chained 'ask' follow-ups: send the raw question only. The block text is
+  // already carried through OpenAI's previous_response_id chain, and omitting
+  // the "Answer the question about this text..." preamble lets the model
+  // resolve the question against the prior answer when appropriate.
+  const input =
+    action === "ask" && previousResponseId
+      ? (trimmedPrompt as string)
+      : buildInput(action, trimmedBlockText, trimmedPrompt);
+
   const result = await createResponse({
     apiKey: settings.apiKey,
     model: settings.model,
-    input: buildInput(action, trimmedBlockText, trimmedPrompt),
+    input,
     instructions,
     reasoningEffort: settings.reasoningEffort,
     webSearchEnabled: settings.webSearchEnabled,

@@ -248,7 +248,19 @@ Streaming is handled by the OpenAI SDK's async iterator; the client dispatches `
 
 ### Ask-mode Q&A chain
 
-When a block is selected, the composer is in `ask` mode. Each `'ask'` call stores the returned `responseId` in `useComposer`'s `askResponseIdRef`. The next ask on the same block passes that ID as `previousResponseId`, chaining the Q&A server-side via OpenAI's `previous_response_id` so follow-up questions include prior answers as context. The chain resets whenever `selectedBlockId` changes (entering, switching, or leaving block mode). Other block actions (`translate`, `eli5`, `expand`, `example`, `rewrite`) remain one-shot and do not participate in the chain.
+When a block is selected, the composer is in `ask` mode. Each `'ask'` call stores the returned `responseId` in `useComposer`'s `askChainRef`, tagged with the block ID it belongs to. The next ask on the same block passes that ID as `previousResponseId`, chaining the Q&A server-side via OpenAI's `previous_response_id` so follow-up questions include prior answers as context.
+
+**Prompt shape:**
+- *First ask:* the preamble anchors the model on the block — `"Answer the following question about the text below.\n\nQuestion: {prompt}\n\nText:\n\n{block}"`.
+- *Chained ask:* input is the raw `{prompt}` only. The block is already carried through the server-side chain; omitting the preamble lets the model resolve the question against the prior answer when that's what the user meant.
+
+**The chain is invalidated when any of the following happens** — the server-side stored context would otherwise go stale relative to what the user sees:
+1. The selected block changes (entering, switching, or leaving block mode).
+2. The selected block's `text`, `selections`, or `isRewritten` flag changes (edit, strikethrough, rewrite, undo) while it remains selected.
+3. A response arrives after the user switched blocks mid-request — the result is dropped (neither the prompt draft nor the chain is written) to avoid leaking state into the new session.
+4. Page reload — `askChainRef` is an in-memory ref; it does not persist.
+
+Other block actions (`translate`, `eli5`, `expand`, `example`, `rewrite`) remain one-shot and do not participate in the chain.
 
 ## Export Feature
 

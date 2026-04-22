@@ -47,6 +47,17 @@ export function useComposer(): UseComposerReturn {
   // Track previous selectedBlockId to detect block switches
   const prevSelectedBlockIdRef = useRef(selectedBlockId);
 
+  // Chain of prior 'ask' responses for the current block selection.
+  // Lets follow-up questions include the last answer as context via OpenAI's
+  // previous_response_id. Tagged with blockId so in-flight responses for a
+  // prior selection can be detected and dropped. Invalidated by any change to
+  // the selected block's grounding (text/selections/rewrite state), because
+  // the stored server-side context would no longer match what the user sees.
+  const askChainRef = useRef<{
+    blockId: string;
+    responseId: string;
+  } | null>(null);
+
   // Clear prompt when switching FROM one block TO another block
   // (Not when entering block mode from chat mode, or when exiting)
   useEffect(() => {
@@ -55,6 +66,10 @@ export function useComposer(): UseComposerReturn {
 
     if (prev !== null && curr !== null && prev !== curr) {
       setPrompt('');
+    }
+
+    if (prev !== curr) {
+      askChainRef.current = null;
     }
 
     prevSelectedBlockIdRef.current = curr;
@@ -73,6 +88,17 @@ export function useComposer(): UseComposerReturn {
 
   const selectedBlock = useStore(selectSelectedBlock);
   const contentForTransform = useStore(useShallow(selectContentForTransform));
+
+  // Invalidate the ask chain whenever the selected block's grounding changes
+  // (edit, strikethrough, rewrite, undo). The chain's server-side context was
+  // built on the prior text, so follow-ups would answer against stale content.
+  const selectedBlockText = selectedBlock?.text;
+  const selectedBlockIsRewritten = selectedBlock?.isRewritten;
+  const selectedBlockSelectionsKey =
+    selectedBlock?.selections?.join(' ') ?? '';
+  useEffect(() => {
+    askChainRef.current = null;
+  }, [selectedBlockText, selectedBlockIsRewritten, selectedBlockSelectionsKey]);
   const addUserMessage = useStore((state) => state.addUserMessage);
   const addAssistantMessage = useStore((state) => state.addAssistantMessage);
   const clearSelection = useStore((state) => state.clearSelection);
@@ -144,16 +170,43 @@ export function useComposer(): UseComposerReturn {
         // Join all content blocks for transformation
         const contentText = contentForTransform.map((b) => b.text).join('\n\n');
 
+        // Capture the block the request is associated with so we can guard
+        // against the user switching/deselecting before the response returns.
+        const blockIdAtRequestTime = useStore.getState().selectedBlockId;
+
+        // Only 'ask' chains context; other actions are one-shot transforms.
+        // Chain is only valid if it belongs to the current block.
+        const previousResponseId =
+          action === 'ask' &&
+          askChainRef.current?.blockId === blockIdAtRequestTime
+            ? askChainRef.current.responseId
+            : undefined;
+
         const result = await fetchBlockAction(
           action,
           contentText,
           action === 'ask' ? prompt : undefined,
           action === 'translate' ? settings.translateLanguage : undefined,
-          settings
+          settings,
+          previousResponseId
         );
+
+        // Drop the result if the user switched blocks or deselected during the
+        // request — writing it would leak state into a different session.
+        const stillSameBlock =
+          useStore.getState().selectedBlockId === blockIdAtRequestTime;
+        if (!stillSameBlock) return;
 
         // CRITICAL: Result goes to composer (editable draft), NOT as message
         setPrompt(result.text);
+
+        // Extend the ask chain so follow-up questions carry prior context.
+        if (action === 'ask' && blockIdAtRequestTime) {
+          askChainRef.current = {
+            blockId: blockIdAtRequestTime,
+            responseId: result.responseId,
+          };
+        }
 
         // Clear error on success
         setError(null);

@@ -128,6 +128,50 @@ describe("fetchBlockAction", () => {
     expect(params.instructions).toBe("translate prompt for Spanish");
   });
 
+  it("forwards previousResponseId and drops preamble on chained ask", async () => {
+    mockCreateResponse.mockResolvedValue({
+      text: "Follow-up answer",
+      responseId: "resp-2",
+    });
+
+    const result = await fetchBlockAction(
+      "ask",
+      "block text",
+      "what is abc?",
+      undefined,
+      baseSettings,
+      "resp-1",
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.previousResponseId).toBe("resp-1");
+    expect(result.responseId).toBe("resp-2");
+    // Chained ask sends just the raw question — no preamble, no block text.
+    expect(params.input).toBe("what is abc?");
+    expect(params.input).not.toContain("Answer the following question");
+    expect(params.input).not.toContain("block text");
+  });
+
+  it("keeps the preamble on the first ask (no previousResponseId)", async () => {
+    mockCreateResponse.mockResolvedValue({
+      text: "First answer",
+      responseId: "resp-1",
+    });
+
+    await fetchBlockAction(
+      "ask",
+      "block text",
+      "what does warp mean?",
+      undefined,
+      baseSettings,
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.input).toContain("Answer the following question");
+    expect(params.input).toContain("what does warp mean?");
+    expect(params.input).toContain("block text");
+  });
+
   it("uses block action instructions for non-translate actions", async () => {
     mockCreateResponse.mockResolvedValue({
       text: "Expanded",

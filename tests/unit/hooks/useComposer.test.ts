@@ -13,6 +13,9 @@ const { mockActions, mockStreamChat, mockFetchBlockAction } = vi.hoisted(
         webSearchEnabled: false,
       },
       selectedBlockId: null as string | null,
+      selectedBlockText: "Block text content",
+      selectedBlockIsRewritten: false,
+      selectedBlockSelections: [] as string[],
       rewriteBlock: vi.fn(),
       addUserMessage: vi.fn(),
       addAssistantMessage: vi.fn(),
@@ -43,7 +46,12 @@ vi.mock("@/lib/store/useStore", () => {
     useStore: useStoreFn,
     selectSelectedBlock: (state: typeof mockActions) => {
       if (!state.selectedBlockId) return null;
-      return { id: state.selectedBlockId, text: "Block text content" };
+      return {
+        id: state.selectedBlockId,
+        text: state.selectedBlockText,
+        selections: state.selectedBlockSelections,
+        isRewritten: state.selectedBlockIsRewritten,
+      };
     },
     selectContentForTransform: (state: typeof mockActions) => {
       if (!state.selectedBlockId) return [];
@@ -85,6 +93,9 @@ describe("useComposer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockActions.selectedBlockId = null;
+    mockActions.selectedBlockText = "Block text content";
+    mockActions.selectedBlockIsRewritten = false;
+    mockActions.selectedBlockSelections = [];
     mockActions.mode = "thread";
     mockActions.activeThreadId = "t1";
     mockActions.isAwaitingResponse = false;
@@ -378,6 +389,7 @@ describe("useComposer", () => {
         mockActions.selectedBlockId = "b1";
         mockFetchBlockAction.mockResolvedValue({
           text: "AI response about block",
+          responseId: "resp-1",
         });
 
         const { result } = renderHook(() => useComposer());
@@ -396,6 +408,7 @@ describe("useComposer", () => {
           "What does this mean?",
           undefined,
           expect.any(Object),
+          undefined,
         );
         // Should NOT call streaming API
         expect(mockStreamChat).not.toHaveBeenCalled();
@@ -430,7 +443,10 @@ describe("useComposer", () => {
 
     it("calls fetchBlockAction and sets prompt to result", async () => {
       mockActions.selectedBlockId = "b1";
-      mockFetchBlockAction.mockResolvedValue({ text: "Simplified version" });
+      mockFetchBlockAction.mockResolvedValue({
+        text: "Simplified version",
+        responseId: "resp-1",
+      });
 
       const { result } = renderHook(() => useComposer());
 
@@ -444,6 +460,7 @@ describe("useComposer", () => {
         undefined,
         undefined,
         expect.any(Object),
+        undefined,
       );
       expect(result.current.prompt).toBe("Simplified version");
       expect(mockActions.setAwaitingResponse).toHaveBeenCalledWith(false);
@@ -451,7 +468,10 @@ describe("useComposer", () => {
 
     it("passes translate language for translate action", async () => {
       mockActions.selectedBlockId = "b1";
-      mockFetchBlockAction.mockResolvedValue({ text: "Translated" });
+      mockFetchBlockAction.mockResolvedValue({
+        text: "Translated",
+        responseId: "resp-1",
+      });
 
       const { result } = renderHook(() => useComposer());
 
@@ -465,12 +485,16 @@ describe("useComposer", () => {
         undefined,
         "zh-TW",
         expect.any(Object),
+        undefined,
       );
     });
 
     it("passes prompt for ask action", async () => {
       mockActions.selectedBlockId = "b1";
-      mockFetchBlockAction.mockResolvedValue({ text: "Answer" });
+      mockFetchBlockAction.mockResolvedValue({
+        text: "Answer",
+        responseId: "resp-1",
+      });
 
       const { result } = renderHook(() => useComposer());
 
@@ -488,6 +512,247 @@ describe("useComposer", () => {
         "My question",
         undefined,
         expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("chains follow-up ask with previous responseId for same block", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "warp means abc", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "abc is ...", responseId: "resp-2" });
+
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("what does warp mean?");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      act(() => {
+        result.current.setPrompt("what is abc?");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        1,
+        "ask",
+        "Block text for transform",
+        "what does warp mean?",
+        undefined,
+        expect.any(Object),
+        undefined,
+      );
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "ask",
+        "Block text for transform",
+        "what is abc?",
+        undefined,
+        expect.any(Object),
+        "resp-1",
+      );
+    });
+
+    it("does not chain previousResponseId for non-ask actions", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "answer", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "simpler", responseId: "resp-2" });
+
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("a question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      await act(async () => {
+        await result.current.handleBlockAction("eli5");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "eli5",
+        "Block text for transform",
+        undefined,
+        undefined,
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("resets ask chain when a different block is selected", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "first answer", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "second answer", responseId: "resp-2" });
+
+      const { result, rerender } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("first question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      mockActions.selectedBlockId = "b2";
+      rerender();
+
+      act(() => {
+        result.current.setPrompt("question on new block");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "ask",
+        "Block text for transform",
+        "question on new block",
+        undefined,
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("invalidates chain when the selected block's text changes (edit)", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "first answer", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "second answer", responseId: "resp-2" });
+
+      const { result, rerender } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("first question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      // Simulate the user editing the block text while it remains selected.
+      mockActions.selectedBlockText = "Block text AFTER edit";
+      mockActions.selectedBlockIsRewritten = true;
+      rerender();
+
+      act(() => {
+        result.current.setPrompt("follow-up question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      // Chain must NOT carry the stale previousResponseId into the post-edit ask.
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "ask",
+        "Block text for transform",
+        "follow-up question",
+        undefined,
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("invalidates chain when the selected block's selections change (strikethrough)", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "first answer", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "second answer", responseId: "resp-2" });
+
+      const { result, rerender } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("first question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      // Simulate a strikethrough adding a selection.
+      mockActions.selectedBlockSelections = ["phrase"];
+      rerender();
+
+      act(() => {
+        result.current.setPrompt("follow-up question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "ask",
+        "Block text for transform",
+        "follow-up question",
+        undefined,
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("drops response and preserves chain when block switches mid-request", async () => {
+      mockActions.selectedBlockId = "b1";
+      let resolveAsk: ((value: unknown) => void) | null = null;
+      mockFetchBlockAction.mockImplementationOnce(
+        () =>
+          new Promise((res) => {
+            resolveAsk = res;
+          }),
+      );
+
+      const { result, rerender } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("question on b1");
+      });
+
+      let askPromise: Promise<void>;
+      act(() => {
+        askPromise = result.current.handleBlockAction("ask");
+      });
+
+      // User switches block BEFORE the ask resolves.
+      mockActions.selectedBlockId = "b2";
+      rerender();
+
+      await act(async () => {
+        resolveAsk!({ text: "answer for b1", responseId: "resp-1" });
+        await askPromise!;
+      });
+
+      // Prompt on the new block should NOT be overwritten by b1's stale answer.
+      expect(result.current.prompt).not.toBe("answer for b1");
+
+      // Asking on b2 should start a fresh chain — no previousResponseId leaked.
+      mockFetchBlockAction.mockResolvedValueOnce({
+        text: "answer for b2",
+        responseId: "resp-2",
+      });
+      act(() => {
+        result.current.setPrompt("question on b2");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "ask",
+        "Block text for transform",
+        "question on b2",
+        undefined,
+        expect.any(Object),
+        undefined,
       );
     });
 

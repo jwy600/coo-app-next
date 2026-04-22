@@ -20,11 +20,13 @@ export const threadToMarkdown = (
   blocks: Block[]
 ): string => {
   const createdDate = new Date().toISOString().split('T')[0];
+  const firstQuestion = getFirstUserQuestion(messages, blocks);
 
   // Build YAML frontmatter
   const frontmatter = [
     '---',
     `title: "${escapeYamlString(thread.title)}"`,
+    `question: "${escapeYamlString(firstQuestion)}"`,
     `created: ${createdDate}`,
     '---',
     '',
@@ -45,6 +47,22 @@ export const threadToMarkdown = (
     .join('\n\n');
 
   return frontmatter + messageContent;
+};
+
+/**
+ * Pick the first user message and concatenate its block text.
+ * Returns an empty string if there is no user message.
+ */
+const getFirstUserQuestion = (
+  messages: Message[],
+  blocks: Block[],
+): string => {
+  const firstUser = messages.find((m) => m.role === 'user');
+  if (!firstUser) return '';
+  return getBlocksForMessage(firstUser, blocks)
+    .map((b) => b.text)
+    .join('\n\n')
+    .trim();
 };
 
 /**
@@ -107,7 +125,7 @@ export const blocksToCardMarkdown = (
   const frontmatter = [
     '---',
     `title: "${escapeYamlString(title)}"`,
-    `original question: "${escapeYamlString(originalQuestion)}"`,
+    `question: "${escapeYamlString(originalQuestion)}"`,
     `created: ${createdDate}`,
     '---',
     '',

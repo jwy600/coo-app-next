@@ -427,7 +427,7 @@ test.describe('Card Mode - Export Integration', () => {
     const content = Buffer.concat(chunks).toString('utf-8');
 
     // Verify original question is included
-    expect(content).toContain('original question: "Explain something"');
+    expect(content).toContain('question: "Explain something"');
   });
 });
 

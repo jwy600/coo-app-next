@@ -123,8 +123,8 @@ export const selectActiveThreadBlocks = (state: StoreState): Block[] => {
   const activeThread = selectActiveThread(state);
   if (!activeThread) return [];
 
-  const messageIds = activeThread.messages.map((m) => m.id);
-  return state.blocks.filter((b) => messageIds.includes(b.messageId));
+  const messageIds = new Set(activeThread.messages.map((m) => m.id));
+  return state.blocks.filter((b) => messageIds.has(b.messageId));
 };
 
 export const selectBlocksByThread =
@@ -132,6 +132,6 @@ export const selectBlocksByThread =
   (state: StoreState): Block[] => {
     const thread = state.threads.find((t) => t.id === threadId);
     if (!thread) return [];
-    const messageIds = thread.messages.map((m) => m.id);
-    return state.blocks.filter((b) => messageIds.includes(b.messageId));
+    const messageIds = new Set(thread.messages.map((m) => m.id));
+    return state.blocks.filter((b) => messageIds.has(b.messageId));
   };

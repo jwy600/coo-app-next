@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import { Message } from '@/types/message';
 import { Block } from '@/types/block';
 import { Card } from '@/types/card';
@@ -22,7 +23,7 @@ interface AssistantMessageProps {
   onUndo?: (blockId: string) => void;
 }
 
-export function AssistantMessage({
+export const AssistantMessage = memo(function AssistantMessage({
   message,
   blocks,
   selectedBlockId = null,
@@ -34,8 +35,13 @@ export function AssistantMessage({
   onRewrite,
   onUndo,
 }: AssistantMessageProps) {
-  // Filter cards to only those belonging to this message
-  const messageCards = cards.filter((c) => c.messageId === message.id);
+  // Cards only change on explicit user action, not during streaming, so
+  // memoizing keeps the BlockStack's `cards` prop referentially stable
+  // across every streaming token.
+  const messageCards = useMemo(
+    () => cards.filter((c) => c.messageId === message.id),
+    [cards, message.id],
+  );
 
   return (
     <div className="assistant-message">
@@ -53,4 +59,4 @@ export function AssistantMessage({
       />
     </div>
   );
-}
+});

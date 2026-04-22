@@ -299,7 +299,18 @@ Key files:
 - `lib/export/download.ts` — Browser download utility `downloadMarkdown(content, filename)`
 - `lib/export/exportMarkdown.ts` — Unified export dispatcher (local download or Obsidian vault)
 - `lib/export/saveToVault.ts` — Server action to save markdown to an Obsidian vault
+- `lib/export/defaultCardTitle.ts` — Pure function `computeDefaultCardTitle(threadTitle, cards, blocks)` used by the Export Cards dialog to pre-populate the filename based on card anchor headings
 - `lib/export/index.ts` — Re-exports
+
+### Export Card Dialog Default Title
+
+When the Export Cards dialog opens, the filename input is pre-populated:
+
+- If a card's **anchor block** is a heading → `"{heading text} - {thread title}"` (picks the first heading-anchored card in document order)
+- Otherwise → `{thread title}`
+- If the thread title is empty, falls back to `"Untitled"`
+
+The per-card dialog (in `CardControls.tsx`) uses the same logic scoped to that single card. Thread title updates that arrive **while the dialog is already open** do not overwrite the user's in-progress edits — the default is only applied when the dialog transitions closed → open.
 
 ### Export Destination Setting
 

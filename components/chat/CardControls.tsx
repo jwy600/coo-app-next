@@ -9,6 +9,7 @@ import {
   blocksToCardMarkdown,
   generateCardFilename,
   exportMarkdown,
+  computeDefaultCardTitle,
 } from '@/lib/export';
 import { ExportCardDialog } from './ExportCardDialog';
 import { Block } from '@/types/block';
@@ -83,6 +84,21 @@ export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps
         onOpenChange={setDialogOpen}
         onConfirm={handleExportCard}
         selectedBlockCount={blockCount}
+        defaultTitle={computeDefaultCardTitle(
+          activeThread?.title ?? '',
+          cardBlocks.length > 0
+            ? [
+                {
+                  id: cardId,
+                  messageId: cardBlocks[0].messageId,
+                  anchorBlockId: cardBlocks[0].id,
+                  blockIds: cardBlocks.map((b) => b.id),
+                  createdAt: 0,
+                },
+              ]
+            : [],
+          cardBlocks,
+        )}
       />
     </>
   );

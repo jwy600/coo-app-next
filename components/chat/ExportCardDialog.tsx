@@ -30,13 +30,15 @@ export function ExportCardDialog({
 }: ExportCardDialogProps) {
   const [title, setTitle] = useState(defaultTitle);
 
-  // Reset title when dialog opens
+  // Reset title ONLY when dialog transitions from closed → open.
+  // `defaultTitle` is intentionally omitted from deps so that thread-title
+  // updates arriving while the dialog is open do not clobber user edits.
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync title with defaultTitle when dialog opens
       setTitle(defaultTitle);
     }
-  }, [open, defaultTitle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleConfirm = () => {
     const trimmedTitle = title.trim();

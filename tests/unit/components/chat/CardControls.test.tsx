@@ -23,6 +23,7 @@ vi.mock('@/lib/export', () => ({
   blocksToCardMarkdown: (...args: unknown[]) => mockBlocksToCardMarkdown(...args),
   generateCardFilename: (...args: unknown[]) => mockGenerateCardFilename(...args),
   exportMarkdown: (...args: unknown[]) => mockExportMarkdown(...args),
+  computeDefaultCardTitle: () => 'Test Default',
 }));
 
 // Stub ExportCardDialog to capture props

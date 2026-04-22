@@ -8,7 +8,6 @@ on:
 
 jobs:
   e2e-tests:
-    if: false
     timeout-minutes: 20
     runs-on: ubuntu-latest
 
@@ -53,7 +52,7 @@ jobs:
         if: failure()
         with:
           name: playwright-report-${{ matrix.browser }}
-          path: playwright-report/
+          path: .artifacts/playwright-report/
           retention-days: 7
 
       - name: Upload test results
@@ -61,7 +60,7 @@ jobs:
         if: failure()
         with:
           name: test-results-${{ matrix.browser }}
-          path: test-results/
+          path: .artifacts/test-results/
           retention-days: 7
 
   # Optional: Run tests on multiple browsers in parallel

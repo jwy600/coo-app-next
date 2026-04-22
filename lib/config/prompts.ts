@@ -9,6 +9,7 @@ import {
   CHATGPT_PROMPT,
   BLOCK_ACTION_PROMPT,
   BLOCK_ACTION_TRANSLATE_PROMPT,
+  THREAD_TITLE_PROMPT,
 } from "./promptTemplates";
 
 type PromptName = SystemPromptFile | "block-action" | "block-action-translate";
@@ -77,6 +78,8 @@ export const getTranslatePrompt = (
     translateLanguage,
   );
 };
+
+export const getThreadTitlePrompt = (): string => THREAD_TITLE_PROMPT;
 
 /** No-op kept for test compatibility. */
 export const _clearPromptCache = (): void => {};

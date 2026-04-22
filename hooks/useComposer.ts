@@ -13,8 +13,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore, selectSelectedBlock, selectContentForTransform } from '@/lib/store/useStore';
-import { fetchBlockAction } from '@/lib/api';
-import { getLastAssistantResponseId } from '@/lib/state';
+import { fetchBlockAction, generateThreadTitle } from '@/lib/api';
+import { getLastAssistantResponseId, getThreadById } from '@/lib/state';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { useStreaming } from './useStreaming';
 import type { BlockAction } from '@/types/api';
@@ -219,9 +219,21 @@ export function useComposer(): UseComposerReturn {
 
       // Update thread title ONLY for the first message (when creating new thread)
       if (isNewThread) {
-        const threadTitle =
+        const fallbackTitle =
           trimmedPrompt.length > 50 ? trimmedPrompt.substring(0, 50) + '...' : trimmedPrompt;
-        updateThreadTitle(currentThreadId, threadTitle);
+        updateThreadTitle(currentThreadId, fallbackTitle);
+
+        // Fire AI title generation in the background — does not block streaming
+        const titleSettings = useStore.getState().settings;
+        const titleThreadId = currentThreadId;
+        void generateThreadTitle(trimmedPrompt, titleSettings).then((generatedTitle) => {
+          if (!generatedTitle) return;
+          // Guard: only apply if thread still exists and title hasn't been changed
+          const currentThread = getThreadById(useStore.getState(), titleThreadId);
+          if (!currentThread) return;
+          if (currentThread.title !== fallbackTitle) return;
+          updateThreadTitle(titleThreadId, generatedTitle);
+        });
       }
 
       // Get previous response ID for contextual chat (chains conversation)

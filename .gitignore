@@ -32,9 +32,6 @@ assets/
 .DS_Store
 Thumbs.db
 
-# Config
-data/supabaseConfig.js
-
 # local notes
 docs/
 codemaps/

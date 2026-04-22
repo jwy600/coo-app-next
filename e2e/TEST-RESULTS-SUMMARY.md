@@ -318,7 +318,7 @@ expand: {
 
 **NEXT_PUBLIC_TEST_MODE=true** with sessionStorage persistence:
 - ✅ Fast, isolated tests
-- ✅ No Supabase dependencies
+- ✅ No backend dependencies
 - ✅ Data persists across navigation (sessionStorage)
 - ✅ Cleared between test runs (sessionStorage scoped to session)
 
@@ -375,11 +375,7 @@ expand: {
    - Makes tests more resilient to CSS changes
    - Current selectors are stable but could be improved
 
-2. **Test Mode Enhancements**
-   - Consider testing with real Supabase for persistence edge cases
-   - Current sessionStorage approach works well for CI/CD
-
-3. **Additional Test Coverage**
+2. **Additional Test Coverage**
    - Add tests for edge cases (very long threads, special characters, etc.)
    - Add visual regression tests
    - Add performance benchmarks

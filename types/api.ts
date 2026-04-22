@@ -31,12 +31,6 @@ export interface BlockActionResponse {
   text: string;
 }
 
-// Config API Types
-export interface ConfigResponse {
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-}
-
 // Error Response
 export interface ApiError {
   error: string;

@@ -66,6 +66,7 @@ describe('markdownExport', () => {
       // Check frontmatter
       expect(result).toMatch(/^---\n/);
       expect(result).toContain('title: "Test Thread"');
+      expect(result).toContain('question: "Hello, how are you?"');
       expect(result).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
       expect(result).toMatch(/---\n## User/);
 
@@ -134,6 +135,7 @@ describe('markdownExport', () => {
       const result = threadToMarkdown(thread, [], []);
 
       expect(result).toContain('title: "Empty Thread"');
+      expect(result).toContain('question: ""');
       expect(result).toMatch(/---\n$/);
     });
 
@@ -246,7 +248,7 @@ describe('markdownExport', () => {
       // Check frontmatter
       expect(result).toMatch(/^---\n/);
       expect(result).toContain('title: "My Card"');
-      expect(result).toContain('original question: "What is React?"');
+      expect(result).toContain('question: "What is React?"');
       expect(result).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
       expect(result).not.toContain('type:');
       expect(result).not.toContain('blocks:');
@@ -274,16 +276,16 @@ describe('markdownExport', () => {
       const result = blocksToCardMarkdown('Single Block Card', 'How does it work?', blocks);
 
       expect(result).toContain('title: "Single Block Card"');
-      expect(result).toContain('original question: "How does it work?"');
+      expect(result).toContain('question: "How does it work?"');
       expect(result).toContain('Only block content.');
     });
 
-    it('should escape double quotes in title and original question', () => {
+    it('should escape double quotes in title and question', () => {
       const blocks: Block[] = [];
       const result = blocksToCardMarkdown('Card with "quotes"', 'What is "this"?', blocks);
 
       expect(result).toContain('title: "Card with \\"quotes\\""');
-      expect(result).toContain('original question: "What is \\"this\\"?"');
+      expect(result).toContain('question: "What is \\"this\\"?"');
     });
 
     it('should preserve code blocks', () => {

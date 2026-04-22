@@ -1,21 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
-import { fileURLToPath } from 'url';
-import path from 'path';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isLive = process.env.TEST_MODE === 'live';
-const authFile = path.join(__dirname, '.artifacts/auth-state.json');
 
 /**
  * Playwright configuration for E2E tests.
  *
  * TEST_MODE=live: Uses real OpenAI API, runs sequentially, single browser
- * Default: Uses mocked API, runs in parallel, all browsers
+ * Default: Uses mocked api.openai.com responses, runs in parallel, all browsers
+ *
+ * Auth is gone — the app is browser-only with no login. Tests seed
+ * `settings.apiKey` into localStorage via a shared fixture (see
+ * e2e/utils/test-fixtures.ts) so the composer enables immediately.
  */
 export default defineConfig({
   testDir: isLive ? './e2e/live' : './e2e/mock',
 
-  /* Output directories */
   outputDir: isLive
     ? '.artifacts/test-results-integration'
     : '.artifacts/test-results',
@@ -35,7 +34,6 @@ export default defineConfig({
   /* Higher timeout for live tests (real API calls) */
   timeout: isLive ? 60 * 1000 : 30 * 1000,
 
-  /* Reporter to use */
   reporter: [
     ['html', {
       outputFolder: isLive
@@ -45,62 +43,32 @@ export default defineConfig({
     ['list'],
   ],
 
-  /* Shared settings for all the projects below */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')` */
     baseURL: 'http://localhost:3000',
-
-    /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
-
-    /* Screenshot on failure */
     screenshot: 'only-on-failure',
-
-    /* Video on failure */
     video: 'retain-on-failure',
   },
 
-  /* Configure projects for major browsers */
   projects: isLive
     ? [
-        // Auth setup - runs first, saves auth state
-        {
-          name: 'auth-setup',
-          testMatch: /auth\.setup\.ts/,
-          testDir: './e2e',
-        },
-        // Live tests - use saved auth state
         {
           name: 'chromium',
-          use: {
-            ...devices['Desktop Chrome'],
-            storageState: authFile,
-          },
-          dependencies: ['auth-setup'],
+          use: { ...devices['Desktop Chrome'] },
         },
       ]
     : [
-        // Auth setup - logs in once (real login or test-mode passthrough)
-        {
-          name: 'auth-setup',
-          testMatch: /auth\.setup\.ts/,
-          testDir: './e2e',
-        },
-        // Mock tests - use saved auth state from setup
         {
           name: 'chromium',
-          use: { ...devices['Desktop Chrome'], storageState: authFile },
-          dependencies: ['auth-setup'],
+          use: { ...devices['Desktop Chrome'] },
         },
         {
           name: 'firefox',
-          use: { ...devices['Desktop Firefox'], storageState: authFile },
-          dependencies: ['auth-setup'],
+          use: { ...devices['Desktop Firefox'] },
         },
         {
           name: 'webkit',
-          use: { ...devices['Desktop Safari'], storageState: authFile },
-          dependencies: ['auth-setup'],
+          use: { ...devices['Desktop Safari'] },
         },
       ],
 
@@ -113,14 +81,10 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: isLive
       ? {
-          // NO test mode - use real Supabase and OpenAI
           NEXT_PUBLIC_TEST_MODE: 'false',
-          // Use real API key from environment
-          OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
         }
       : {
           NEXT_PUBLIC_TEST_MODE: 'true',
-          OPENAI_API_KEY: 'test_mock_key',
         },
   },
 });

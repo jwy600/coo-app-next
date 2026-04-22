@@ -33,11 +33,12 @@ export class LandingPage {
   }
 
   /**
-   * Wait for auth to complete and composer to become interactive
+   * Wait for the composer to become interactive.
+   * The test fixture seeds a dummy API key into localStorage so the submit
+   * button enables as soon as the store hydrates.
    */
   async waitForReady(): Promise<void> {
     await this.sendButton.waitFor({ state: 'attached' });
-    // Wait for auth loading to finish (button becomes enabled)
     await expect(this.sendButton).toBeEnabled({ timeout: 10000 });
   }
 

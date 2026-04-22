@@ -7,12 +7,13 @@ Block-based chat wiki where LLM responses are interactive semantic blocks (expan
 | What | Where |
 |------|-------|
 | Architecture overview | `docs/architecture.md` |
-| Database schema | `docs/database.md` |
 | Test patterns | `docs/testing.md` |
 | TypeScript types | `types/` |
 
 ## Tech Stack
-Next.js 16 + React 19 + TypeScript + Zustand + Tailwind + Radix UI + Supabase + OpenAI API
+Next.js 16 + React 19 + TypeScript + Zustand (localStorage persist) + Tailwind + Radix UI + OpenAI API (browser-direct).
+
+No backend. No database. No auth. The user's OpenAI API key is entered via Settings and stored in localStorage alongside threads, messages, blocks, and cards.
 
 ## Directory Map
 
@@ -42,8 +43,6 @@ lib/store/           # Zustand store (thin wrappers calling lib/state/)
 ### Components
 ```
 components/
-├── auth/            # Authentication
-│   └── LoginForm.tsx        # Email/password login form
 ├── chat/            # Core chat UI
 │   ├── MessageList.tsx      # Message rendering loop
 │   ├── AssistantMessage.tsx # AI response container
@@ -78,45 +77,28 @@ components/
 └── ui/              # shadcn/ui primitives
 ```
 
-### API Routes
+### OpenAI Integration (browser-direct)
 ```
-app/api/
-├── chat/route.ts         # POST: Chat completion (streaming SSE)
-├── block-action/route.ts # POST: Block transformations (ELI5, translate, expand)
-└── config/route.ts       # GET: Supabase config
-```
-
-### Database
-```
-lib/supabase/
-├── client.ts    # withSupabaseClient helper (browser)
-├── server.ts    # Server-side client (cookie-based auth)
-├── auth.ts      # Auth helpers (signIn, signOut)
-├── threads.ts   # Thread CRUD
-├── messages.ts  # Message CRUD
-├── blocks.ts    # Block CRUD
-├── cards.ts         # Card CRUD
-├── usersettings.ts  # User settings CRUD
-└── types.ts         # Supabase types (all include user_id)
+lib/api/
+├── openAiClient.ts  # Thin wrapper around `openai` SDK (dangerouslyAllowBrowser: true)
+├── chat.ts          # fetchChatCompletionStream — streams assistant replies
+├── blockAction.ts   # fetchBlockAction — one-shot block transforms
+└── index.ts         # Re-exports
 ```
 
 ### Other Key Locations
 ```
 hooks/               # Custom React hooks
-├── useAuth.ts       # Supabase auth state hook
 ├── useComposer.ts   # Composer logic (chat/ask/edit modes)
-├── useStreaming.ts   # SSE streaming hook
+├── useStreaming.ts  # Streaming hook (dispatches SDK callbacks into store)
 ├── useBlockSelection.ts  # Block click handling
 ├── useTextSelection.ts   # Text selection for rewrite
-├── useKeyboardShortcuts.ts
-└── useThreadSync.ts # Thread ↔ Supabase sync
-lib/api/             # Frontend API client functions
+└── useKeyboardShortcuts.ts
 lib/export/          # Markdown export utilities
 lib/rendering/       # Markdown + KaTeX + strikethrough rendering
 lib/config/          # OpenAI model settings + prompt loader
 prompts/             # System prompt .md files (language-neutral, injected at runtime)
 types/state/         # State type definitions (CoreState, UIState)
-proxy.ts             # Next.js middleware (auth session refresh)
 tests/               # Vitest unit tests
 e2e/                 # Playwright E2E tests
 ```
@@ -131,7 +113,7 @@ e2e/                 # Playwright E2E tests
 
 **Card model**: Double-click block gutter → creates card. Headings expand to include section content.
 
-**Auth**: Supabase Auth with RLS. All tables have `user_id`. `proxy.ts` handles session refresh.
+**Persistence**: Zustand `persist` middleware → localStorage. No backend, no auth. The OpenAI API key lives in `settings.apiKey` (also persisted) and is passed to the `openai` SDK directly from the browser.
 
 ## Commands
 ```bash
@@ -143,8 +125,4 @@ npm run test:e2e     # Playwright
 ```
 
 ## Environment
-```bash
-OPENAI_API_KEY=...                           # Required
-NEXT_PUBLIC_SUPABASE_URL=...                 # Optional (persistence)
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...     # Optional (persistence)
-```
+No environment variables are required. Users enter their OpenAI API key in the Settings UI; it is persisted to localStorage and read from `settings.apiKey` on every request.

@@ -3,19 +3,6 @@ import { render, screen } from "@testing-library/react";
 import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import React from "react";
 
-// Hoist mock data
-const { mockAuth } = vi.hoisted(() => ({
-  mockAuth: {
-    user: null as unknown,
-    isLoading: false,
-    isAuthenticated: true,
-  },
-}));
-
-vi.mock("@/hooks/useAuth", () => ({
-  useAuth: vi.fn(() => mockAuth),
-}));
-
 // Stub sidebar components
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarMenu: ({ children }: { children: React.ReactNode }) =>
@@ -74,13 +61,10 @@ vi.mock("@/components/settings/SettingsForm", () => ({
 describe("SettingsSheet", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAuth.isAuthenticated = true;
-    mockAuth.isLoading = false;
   });
 
   it("renders Settings button", () => {
     render(<SettingsSheet />);
-    // "Settings" appears in both button text and SheetTitle
     expect(screen.getAllByText("Settings").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByTestId("settings-btn")).toBeTruthy();
   });
@@ -90,28 +74,8 @@ describe("SettingsSheet", () => {
     expect(screen.getByTestId("settings-form")).toBeTruthy();
   });
 
-  it("renders description text", () => {
+  it("renders description text mentioning API key", () => {
     render(<SettingsSheet />);
-    expect(screen.getByText(/Configure model/)).toBeTruthy();
-  });
-
-  it("disables button when not authenticated", () => {
-    mockAuth.isAuthenticated = false;
-    render(<SettingsSheet />);
-    const btn = screen.getByTestId("settings-btn") as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
-  });
-
-  it("disables button while loading", () => {
-    mockAuth.isLoading = true;
-    render(<SettingsSheet />);
-    const btn = screen.getByTestId("settings-btn") as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
-  });
-
-  it("enables button when authenticated", () => {
-    render(<SettingsSheet />);
-    const btn = screen.getByTestId("settings-btn") as HTMLButtonElement;
-    expect(btn.disabled).toBe(false);
+    expect(screen.getByText(/API key/i)).toBeTruthy();
   });
 });

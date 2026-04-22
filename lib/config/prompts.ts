@@ -1,43 +1,25 @@
-import { readFileSync } from "fs";
-import { join } from "path";
 import type {
   ResponseLanguage,
   TranslateLanguage,
   SystemPromptFile,
 } from "@/types/settings";
 import { LANGUAGE_MAP } from "@/types/settings";
+import {
+  DEVELOPER_PROMPT,
+  CHATGPT_PROMPT,
+  BLOCK_ACTION_PROMPT,
+  BLOCK_ACTION_TRANSLATE_PROMPT,
+} from "./promptTemplates";
 
-/** Supported prompt names (chat prompts derived from SystemPromptFile + block-action variants) */
 type PromptName = SystemPromptFile | "block-action" | "block-action-translate";
 
-/** Module-scope cache: each raw template is read from disk once */
-const templateCache = new Map<string, string>();
-
-/**
- * Load a raw prompt template from prompts/{name}.md, with module-scope caching.
- * Reads synchronously on first access, returns cached value thereafter.
- */
-const loadTemplate = (name: PromptName): string => {
-  const cached = templateCache.get(name);
-  if (cached !== undefined) {
-    return cached;
-  }
-
-  const filePath = join(process.cwd(), "prompts", `${name}.md`);
-  const content = readFileSync(filePath, "utf-8").trim();
-
-  if (!content) {
-    throw new Error(`Prompt file is empty: ${filePath}`);
-  }
-
-  templateCache.set(name, content);
-  return content;
+const TEMPLATES: Record<PromptName, string> = {
+  developer: DEVELOPER_PROMPT,
+  chatgpt: CHATGPT_PROMPT,
+  "block-action": BLOCK_ACTION_PROMPT,
+  "block-action-translate": BLOCK_ACTION_TRANSLATE_PROMPT,
 };
 
-/**
- * Replace the <language></language> placeholder in a template with a language directive.
- * For English, removes the placeholder entirely (no directive needed).
- */
 export const replaceLanguageTag = (
   template: string,
   lang: ResponseLanguage,
@@ -52,34 +34,25 @@ export const replaceLanguageTag = (
   );
 };
 
-/** Get the chat system prompt for the given prompt file and language. */
 export const getChatPrompt = (
   promptFile: SystemPromptFile = "developer",
   responseLanguage: ResponseLanguage = "en",
 ): string => {
-  const template = loadTemplate(promptFile);
-  return replaceLanguageTag(template, responseLanguage);
+  return replaceLanguageTag(TEMPLATES[promptFile], responseLanguage);
 };
 
-/** Get the developer/chat system prompt for the given language. */
 export const getDeveloperPrompt = (
   responseLanguage: ResponseLanguage = "en",
 ): string => {
   return getChatPrompt("developer", responseLanguage);
 };
 
-/** Get the block action system prompt for the given language. */
 export const getBlockActionPrompt = (
   responseLanguage: ResponseLanguage = "en",
 ): string => {
-  const template = loadTemplate("block-action");
-  return replaceLanguageTag(template, responseLanguage);
+  return replaceLanguageTag(TEMPLATES["block-action"], responseLanguage);
 };
 
-/**
- * Replace the <translationlanguage></translationlanguage> placeholder with
- * the target language name. Removes the tag entirely for English.
- */
 export const replaceTranslationLanguageTag = (
   template: string,
   lang: TranslateLanguage,
@@ -96,15 +69,14 @@ export const replaceTranslationLanguageTag = (
   );
 };
 
-/** Get the system prompt for the translate action. */
 export const getTranslatePrompt = (
   translateLanguage: TranslateLanguage,
 ): string => {
-  const template = loadTemplate("block-action-translate");
-  return replaceTranslationLanguageTag(template, translateLanguage);
+  return replaceTranslationLanguageTag(
+    TEMPLATES["block-action-translate"],
+    translateLanguage,
+  );
 };
 
-/** Clear the template cache (for testing only). */
-export const _clearPromptCache = (): void => {
-  templateCache.clear();
-};
+/** No-op kept for test compatibility. */
+export const _clearPromptCache = (): void => {};

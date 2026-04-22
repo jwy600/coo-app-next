@@ -5,7 +5,7 @@ import { createThread } from '@/tests/mocks/fixtures';
 import React from 'react';
 
 // Hoist mock data
-const { mockSidebar } = vi.hoisted(() => ({
+const { mockSidebar, mockThreads } = vi.hoisted(() => ({
   mockSidebar: {
     state: 'expanded' as string,
     open: true,
@@ -15,6 +15,15 @@ const { mockSidebar } = vi.hoisted(() => ({
     setOpenMobile: vi.fn(),
     toggleSidebar: vi.fn(),
   },
+  mockThreads: { current: [] as { id: string }[] },
+}));
+
+vi.mock('@/lib/store/useStore', () => ({
+  useStore: vi.fn((selector?: (s: { threads: { id: string }[] }) => unknown) => {
+    const state = { threads: mockThreads.current };
+    if (selector) return selector(state);
+    return state;
+  }),
 }));
 
 vi.mock('@/components/ui/sidebar', () => ({
@@ -66,10 +75,11 @@ describe('AppSidebar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSidebar.state = 'expanded';
+    mockThreads.current = [];
   });
 
   it('renders sidebar structure', () => {
-    render(<AppSidebar threads={[]} />);
+    render(<AppSidebar />);
     expect(screen.getByTestId('sidebar')).toBeTruthy();
     expect(screen.getByTestId('sidebar-header')).toBeTruthy();
     expect(screen.getByTestId('sidebar-content')).toBeTruthy();
@@ -77,37 +87,37 @@ describe('AppSidebar', () => {
   });
 
   it('renders SidebarLogo', () => {
-    render(<AppSidebar threads={[]} />);
+    render(<AppSidebar />);
     expect(screen.getByTestId('logo')).toBeTruthy();
   });
 
   it('renders NewChatButton', () => {
-    render(<AppSidebar threads={[]} />);
+    render(<AppSidebar />);
     expect(screen.getByTestId('new-chat')).toBeTruthy();
   });
 
-  it('passes threads to SidebarThreadList', () => {
-    const threads = [
+  it('passes threads from store to SidebarThreadList', () => {
+    mockThreads.current = [
       createThread({ id: 't1' }),
       createThread({ id: 't2' }),
     ];
-    render(<AppSidebar threads={threads} />);
+    render(<AppSidebar />);
     expect(screen.getByTestId('thread-list').getAttribute('data-count')).toBe('2');
   });
 
   it('renders SettingsSheet in footer', () => {
-    render(<AppSidebar threads={[]} />);
+    render(<AppSidebar />);
     expect(screen.getByTestId('settings-sheet')).toBeTruthy();
   });
 
   it('shows SidebarTrigger when expanded', () => {
-    render(<AppSidebar threads={[]} />);
+    render(<AppSidebar />);
     expect(screen.getByTestId('sidebar-trigger')).toBeTruthy();
   });
 
   it('hides SidebarTrigger when collapsed', () => {
     mockSidebar.state = 'collapsed';
-    render(<AppSidebar threads={[]} />);
+    render(<AppSidebar />);
     expect(screen.queryByTestId('sidebar-trigger')).toBeNull();
   });
 });

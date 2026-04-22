@@ -64,6 +64,7 @@ export const getDefaultTranslateLanguage = (
 export type ExportDestination = "local" | "obsidian";
 
 export interface Settings {
+  apiKey: string;
   systemPromptFile: SystemPromptFile;
   model: ModelType;
   reasoningEffort: ReasoningEffort;
@@ -75,6 +76,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  apiKey: "",
   systemPromptFile: "developer",
   model: "gpt-5.4-mini",
   reasoningEffort: "none",

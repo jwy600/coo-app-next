@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Settings } from 'lucide-react';
+import { Settings } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -8,33 +8,41 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
-} from '@/components/ui/sheet';
-import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { SettingsForm, SettingsFooter } from './SettingsForm';
-import { useAuth } from '@/hooks/useAuth';
+} from "@/components/ui/sheet";
+import {
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { SettingsForm, SettingsFooter } from "./SettingsForm";
 
-export function SettingsSheet() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const isDisabled = isLoading || !isAuthenticated;
-
+export function SettingsSheet({
+  defaultOpen = false,
+}: {
+  defaultOpen?: boolean;
+}) {
   return (
-    <Sheet>
+    <Sheet defaultOpen={defaultOpen}>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SheetTrigger asChild disabled={isDisabled}>
-            <SidebarMenuButton disabled={isDisabled}>
+          <SheetTrigger asChild>
+            <SidebarMenuButton>
               <Settings className="h-4 w-4" />
               <span>Settings</span>
             </SidebarMenuButton>
           </SheetTrigger>
         </SidebarMenuItem>
       </SidebarMenu>
-      <SheetContent side="right" className="w-[320px] sm:w-[400px] flex flex-col">
+      <SheetContent
+        side="right"
+        className="w-[320px] sm:w-[400px] flex flex-col"
+      >
         <SheetHeader>
           <SheetTitle>Settings</SheetTitle>
           <SheetDescription>
-            Configure model, reasoning, and search options.
+            Enter your OpenAI API key and configure model options. Everything is
+            stored locally in your browser.
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="flex-1 pr-4">

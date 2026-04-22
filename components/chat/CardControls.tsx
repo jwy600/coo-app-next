@@ -33,7 +33,7 @@ export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps
   /**
    * Export card blocks as markdown
    */
-  const handleExportCard = async (title: string) => {
+  const handleExportCard = (title: string) => {
     if (!activeThread) return;
 
     const markdown = blocksToCardMarkdown(
@@ -42,7 +42,7 @@ export function CardControls({ cardId, cardBlocks, onRemove }: CardControlsProps
       cardBlocks
     );
     const filename = generateCardFilename(title);
-    const result = await exportMarkdown(markdown, filename, settings);
+    const result = exportMarkdown(markdown, filename, settings);
     if (settings.exportDestination === 'obsidian') {
       if (result.success) {
         toast.success('Opened in Obsidian');

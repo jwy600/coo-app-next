@@ -122,9 +122,12 @@ await chatPage.selectBlock(0);
 ### Test Mode
 
 Tests run with `NEXT_PUBLIC_TEST_MODE=true`, which:
-- Uses in-memory Zustand store instead of Supabase
-- Skips external API calls
-- Provides fast, isolated test execution
+- Uses an isolated `coo-test-storage` localStorage key so test runs don't
+  pollute real user data
+- Lets the shared fixture (`e2e/utils/test-fixtures.ts`) pre-seed a dummy
+  `settings.apiKey` so the composer enables without Settings interaction
+- Paired with mocked `api.openai.com/v1/responses` calls for deterministic,
+  offline-safe runs
 
 ## Test Files
 
@@ -275,10 +278,11 @@ See `playwright.config.ts` in the project root for:
 The prompt input uses a contenteditable div (not a textarea) to support text selection. Page objects use `evaluate()` to set text content rather than `fill()`.
 
 ### Test Mode Limitations
-In test mode (with Zustand store), some features may behave differently than in production:
-- No persistent storage (reloading page clears data)
-- No Supabase real-time updates
-- Thread list may not update without refresh
+In test mode the store persists to `coo-test-storage` instead of
+`coo-storage`, so:
+- Data is isolated from the user's real browser state
+- State survives within a test run (same tab), but tests clear between
+  specs via the seeded fixture
 
 ### Browser Differences
 Some tests may behave differently across browsers:

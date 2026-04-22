@@ -1,15 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { SettingsForm, SettingsFooter } from "@/components/settings/SettingsForm";
 import { createMockStoreState } from "@/tests/mocks/store";
-import { mockRouter, resetNavigationMock } from "@/tests/mocks/next-navigation";
-
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => mockRouter),
-}));
 
 const mockState = createMockStoreState({
   settings: {
+    apiKey: "",
     model: "gpt-5.4-mini",
     reasoningEffort: "none",
     responseLanguage: "en",
@@ -17,6 +13,7 @@ const mockState = createMockStoreState({
     webSearchEnabled: false,
     exportDestination: "local",
     obsidianVaultName: "",
+    systemPromptFile: "default",
   },
 });
 
@@ -27,21 +24,25 @@ vi.mock("@/lib/store/useStore", () => ({
   }),
 }));
 
-const mockSignOut = vi.fn();
-vi.mock("@/lib/supabase/auth", () => ({
-  signOut: (...args: unknown[]) => mockSignOut(...args),
-}));
-
 describe("SettingsForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetNavigationMock();
-    mockSignOut.mockResolvedValue({ success: true });
+  });
+
+  it("renders OpenAI API Key input", () => {
+    render(<SettingsForm />);
+    expect(screen.getByLabelText(/OpenAI API Key/i)).toBeTruthy();
+  });
+
+  it("calls updateApiKey when API key input changes", () => {
+    render(<SettingsForm />);
+    const input = screen.getByLabelText(/OpenAI API Key/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "sk-test-123" } });
+    expect(mockState.updateApiKey).toHaveBeenCalledWith("sk-test-123");
   });
 
   it("renders Model section with options", () => {
     render(<SettingsForm />);
-    // "Model" appears as section header and label
     expect(screen.getAllByText("Model").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("GPT-5.4-mini")).toBeTruthy();
     expect(screen.getByText("GPT-5.4")).toBeTruthy();
@@ -59,14 +60,6 @@ describe("SettingsForm", () => {
   it("renders Response Language section", () => {
     render(<SettingsForm />);
     expect(screen.getByText("Response Language")).toBeTruthy();
-  });
-
-  it("filters conflicting translate language options", () => {
-    render(<SettingsForm />);
-    // With responseLanguage=en, the translate options should not include "English"
-    // but should include Chinese, Spanish, French, Japanese
-    const translateSection = screen.getByText("Translation Language");
-    expect(translateSection).toBeTruthy();
   });
 
   it("renders Translation Language section", () => {
@@ -91,8 +84,6 @@ describe("SettingsForm", () => {
 describe("SettingsFooter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetNavigationMock();
-    mockSignOut.mockResolvedValue({ success: true });
   });
 
   it("renders Reset to Defaults button", () => {
@@ -104,32 +95,5 @@ describe("SettingsFooter", () => {
     render(<SettingsFooter />);
     fireEvent.click(screen.getByText("Reset to Defaults"));
     expect(mockState.resetSettings).toHaveBeenCalled();
-  });
-
-  it("renders Sign out button", () => {
-    render(<SettingsFooter />);
-    expect(screen.getByText("Sign out")).toBeTruthy();
-  });
-
-  it("calls signOut and navigates on logout", async () => {
-    render(<SettingsFooter />);
-    fireEvent.click(screen.getByText("Sign out"));
-
-    await waitFor(() => {
-      expect(mockSignOut).toHaveBeenCalled();
-      expect(mockState.reset).toHaveBeenCalled();
-      expect(mockRouter.push).toHaveBeenCalledWith("/auth/login");
-      expect(mockRouter.refresh).toHaveBeenCalled();
-    });
-  });
-
-  it('shows "Signing out..." during logout', async () => {
-    mockSignOut.mockReturnValue(new Promise(() => {})); // hang
-    render(<SettingsFooter />);
-    fireEvent.click(screen.getByText("Sign out"));
-
-    await waitFor(() => {
-      expect(screen.getByText("Signing out...")).toBeTruthy();
-    });
   });
 });

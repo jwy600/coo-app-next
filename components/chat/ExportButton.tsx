@@ -60,7 +60,7 @@ export function ExportButton() {
   /**
    * Export entire thread as markdown
    */
-  const handleExportThread = async () => {
+  const handleExportThread = () => {
     if (!activeThread) return;
 
     const markdown = threadToMarkdown(
@@ -69,14 +69,14 @@ export function ExportButton() {
       allBlocks
     );
     const filename = generateExportFilename(activeThread.title);
-    const result = await exportMarkdown(markdown, filename, settings);
+    const result = exportMarkdown(markdown, filename, settings);
     handleExportResult(result);
   };
 
   /**
    * Export all cards as a combined markdown file
    */
-  const handleExportAllCards = async (title: string) => {
+  const handleExportAllCards = (title: string) => {
     if (!activeThread) return;
 
     const markdown = blocksToCardMarkdown(
@@ -85,7 +85,7 @@ export function ExportButton() {
       allCardBlocks
     );
     const filename = generateCardFilename(title);
-    const result = await exportMarkdown(markdown, filename, settings);
+    const result = exportMarkdown(markdown, filename, settings);
     handleExportResult(result);
   };
 

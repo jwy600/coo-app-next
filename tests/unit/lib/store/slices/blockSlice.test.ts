@@ -1,22 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { useStore } from "@/lib/store/useStore";
-import * as supabaseBlocks from "@/lib/supabase/blocks";
-
-// Mock Supabase modules
-vi.mock("@/lib/supabase/threads", () => ({
-  persistThreadSnapshot: vi.fn().mockResolvedValue(undefined),
-  updateThreadMetadata: vi.fn().mockResolvedValue(undefined),
-  deleteThreadFromSupabase: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/supabase/blocks", () => ({
-  persistBlockUpdate: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/supabase/cards", () => ({
-  persistCard: vi.fn().mockResolvedValue(undefined),
-  deleteCard: vi.fn().mockResolvedValue(undefined),
-}));
 
 describe("blockSlice", () => {
   let blockId: string;
@@ -33,7 +16,6 @@ describe("blockSlice", () => {
       isAwaitingResponse: false,
       streamingMessage: null,
     });
-    vi.clearAllMocks();
 
     // Setup: create thread with an assistant block
     const store = useStore.getState();
@@ -42,7 +24,6 @@ describe("blockSlice", () => {
       { text: "Original block text", type: "paragraph" },
     ]);
     blockId = useStore.getState().blocks[0].id;
-    vi.clearAllMocks(); // Clear setup persistence calls
   });
 
   describe("rewriteBlock", () => {
@@ -53,13 +34,6 @@ describe("blockSlice", () => {
       expect(block?.text).toBe("New text");
       expect(block?.prevText).toBe("Original block text");
       expect(block?.isRewritten).toBe(true);
-    });
-
-    it("should persist rewrite to Supabase", async () => {
-      useStore.getState().rewriteBlock(blockId, "Rewritten");
-
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      expect(supabaseBlocks.persistBlockUpdate).toHaveBeenCalled();
     });
 
     it("should maintain immutability", () => {
@@ -79,16 +53,6 @@ describe("blockSlice", () => {
       const block = useStore.getState().blocks.find((b) => b.id === blockId);
       expect(block?.text).toBe("Original block text");
       expect(block?.isRewritten).toBe(false);
-    });
-
-    it("should persist undo to Supabase", async () => {
-      useStore.getState().rewriteBlock(blockId, "Rewritten text");
-      vi.clearAllMocks();
-
-      useStore.getState().undoRewrite(blockId);
-
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      expect(supabaseBlocks.persistBlockUpdate).toHaveBeenCalled();
     });
   });
 

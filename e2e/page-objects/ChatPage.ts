@@ -122,7 +122,7 @@ export class ChatPage {
 
     // Wait for API response to complete before continuing (any status code)
     const responsePromise = this.page.waitForResponse(
-      (response) => response.url().includes('/api/block-action'),
+      (response) => response.url().includes('api.openai.com/v1/responses'),
       { timeout: 10000 }
     );
 
@@ -306,7 +306,7 @@ export class ChatPage {
 
     // Wait for API response to complete before continuing
     const responsePromise = this.page.waitForResponse(
-      (response) => response.url().includes('/api/block-action') && response.status() === 200,
+      (response) => response.url().includes('api.openai.com/v1/responses') && response.status() === 200,
       { timeout: 10000 }
     );
 

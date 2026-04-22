@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../utils/test-fixtures';
 import { LandingPage } from '../page-objects/LandingPage';
 import { ChatPage } from '../page-objects/ChatPage';
 import { ApiMocker } from '../utils/api-mocks';
@@ -427,7 +427,7 @@ test.describe('Card Mode - Export Integration', () => {
     const content = Buffer.concat(chunks).toString('utf-8');
 
     // Verify original question is included
-    expect(content).toContain('original question: "Explain something"');
+    expect(content).toContain('question: "Explain something"');
   });
 });
 

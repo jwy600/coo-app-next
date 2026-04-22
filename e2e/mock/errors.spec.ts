@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../utils/test-fixtures';
 import { LandingPage } from '../page-objects/LandingPage';
 import { ChatPage } from '../page-objects/ChatPage';
 import { Composer } from '../page-objects/Composer';
@@ -87,7 +87,7 @@ test.describe('Error Handling', () => {
 
     // Wait for the API response to be intercepted
     const responsePromise = page.waitForResponse(
-      (response) => response.url().includes('/api/chat'),
+      (response) => response.url().includes('api.openai.com/v1/responses'),
       { timeout: 15000 }
     );
 

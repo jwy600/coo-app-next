@@ -35,7 +35,6 @@ export function LandingContent() {
       onPromptChange={setPrompt}
       onSubmit={handleSubmit}
       disabled={isDisabled}
-      needsApiKey={needsApiKey}
     />
   );
 }

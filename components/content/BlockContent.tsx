@@ -326,9 +326,18 @@ function renderCode(text: string, className?: string): React.ReactElement {
 
 /**
  * Main BlockContent component
- * Renders block text with appropriate formatting based on type
+ * Renders block text with appropriate formatting based on type.
+ *
+ * Memoized: during streaming every new token triggers a store update that
+ * ripples down the tree. Props here are all primitives, so the default
+ * shallow comparator is sufficient to skip re-parsing and re-rendering
+ * every finished block on every token.
  */
-export function BlockContent({ text, type, className = '' }: BlockContentProps) {
+export const BlockContent = React.memo(function BlockContent({
+  text,
+  type,
+  className = '',
+}: BlockContentProps) {
   if (!text) {
     return null;
   }
@@ -349,4 +358,4 @@ export function BlockContent({ text, type, className = '' }: BlockContentProps) 
     default:
       return <div className={className}>{text}</div>;
   }
-}
+});

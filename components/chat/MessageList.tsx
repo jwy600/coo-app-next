@@ -18,6 +18,10 @@ interface StreamingMessageData {
   blocks: BlockData[];
 }
 
+// Stable empty array so AssistantMessage's `cards` prop keeps identity
+// across streaming re-renders (new [] per render would defeat memo).
+const EMPTY_CARDS: Card[] = [];
+
 /**
  * Client Component - Container for all messages in a thread
  * Needs 'use client' for scroll handling and state
@@ -88,6 +92,35 @@ export function MessageList({
     [blocks]
   );
 
+  // Streaming message + its synthesized blocks change identity on every
+  // token otherwise, forcing AssistantMessage + BlockStack to re-render
+  // even for unchanged blocks.
+  const streamingAssistantMessage = useMemo(() => {
+    if (!streamingMessage) return null;
+    return {
+      id: streamingMessage.messageId,
+      threadId: streamingMessage.threadId,
+      role: 'assistant' as const,
+      createdAt: streamingTimestamp ?? 0,
+      content: streamingMessage.blocks.map((_, i) => ({ blockId: `stream-${i}` })),
+      meta: {},
+    };
+  }, [streamingMessage, streamingTimestamp]);
+
+  const streamingBlocks = useMemo<Block[]>(() => {
+    if (!streamingMessage) return [];
+    return streamingMessage.blocks.map((blockData, i) => ({
+      id: `stream-${i}`,
+      messageId: streamingMessage.messageId,
+      type: blockData.type,
+      text: blockData.text,
+      edited: false,
+      selections: [],
+      prevText: null,
+      isRewritten: false,
+    }));
+  }, [streamingMessage]);
+
   return (
     <div
       ref={containerRef}
@@ -124,29 +157,13 @@ export function MessageList({
       })}
 
       {/* Streaming message (in-progress response) */}
-      {streamingMessage && streamingMessage.blocks.length > 0 && (
+      {streamingAssistantMessage && streamingBlocks.length > 0 && (
         <AssistantMessage
           key="streaming"
-          message={{
-            id: streamingMessage.messageId,
-            threadId: streamingMessage.threadId,
-            role: 'assistant',
-            createdAt: streamingTimestamp ?? 0,
-            content: streamingMessage.blocks.map((_, i) => ({ blockId: `stream-${i}` })),
-            meta: {},
-          }}
-          blocks={streamingMessage.blocks.map((blockData, i) => ({
-            id: `stream-${i}`,
-            messageId: streamingMessage.messageId,
-            type: blockData.type,
-            text: blockData.text,
-            edited: false,
-            selections: [],
-            prevText: null,
-            isRewritten: false,
-          }))}
+          message={streamingAssistantMessage}
+          blocks={streamingBlocks}
           selectedBlockId={null}
-          cards={[]}
+          cards={EMPTY_CARDS}
         />
       )}
 

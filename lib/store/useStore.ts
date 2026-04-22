@@ -6,7 +6,12 @@
  */
 
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import {
+  devtools,
+  persist,
+  createJSONStorage,
+  type StateStorage,
+} from "zustand/middleware";
 import { threadSlice, ThreadSlice } from "./slices/threadSlice";
 import { blockSlice, BlockSlice } from "./slices/blockSlice";
 import { uiSlice, UISlice } from "./slices/uiSlice";
@@ -30,6 +35,69 @@ export type StoreState = AppState &
 
 const STORAGE_NAME = isTestMode() ? "coo-test-storage" : "coo-storage";
 
+/**
+ * Trailing-edge throttled localStorage wrapper.
+ *
+ * Zustand's persist middleware calls setItem on every state mutation — which
+ * during streaming means serializing the full persisted slice (threads +
+ * blocks + cards + settings) to localStorage on every token. This wrapper
+ * coalesces rapid writes to a single serialize-and-write at most once per
+ * WRITE_INTERVAL_MS, and flushes synchronously on pagehide / beforeunload
+ * so no state is lost if the tab closes mid-stream.
+ */
+const WRITE_INTERVAL_MS = 250;
+
+const createThrottledStorage = (): StateStorage => {
+  let pending: { key: string; value: string } | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = () => {
+    if (pending) {
+      try {
+        localStorage.setItem(pending.key, pending.value);
+      } catch (err) {
+        console.error("Persist flush failed:", err);
+      }
+      pending = null;
+    }
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    // pagehide fires on tab close and on back/forward cache entry; more
+    // reliable than beforeunload on modern browsers and mobile Safari.
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+  }
+
+  return {
+    getItem: (key) =>
+      typeof window === "undefined" ? null : localStorage.getItem(key),
+    setItem: (key, value) => {
+      if (typeof window === "undefined") return;
+      pending = { key, value };
+      if (!timer) {
+        timer = setTimeout(() => {
+          timer = null;
+          flush();
+        }, WRITE_INTERVAL_MS);
+      }
+    },
+    removeItem: (key) => {
+      if (typeof window === "undefined") return;
+      pending = null;
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      localStorage.removeItem(key);
+    },
+  };
+};
+
 export const useStore = create<StoreState>()(
   devtools(
     persist(
@@ -44,6 +112,7 @@ export const useStore = create<StoreState>()(
       {
         name: STORAGE_NAME,
         version: 2,
+        storage: createJSONStorage(createThrottledStorage),
         partialize: (state) => ({
           threads: state.threads,
           blocks: state.blocks,

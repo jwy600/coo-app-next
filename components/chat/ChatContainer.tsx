@@ -60,11 +60,14 @@ export function ChatContainer({ threadId }: ChatContainerProps) {
   const { captureSelection, removeSelection: removeSelectionFromHook } =
     useTextSelection(selectedBlockId);
 
-  const handleRemoveSelection = (blockId: string, index: number) => {
-    if (blockId === selectedBlockId) {
-      removeSelectionFromHook(index);
-    }
-  };
+  const handleRemoveSelection = useCallback(
+    (blockId: string, index: number) => {
+      if (blockId === selectedBlockId) {
+        removeSelectionFromHook(index);
+      }
+    },
+    [selectedBlockId, removeSelectionFromHook],
+  );
 
   useKeyboardShortcuts({
     Escape: clearSelection,
@@ -101,42 +104,45 @@ export function ChatContainer({ threadId }: ChatContainerProps) {
     }
   }, [hasSelection, setPrompt]);
 
-  const handleRewrite = async (blockId: string) => {
-    const block = blocks.find((b) => b.id === blockId);
-    if (!block) return;
+  const handleRewrite = useCallback(
+    async (blockId: string) => {
+      const block = blocks.find((b) => b.id === blockId);
+      if (!block) return;
 
-    const selectionsText = block.selections.join(", ");
+      const selectionsText = block.selections.join(", ");
 
-    if (!selectionsText) {
-      return;
-    }
+      if (!selectionsText) {
+        return;
+      }
 
-    try {
-      const { fetchBlockAction } = await import("@/lib/api");
-      const currentSettings = useStore.getState().settings;
-      const result = await fetchBlockAction(
-        "rewrite",
-        block.text,
-        selectionsText,
-        undefined,
-        currentSettings,
-      );
+      try {
+        const { fetchBlockAction } = await import("@/lib/api");
+        const currentSettings = useStore.getState().settings;
+        const result = await fetchBlockAction(
+          "rewrite",
+          block.text,
+          selectionsText,
+          undefined,
+          currentSettings,
+        );
 
-      const rewriteBlock = useStore.getState().rewriteBlock;
-      rewriteBlock(blockId, result.text);
-    } catch (error) {
-      console.error("Rewrite failed:", error);
-    }
-  };
+        const rewriteBlock = useStore.getState().rewriteBlock;
+        rewriteBlock(blockId, result.text);
+      } catch (error) {
+        console.error("Rewrite failed:", error);
+      }
+    },
+    [blocks],
+  );
 
-  const handleUndo = (blockId: string) => {
+  const handleUndo = useCallback((blockId: string) => {
     const undoRewrite = useStore.getState().undoRewrite;
     undoRewrite(blockId);
-  };
+  }, []);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     handleSubmit();
-  };
+  }, [handleSubmit]);
 
   const handleComposerModeChange = useCallback(
     (newMode: "ask" | "edit") => {

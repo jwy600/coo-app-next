@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ChatContainer } from '@/components/chat/ChatContainer';
+import { ChatContainer } from "@/components/chat/ChatContainer";
 
 interface ThreadContentProps {
   threadId: string;
@@ -9,12 +9,7 @@ interface ThreadContentProps {
 export function ThreadContent({ threadId }: ThreadContentProps) {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <ChatContainer
-        threadId={threadId}
-        initialThread={undefined}
-        initialMessages={undefined}
-        initialBlocks={undefined}
-      />
+      <ChatContainer threadId={threadId} />
     </div>
   );
 }

@@ -1,18 +1,16 @@
 /**
- * Block slice - Wraps pure block state functions
+ * Block slice - Wraps pure block state functions.
+ * Persistence is handled centrally by Zustand's persist middleware in useStore.ts.
  */
 
-import { StateCreator } from 'zustand';
-import * as stateFns from '@/lib/state';
-import { persistAsync } from '@/lib/utils/persistence';
-import { persistBlockUpdate } from '@/lib/supabase/blocks';
-import { Block } from '@/types/block';
-import { AppState } from '@/types/state';
+import { StateCreator } from "zustand";
+import * as stateFns from "@/lib/state";
+import { Block } from "@/types/block";
+import { AppState } from "@/types/state";
 
 export interface BlockSlice {
   blocks: Block[];
 
-  // Actions
   addSelection: (blockId: string, text: string) => void;
   removeSelection: (blockId: string, index: number) => void;
   clearSelections: (blockId: string) => void;
@@ -27,62 +25,36 @@ export const blockSlice: StateCreator<
   [],
   [],
   BlockSlice
-> = (set, get) => {
-  return {
-    blocks: [],
+> = (set, get) => ({
+  blocks: [],
 
-    addSelection: (blockId, text) => {
-      const result = stateFns.addSelection(get(), blockId, text);
-      set({ blocks: result.state.blocks });
+  addSelection: (blockId, text) => {
+    const result = stateFns.addSelection(get(), blockId, text);
+    set({ blocks: result.state.blocks });
+  },
 
-      if (result.block) {
-        persistAsync(() => persistBlockUpdate(result.block!), 'persist selection');
-      }
-    },
+  removeSelection: (blockId, index) => {
+    const result = stateFns.removeSelection(get(), blockId, index);
+    set({ blocks: result.state.blocks });
+  },
 
-    removeSelection: (blockId, index) => {
-      const result = stateFns.removeSelection(get(), blockId, index);
-      set({ blocks: result.state.blocks });
+  clearSelections: (blockId) => {
+    const result = stateFns.clearSelections(get(), blockId);
+    set({ blocks: result.state.blocks });
+  },
 
-      if (result.block) {
-        persistAsync(() => persistBlockUpdate(result.block!), 'persist selection removal');
-      }
-    },
+  toggleRewrite: (blockId, rewriteText) => {
+    const result = stateFns.toggleRewrite(get(), blockId, rewriteText);
+    set({ blocks: result.state.blocks });
+  },
 
-    clearSelections: (blockId) => {
-      const result = stateFns.clearSelections(get(), blockId);
-      set({ blocks: result.state.blocks });
+  rewriteBlock: (blockId, rewriteText) => {
+    const result = stateFns.rewriteBlock(get(), blockId, rewriteText);
+    set({ blocks: result.state.blocks });
+  },
 
-      if (result.block) {
-        persistAsync(() => persistBlockUpdate(result.block!), 'clear selections');
-      }
-    },
-
-    toggleRewrite: (blockId, rewriteText) => {
-      const result = stateFns.toggleRewrite(get(), blockId, rewriteText);
-      set({ blocks: result.state.blocks });
-
-      if (result.block) {
-        persistAsync(() => persistBlockUpdate(result.block!), 'persist rewrite toggle');
-      }
-    },
-
-    rewriteBlock: (blockId, rewriteText) => {
-      const result = stateFns.rewriteBlock(get(), blockId, rewriteText);
-      set({ blocks: result.state.blocks });
-
-      if (result.block) {
-        persistAsync(() => persistBlockUpdate(result.block!), 'persist rewrite');
-      }
-    },
-
-    undoRewrite: (blockId) => {
-      const result = stateFns.undoRewrite(get(), blockId);
-      set({ blocks: result.state.blocks });
-
-      if (result.block) {
-        persistAsync(() => persistBlockUpdate(result.block!), 'persist undo rewrite');
-      }
-    },
-  };
-};
+  undoRewrite: (blockId) => {
+    const result = stateFns.undoRewrite(get(), blockId);
+    set({ blocks: result.state.blocks });
+  },
+});

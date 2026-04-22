@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -15,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStore } from "@/lib/store/useStore";
-import { signOut } from "@/lib/supabase/auth";
 import {
   TRANSLATE_TO_RESPONSE_MAP,
   SYSTEM_PROMPT_OPTIONS,
@@ -69,6 +66,7 @@ const ALL_TRANSLATE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
 
 export function SettingsForm() {
   const settings = useStore((state) => state.settings);
+  const updateApiKey = useStore((state) => state.updateApiKey);
   const updateSystemPromptFile = useStore(
     (state) => state.updateSystemPromptFile,
   );
@@ -92,13 +90,29 @@ export function SettingsForm() {
     (state) => state.updateObsidianVaultName,
   );
 
-  // Filter translate options to exclude the current response language (prevents conflict)
   const filteredTranslateOptions = ALL_TRANSLATE_OPTIONS.filter(
     (opt) => TRANSLATE_TO_RESPONSE_MAP[opt.value] !== settings.responseLanguage,
   );
 
   return (
     <div className="flex flex-col gap-5 py-4">
+      <div className="space-y-2">
+        <Label htmlFor="api-key" className="text-sm font-medium">
+          OpenAI API Key
+        </Label>
+        <Input
+          id="api-key"
+          type="password"
+          autoComplete="off"
+          value={settings.apiKey}
+          onChange={(e) => updateApiKey(e.target.value)}
+          placeholder="sk-..."
+        />
+        <p className="text-xs text-muted-foreground">
+          Stored locally in your browser. Never sent to any server besides OpenAI.
+        </p>
+      </div>
+
       <div className="space-y-2">
         <Label className="text-sm font-medium">Response Language</Label>
           <Select
@@ -294,21 +308,7 @@ export function SettingsForm() {
 }
 
 export function SettingsFooter() {
-  const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const resetSettings = useStore((state) => state.resetSettings);
-  const resetStore = useStore((state) => state.reset);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    const result = await signOut();
-    if (result.success) {
-      resetStore();
-      router.push("/auth/login");
-      router.refresh();
-    }
-    setIsLoggingOut(false);
-  };
 
   return (
     <div className="space-y-3 pt-3">
@@ -316,14 +316,6 @@ export function SettingsFooter() {
       <div className="flex flex-col gap-2 px-1">
         <Button variant="outline" onClick={resetSettings} className="w-full">
           Reset to Defaults
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="w-full"
-        >
-          {isLoggingOut ? "Signing out..." : "Sign out"}
         </Button>
       </div>
     </div>

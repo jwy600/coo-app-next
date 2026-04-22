@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Sidebar,
@@ -11,29 +11,24 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { SidebarLogo } from './SidebarLogo';
-import { NewChatButton } from './NewChatButton';
-import { SidebarThreadList } from './SidebarThreadList';
-import { SettingsSheet } from '@/components/settings/SettingsSheet';
-import type { Thread } from '@/types/thread';
+} from "@/components/ui/sidebar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { SidebarLogo } from "./SidebarLogo";
+import { NewChatButton } from "./NewChatButton";
+import { SidebarThreadList } from "./SidebarThreadList";
+import { SettingsSheet } from "@/components/settings/SettingsSheet";
+import { useStore } from "@/lib/store/useStore";
 
-interface AppSidebarProps {
-  threads: Thread[];
-}
-
-export function AppSidebar({ threads }: AppSidebarProps) {
+export function AppSidebar() {
   const { state } = useSidebar();
-  const isCollapsed = state === 'collapsed';
+  const isCollapsed = state === "collapsed";
+  const threads = useStore((s) => s.threads);
 
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="flex flex-row items-center justify-between">
         <SidebarLogo />
-        {!isCollapsed && (
-          <SidebarTrigger className="h-6 w-6" />
-        )}
+        {!isCollapsed && <SidebarTrigger className="h-6 w-6" />}
       </SidebarHeader>
 
       <SidebarContent>

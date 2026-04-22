@@ -26,6 +26,16 @@ export const createInitialSettings = (): Settings => {
 };
 
 /**
+ * Update the OpenAI API key
+ */
+export const updateApiKey = (
+  settings: Settings,
+  apiKey: string,
+): Settings => {
+  return { ...settings, apiKey };
+};
+
+/**
  * Update the system prompt file
  */
 export const updateSystemPromptFile = (

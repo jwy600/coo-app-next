@@ -18,6 +18,7 @@ export interface SettingsSlice {
   settings: Settings;
 
   // Actions that wrap pure functions
+  updateApiKey: (apiKey: string) => void;
   updateSystemPromptFile: (file: SystemPromptFile) => void;
   updateModel: (model: ModelType) => void;
   updateReasoningEffort: (effort: ReasoningEffort) => void;
@@ -36,6 +37,11 @@ export const settingsSlice: StateCreator<
   SettingsSlice
 > = (set, get) => ({
   settings: settingsFns.createInitialSettings(),
+
+  updateApiKey: (apiKey) => {
+    const updated = settingsFns.updateApiKey(get().settings, apiKey);
+    set({ settings: updated });
+  },
 
   updateSystemPromptFile: (file) => {
     const updated = settingsFns.updateSystemPromptFile(get().settings, file);

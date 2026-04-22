@@ -40,13 +40,11 @@ If you want a longer write-up, check out my blog post: [ChatGPT, the Slot Machin
 
 ### Hosted Version
 
-Sign-up is currently invite-only. If you'd like access, contact **jwy600@gmail.com**.
-
-Visit **[coo-app-next.vercel.app](https://coo-app-next.vercel.app)** to try Coo.
+Visit **[coo-app-next.vercel.app](https://coo-app-next.vercel.app)** to try Coo. No sign-up required — open Settings and paste your own OpenAI API key. Your key and data stay in your browser's localStorage.
 
 ### Self-Hosted
 
-Prefer to run it yourself? Clone the repo and configure your own API keys — see [Getting Started](#getting-started) below.
+Prefer to run it yourself? Clone the repo and use your own API key — see [Getting Started](#getting-started) below.
 
 ## Tech Stack
 
@@ -68,7 +66,7 @@ Prefer to run it yourself? Clone the repo and configure your own API keys — se
 ### Install
 
 ```bash
-git clone https://github.com/jwy600/coo-app.git
+git clone https://github.com/jwy600/coo-app-next.git
 cd coo-app-next
 npm install
 ```

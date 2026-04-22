@@ -378,6 +378,7 @@ describe("useComposer", () => {
         mockActions.selectedBlockId = "b1";
         mockFetchBlockAction.mockResolvedValue({
           text: "AI response about block",
+          responseId: "resp-1",
         });
 
         const { result } = renderHook(() => useComposer());
@@ -396,6 +397,7 @@ describe("useComposer", () => {
           "What does this mean?",
           undefined,
           expect.any(Object),
+          undefined,
         );
         // Should NOT call streaming API
         expect(mockStreamChat).not.toHaveBeenCalled();
@@ -430,7 +432,10 @@ describe("useComposer", () => {
 
     it("calls fetchBlockAction and sets prompt to result", async () => {
       mockActions.selectedBlockId = "b1";
-      mockFetchBlockAction.mockResolvedValue({ text: "Simplified version" });
+      mockFetchBlockAction.mockResolvedValue({
+        text: "Simplified version",
+        responseId: "resp-1",
+      });
 
       const { result } = renderHook(() => useComposer());
 
@@ -444,6 +449,7 @@ describe("useComposer", () => {
         undefined,
         undefined,
         expect.any(Object),
+        undefined,
       );
       expect(result.current.prompt).toBe("Simplified version");
       expect(mockActions.setAwaitingResponse).toHaveBeenCalledWith(false);
@@ -451,7 +457,10 @@ describe("useComposer", () => {
 
     it("passes translate language for translate action", async () => {
       mockActions.selectedBlockId = "b1";
-      mockFetchBlockAction.mockResolvedValue({ text: "Translated" });
+      mockFetchBlockAction.mockResolvedValue({
+        text: "Translated",
+        responseId: "resp-1",
+      });
 
       const { result } = renderHook(() => useComposer());
 
@@ -465,12 +474,16 @@ describe("useComposer", () => {
         undefined,
         "zh-TW",
         expect.any(Object),
+        undefined,
       );
     });
 
     it("passes prompt for ask action", async () => {
       mockActions.selectedBlockId = "b1";
-      mockFetchBlockAction.mockResolvedValue({ text: "Answer" });
+      mockFetchBlockAction.mockResolvedValue({
+        text: "Answer",
+        responseId: "resp-1",
+      });
 
       const { result } = renderHook(() => useComposer());
 
@@ -488,6 +501,115 @@ describe("useComposer", () => {
         "My question",
         undefined,
         expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("chains follow-up ask with previous responseId for same block", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "warp means abc", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "abc is ...", responseId: "resp-2" });
+
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("what does warp mean?");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      act(() => {
+        result.current.setPrompt("what is abc?");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        1,
+        "ask",
+        "Block text for transform",
+        "what does warp mean?",
+        undefined,
+        expect.any(Object),
+        undefined,
+      );
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "ask",
+        "Block text for transform",
+        "what is abc?",
+        undefined,
+        expect.any(Object),
+        "resp-1",
+      );
+    });
+
+    it("does not chain previousResponseId for non-ask actions", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "answer", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "simpler", responseId: "resp-2" });
+
+      const { result } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("a question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      await act(async () => {
+        await result.current.handleBlockAction("eli5");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "eli5",
+        "Block text for transform",
+        undefined,
+        undefined,
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it("resets ask chain when a different block is selected", async () => {
+      mockActions.selectedBlockId = "b1";
+      mockFetchBlockAction
+        .mockResolvedValueOnce({ text: "first answer", responseId: "resp-1" })
+        .mockResolvedValueOnce({ text: "second answer", responseId: "resp-2" });
+
+      const { result, rerender } = renderHook(() => useComposer());
+
+      act(() => {
+        result.current.setPrompt("first question");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      mockActions.selectedBlockId = "b2";
+      rerender();
+
+      act(() => {
+        result.current.setPrompt("question on new block");
+      });
+      await act(async () => {
+        await result.current.handleBlockAction("ask");
+      });
+
+      expect(mockFetchBlockAction).toHaveBeenNthCalledWith(
+        2,
+        "ask",
+        "Block text for transform",
+        "question on new block",
+        undefined,
+        expect.any(Object),
+        undefined,
       );
     });
 

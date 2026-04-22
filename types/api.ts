@@ -29,6 +29,7 @@ export interface BlockActionRequest {
 
 export interface BlockActionResponse {
   text: string;
+  responseId: string;
 }
 
 // Error Response

@@ -242,9 +242,13 @@ The app has no backend route handlers for chat. Instead, the browser calls OpenA
 |--------|---------|
 | `lib/api/openAiClient.ts` | Thin wrapper around `openai` SDK (`dangerouslyAllowBrowser: true`), exposes `createResponse` and `createResponseStream` |
 | `lib/api/chat.ts` | `fetchChatCompletionStream(prompt, callbacks, threadId, previousResponseId, settings)` — streams assistant replies via callbacks |
-| `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt, translateLanguage, settings)` — one-shot transformations (ELI5, translate, expand, etc.) |
+| `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt, translateLanguage, settings, previousResponseId)` — one-shot transformations (ELI5, translate, expand, etc.); returns `{ text, responseId }` |
 
 Streaming is handled by the OpenAI SDK's async iterator; the client dispatches `onToken`, `onResponseId`, `onComplete`, and `onError` callbacks to the store.
+
+### Ask-mode Q&A chain
+
+When a block is selected, the composer is in `ask` mode. Each `'ask'` call stores the returned `responseId` in `useComposer`'s `askResponseIdRef`. The next ask on the same block passes that ID as `previousResponseId`, chaining the Q&A server-side via OpenAI's `previous_response_id` so follow-up questions include prior answers as context. The chain resets whenever `selectedBlockId` changes (entering, switching, or leaving block mode). Other block actions (`translate`, `eli5`, `expand`, `example`, `rewrite`) remain one-shot and do not participate in the chain.
 
 ## Export Feature
 

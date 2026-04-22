@@ -47,6 +47,12 @@ export function useComposer(): UseComposerReturn {
   // Track previous selectedBlockId to detect block switches
   const prevSelectedBlockIdRef = useRef(selectedBlockId);
 
+  // Chain of prior 'ask' responses for the current block session.
+  // Lets follow-up questions include the last answer as context via
+  // OpenAI's previous_response_id. Reset whenever the selected block changes
+  // (entering, switching, or leaving block mode) — chain is per-session.
+  const askResponseIdRef = useRef<string | null>(null);
+
   // Clear prompt when switching FROM one block TO another block
   // (Not when entering block mode from chat mode, or when exiting)
   useEffect(() => {
@@ -55,6 +61,10 @@ export function useComposer(): UseComposerReturn {
 
     if (prev !== null && curr !== null && prev !== curr) {
       setPrompt('');
+    }
+
+    if (prev !== curr) {
+      askResponseIdRef.current = null;
     }
 
     prevSelectedBlockIdRef.current = curr;
@@ -144,16 +154,26 @@ export function useComposer(): UseComposerReturn {
         // Join all content blocks for transformation
         const contentText = contentForTransform.map((b) => b.text).join('\n\n');
 
+        // Only 'ask' chains context; other actions are one-shot transforms.
+        const previousResponseId =
+          action === 'ask' ? askResponseIdRef.current ?? undefined : undefined;
+
         const result = await fetchBlockAction(
           action,
           contentText,
           action === 'ask' ? prompt : undefined,
           action === 'translate' ? settings.translateLanguage : undefined,
-          settings
+          settings,
+          previousResponseId
         );
 
         // CRITICAL: Result goes to composer (editable draft), NOT as message
         setPrompt(result.text);
+
+        // Extend the ask chain so follow-up questions carry prior context.
+        if (action === 'ask') {
+          askResponseIdRef.current = result.responseId;
+        }
 
         // Clear error on success
         setError(null);

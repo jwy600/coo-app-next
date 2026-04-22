@@ -40,6 +40,7 @@ export async function fetchBlockAction(
   prompt?: string,
   translateLanguage?: TranslateLanguage,
   settings?: Settings,
+  previousResponseId?: string,
 ): Promise<BlockActionResponse> {
   const trimmedBlockText = parseString(blockText);
   const trimmedPrompt = parseString(prompt);
@@ -66,7 +67,8 @@ export async function fetchBlockAction(
     instructions,
     reasoningEffort: settings.reasoningEffort,
     webSearchEnabled: settings.webSearchEnabled,
+    previousResponseId,
   });
 
-  return { text: result.text };
+  return { text: result.text, responseId: result.responseId };
 }

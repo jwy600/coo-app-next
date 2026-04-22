@@ -128,6 +128,26 @@ describe("fetchBlockAction", () => {
     expect(params.instructions).toBe("translate prompt for Spanish");
   });
 
+  it("forwards previousResponseId to createResponse for ask chain", async () => {
+    mockCreateResponse.mockResolvedValue({
+      text: "Follow-up answer",
+      responseId: "resp-2",
+    });
+
+    const result = await fetchBlockAction(
+      "ask",
+      "block text",
+      "what is abc?",
+      undefined,
+      baseSettings,
+      "resp-1",
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.previousResponseId).toBe("resp-1");
+    expect(result.responseId).toBe("resp-2");
+  });
+
   it("uses block action instructions for non-translate actions", async () => {
     mockCreateResponse.mockResolvedValue({
       text: "Expanded",

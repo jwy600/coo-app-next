@@ -65,7 +65,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       const result = await createResponse({
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         input: "Hello",
         instructions: "Be helpful",
       });
@@ -74,7 +74,7 @@ describe("openAiClient", () => {
       expect(result.responseId).toBe("resp-123");
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "gpt-5-mini",
+          model: "gpt-5.4-mini",
           input: "Hello",
           instructions: "Be helpful",
           store: true,
@@ -91,7 +91,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         input: "Continue",
         previousResponseId: "resp-1",
       });
@@ -112,7 +112,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         input: "Think hard",
         reasoningEffort: "high",
       });
@@ -133,7 +133,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         input: "Quick",
         reasoningEffort: "none",
       });
@@ -151,7 +151,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         input: "Search this",
         webSearchEnabled: true,
       });
@@ -172,7 +172,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       const result = await createResponse({
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         input: "Hello",
       });
 
@@ -187,7 +187,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await expect(
-        createResponse({ model: "gpt-5-mini", input: "Hello" }),
+        createResponse({ model: "gpt-5.4-mini", input: "Hello" }),
       ).rejects.toThrow("API rate limited");
     });
   });
@@ -219,7 +219,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5-mini", input: "Hello" },
+        { model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 
@@ -245,7 +245,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5-mini", input: "Hello" },
+        { model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 
@@ -279,7 +279,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5-mini", input: "Hello" },
+        { model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 
@@ -305,7 +305,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5-mini", input: "Hello" },
+        { model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 

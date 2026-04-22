@@ -68,7 +68,7 @@ describe("POST /api/chat", () => {
       });
 
       const settings = {
-        model: "gpt-5.2",
+        model: "gpt-5.4",
         reasoningEffort: "high",
         responseLanguage: "zh",
         webSearchEnabled: true,
@@ -78,7 +78,7 @@ describe("POST /api/chat", () => {
 
       expect(mockCreateResponse).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "gpt-5.2",
+          model: "gpt-5.4",
           input: "Hello",
           reasoningEffort: "high",
           webSearchEnabled: true,

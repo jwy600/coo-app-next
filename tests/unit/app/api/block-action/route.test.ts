@@ -218,11 +218,11 @@ describe("POST /api/block-action", () => {
         makeRequest({
           action: "eli5",
           blockText: "text",
-          settings: { model: "gpt-5.2" },
+          settings: { model: "gpt-5.4" },
         }),
       );
 
-      expect(mockCreate.mock.calls[0][0].model).toBe("gpt-5.2");
+      expect(mockCreate.mock.calls[0][0].model).toBe("gpt-5.4");
     });
   });
 

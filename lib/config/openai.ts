@@ -4,7 +4,7 @@ export interface OpenAIModelConfig {
 
 export const getOpenAIModelConfig = (): OpenAIModelConfig => {
   return {
-    model: process.env.OPENAI_MODEL || "gpt-5-mini",
+    model: process.env.OPENAI_MODEL || "gpt-5.4-mini",
   };
 };
 
@@ -21,10 +21,10 @@ const MODEL_PRICING: Record<
   string,
   { input: number; cachedInput: number; output: number }
 > = {
-  "gpt-5.2": { input: 1.75, cachedInput: 0.175, output: 14.0 },
+  "gpt-5.4": { input: 1.75, cachedInput: 0.175, output: 14.0 },
   "gpt-5.1": { input: 1.25, cachedInput: 0.125, output: 10.0 },
   "gpt-5": { input: 1.25, cachedInput: 0.125, output: 10.0 },
-  "gpt-5-mini": { input: 0.25, cachedInput: 0.025, output: 2.0 },
+  "gpt-5.4-mini": { input: 0.25, cachedInput: 0.025, output: 2.0 },
   "gpt-5-nano": { input: 0.05, cachedInput: 0.005, output: 0.4 },
 };
 

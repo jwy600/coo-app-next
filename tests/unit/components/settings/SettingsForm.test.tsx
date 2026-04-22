@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
 
 const mockState = createMockStoreState({
   settings: {
-    model: "gpt-5-mini",
+    model: "gpt-5.4-mini",
     reasoningEffort: "none",
     responseLanguage: "en",
     translateLanguage: "Chinese",

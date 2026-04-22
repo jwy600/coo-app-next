@@ -84,7 +84,7 @@ describe("fetchBlockAction", () => {
     mockApiFetch.mockResolvedValue({ text: "ok" });
 
     const settings = {
-      model: "gpt-5.2" as const,
+      model: "gpt-5.4" as const,
       reasoningEffort: "high" as const,
       responseLanguage: "en" as const,
       translateLanguage: "English" as const,

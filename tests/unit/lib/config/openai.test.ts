@@ -21,13 +21,13 @@ describe("getOpenAIModelConfig", () => {
   it("returns default model when env var not set", () => {
     delete process.env.OPENAI_MODEL;
     const config = getOpenAIModelConfig();
-    expect(config.model).toBe("gpt-5-mini");
+    expect(config.model).toBe("gpt-5.4-mini");
   });
 
   it("returns env var model when set", () => {
-    process.env.OPENAI_MODEL = "gpt-5.2";
+    process.env.OPENAI_MODEL = "gpt-5.4";
     const config = getOpenAIModelConfig();
-    expect(config.model).toBe("gpt-5.2");
+    expect(config.model).toBe("gpt-5.4");
   });
 });
 
@@ -93,8 +93,8 @@ describe("getBlockActionPrompt", () => {
 
 describe("calculateCost", () => {
   it("calculates cost for known model", () => {
-    // gpt-5-mini: input=0.25, output=2.00 per 1M tokens
-    const cost = calculateCost("gpt-5-mini", 1_000_000, 1_000_000);
+    // gpt-5.4-mini: input=0.25, output=2.00 per 1M tokens
+    const cost = calculateCost("gpt-5.4-mini", 1_000_000, 1_000_000);
     expect(cost).toBeCloseTo(0.25 + 2.0);
   });
 
@@ -103,12 +103,12 @@ describe("calculateCost", () => {
   });
 
   it("handles zero tokens", () => {
-    expect(calculateCost("gpt-5-mini", 0, 0)).toBe(0);
+    expect(calculateCost("gpt-5.4-mini", 0, 0)).toBe(0);
   });
 
   it("calculates fractional costs correctly", () => {
-    // 100 tokens of gpt-5.2: input=1.75/1M, output=14.00/1M
-    const cost = calculateCost("gpt-5.2", 100, 100);
+    // 100 tokens of gpt-5.4: input=1.75/1M, output=14.00/1M
+    const cost = calculateCost("gpt-5.4", 100, 100);
     const expected = (100 / 1_000_000) * 1.75 + (100 / 1_000_000) * 14.0;
     expect(cost).toBeCloseTo(expected);
   });

@@ -13,11 +13,6 @@ test.describe('Composer Overflow and Growth', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    // Set test mode environment variable
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
   });
 

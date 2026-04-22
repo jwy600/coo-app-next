@@ -255,6 +255,93 @@ export class ApiMocker {
   async clearMocks(): Promise<void> {
     await this.page.unroute(OPENAI_RESPONSES_URL);
   }
+
+  /**
+   * Mock the background thread-title generator call. The title generator is a
+   * non-streaming call to `gpt-5.4-mini` with a short instruction; we match by
+   * `model` in the request body so it composes with chat mocks.
+   *
+   * NOTE: `lib/api/generateThreadTitle.ts` short-circuits in test mode, so
+   * tests that exercise the title-gen flow must disable that short-circuit
+   * (e.g. seed a real-looking settings object and flip the test-mode flag
+   * off for that spec).
+   */
+  async mockTitleGeneration(title: string): Promise<void> {
+    await this.page.route(OPENAI_RESPONSES_URL, async (route: Route) => {
+      const body = route.request().postDataJSON() as {
+        model?: string;
+        stream?: boolean;
+      } | null;
+
+      if (body?.stream || body?.model !== 'gpt-5.4-mini') {
+        await route.fallback();
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: randomId(), output_text: title }),
+      });
+    });
+  }
+
+  /**
+   * Capture every OpenAI Responses API request body for later assertions
+   * (e.g. checking that a follow-up ask carries `previous_response_id`).
+   *
+   * Returns an array that is mutated in place as requests arrive.
+   */
+  captureResponseRequests(): ResponsesRequest[] {
+    const captured: ResponsesRequest[] = [];
+    this.page.on('request', (request) => {
+      if (!request.url().includes('api.openai.com/v1/responses')) return;
+      const body = request.postDataJSON() as ResponsesRequest | null;
+      if (body) captured.push(body);
+    });
+    return captured;
+  }
+
+  /**
+   * Capture `obsidian://new?…` URIs triggered by the anchor-click export flow.
+   * Installs an init script that patches `HTMLAnchorElement.prototype.click`
+   * so clicks on `obsidian:` hrefs push into `window.__OBSIDIAN_URIS__`
+   * instead of attempting navigation.
+   *
+   * Call `readCapturedObsidianUris()` to drain the queue.
+   */
+  async captureObsidianUri(): Promise<void> {
+    await this.page.addInitScript(() => {
+      (window as unknown as { __OBSIDIAN_URIS__: string[] }).__OBSIDIAN_URIS__ = [];
+      const original = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () {
+        if (this.href?.startsWith('obsidian:')) {
+          (
+            window as unknown as { __OBSIDIAN_URIS__: string[] }
+          ).__OBSIDIAN_URIS__.push(this.href);
+          return;
+        }
+        return original.call(this);
+      };
+    });
+  }
+
+  async readCapturedObsidianUris(): Promise<string[]> {
+    return await this.page.evaluate(
+      () =>
+        (window as unknown as { __OBSIDIAN_URIS__?: string[] })
+          .__OBSIDIAN_URIS__ ?? [],
+    );
+  }
+}
+
+export interface ResponsesRequest {
+  model?: string;
+  input?: string;
+  instructions?: string;
+  stream?: boolean;
+  previous_response_id?: string | null;
+  [key: string]: unknown;
 }
 
 const ACTION_MARKERS: Record<BlockAction, (input: string) => boolean> = {

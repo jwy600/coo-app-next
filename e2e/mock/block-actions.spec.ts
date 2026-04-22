@@ -13,11 +13,6 @@ test.describe('Block Actions', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    // Set test mode
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     // Create a thread with initial content
     await landingPage.goto();
     await apiMocker.mockChatSuccess(MOCK_RESPONSES.chat.multiBlock);

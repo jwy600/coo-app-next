@@ -26,10 +26,6 @@ test.describe('Direct Edit - Toggle Visibility', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
     await apiMocker.mockChatSuccess(SIMPLE_RESPONSE);
     await landingPage.submitFirstPrompt('Explain React');
@@ -77,10 +73,6 @@ test.describe('Direct Edit - Mode Switching', () => {
     landingPage = new LandingPage(page);
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
-
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
 
     await landingPage.goto();
     await apiMocker.mockChatSuccess(SIMPLE_RESPONSE);
@@ -159,10 +151,6 @@ test.describe('Direct Edit - Block Replacement', () => {
     landingPage = new LandingPage(page);
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
-
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
 
     await landingPage.goto();
     await apiMocker.mockChatSuccess(SIMPLE_RESPONSE);
@@ -250,10 +238,6 @@ test.describe('Direct Edit - Strikethrough', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
     await apiMocker.mockChatSuccess(SIMPLE_RESPONSE);
     await landingPage.submitFirstPrompt('Explain React');
@@ -301,10 +285,6 @@ test.describe('Direct Edit - Edge Cases', () => {
     landingPage = new LandingPage(page);
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
-
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
 
     await landingPage.goto();
     await apiMocker.mockChatSuccess(SIMPLE_RESPONSE);

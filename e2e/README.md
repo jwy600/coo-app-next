@@ -1,187 +1,125 @@
 # E2E Testing with Playwright
 
-This directory contains end-to-end tests for the Coo block-based AI chat application using Playwright.
+End-to-end tests for Coo. Two suites:
 
-## 🎯 Current Status
+- **`e2e/mock/`** — default. Intercepts OpenAI Responses API calls at the HTTP
+  boundary; no network, no API key, runs in parallel across Chromium, Firefox,
+  WebKit.
+- **`e2e/live/`** — opt-in smoke tests that hit real OpenAI. Runs only when
+  `TEST_MODE=live` is set; sequential, single browser, higher timeouts.
 
-**✅ Core Functionality: 100% Passing (19/19 tests)**
-- All chat-basic tests passing (5/5)
-- All block-actions tests passing (8/8)
-- All keyboard tests passing (6/6)
+## Quick start
 
-**✅ Text Selection & Rewrite: 100% Passing (8/8 tests)**
-
-**✅ Error Handling: 87.5% Passing (7/8 tests)**
-
-**✅ Thread Navigation: 100% Passing (5/5 tests)**
-
-**📊 Overall: 97.5% Passing (39/40 verified tests)**
-
-See [TEST-RESULTS-SUMMARY.md](./TEST-RESULTS-SUMMARY.md) for detailed results.
-
-## Overview
-
-The E2E test suite automates critical user flows to ensure the application works correctly in real browsers. Tests use API mocking for fast, deterministic execution without requiring OpenAI API calls.
-
-**Test Coverage:** 6 test files with 40 tests covering:
-- ✅ Basic chat functionality (100% passing)
-- ✅ Block selection and transformations (100% passing)
-- ✅ Keyboard shortcuts (100% passing)
-- ✅ Text selection and rewrite (100% passing)
-- ✅ Error handling (87.5% passing)
-- ✅ Thread navigation and persistence (100% passing)
-
-## Quick Start
-
-### Run All Tests
 ```bash
-npm run test:e2e
+npm run test:e2e              # mock suite
+npm run test:e2e:ui           # mock suite in UI mode
+npm run test:e2e:debug        # mock suite in debug mode
+npm run test:e2e:report       # view last HTML report
+TEST_MODE=live npm run test:e2e   # real OpenAI API
 ```
 
-**Note:** For best reliability, run tests sequentially to avoid resource contention:
+Run a single file:
 ```bash
-npx playwright test --project=chromium --workers=1
+npx playwright test chat-basic --project=chromium
 ```
 
-### Run Tests in UI Mode (Recommended for Development)
-```bash
-npm run test:e2e:ui
-```
-
-### Run Tests in Debug Mode
-```bash
-npm run test:e2e:debug
-```
-
-### Run Specific Test File
-```bash
-npx playwright test chat-basic.spec.ts
-```
-
-### Run Tests in a Specific Browser
-```bash
-npx playwright test --project=chromium
-npx playwright test --project=firefox
-npx playwright test --project=webkit
-```
-
-## Directory Structure
+## Directory layout
 
 ```
 e2e/
-├── README.md                     # This file
-├── page-objects/                 # Page Object Models (POMs)
-│   ├── LandingPage.ts           # Landing page interactions
-│   ├── ChatPage.ts              # Chat/thread page interactions
-│   └── Composer.ts              # Composer component interactions
-├── utils/                        # Test utilities
-│   └── api-mocks.ts             # API mocking utilities
-├── fixtures/                     # Test data (optional)
-└── tests/                        # Test specs
-    ├── chat-basic.spec.ts       # P0: Basic chat functionality
-    ├── block-actions.spec.ts    # P0: Block transformations
-    ├── text-selection.spec.ts   # P1: Text selection & rewrite
-    ├── thread-nav.spec.ts       # P1: Thread navigation
-    ├── errors.spec.ts           # P2: Error handling
-    └── keyboard.spec.ts         # P2: Keyboard shortcuts
+├── README.md
+├── mock/                       # Mocked API specs (default)
+│   ├── chat-basic.spec.ts
+│   ├── block-actions.spec.ts
+│   ├── block-selection.spec.ts
+│   ├── card-mode.spec.ts
+│   ├── direct-edit.spec.ts
+│   ├── text-selection.spec.ts
+│   ├── thread-nav.spec.ts
+│   ├── composer-overflow.spec.ts
+│   ├── keyboard.spec.ts
+│   └── errors.spec.ts
+├── live/                       # Real-API smoke specs (opt-in)
+│   ├── chat-real.spec.ts
+│   └── block-actions-real.spec.ts
+├── page-objects/               # Page Object Models
+│   ├── LandingPage.ts
+│   ├── ChatPage.ts             # Façade — composes the POMs below
+│   ├── BlockActionsPO.ts       # ELI5/Translate/Expand/Example/Ask
+│   ├── SelectionPO.ts          # Composer text selection + rewrite/undo
+│   ├── CardModePO.ts           # Double-click gutter → card
+│   ├── EditModePO.ts           # Ask/Edit toggle, Replace
+│   ├── ExportDialogPO.ts       # Export Card dialog
+│   ├── SettingsSheetPO.ts      # Settings sheet (API key, model, prompt)
+│   ├── ApiKeyBannerPO.ts       # Sticky "add API key" banner
+│   ├── SidebarPO.ts            # Thread list + delete
+│   └── Composer.ts             # Standalone composer helper
+└── utils/
+    ├── test-fixtures.ts        # Playwright fixture: seeds API key + test mode
+    └── api-mocks.ts            # ApiMocker + MOCK_RESPONSES
 ```
 
-## Key Features
+## Test fixture
 
-### API Mocking
+`e2e/utils/test-fixtures.ts` extends `@playwright/test` with a `page` fixture
+that, on every test, does one `page.addInitScript` to:
 
-All tests use API mocking to avoid hitting the real OpenAI API. This provides:
-- **Fast execution** (no network latency)
-- **Deterministic results** (no AI variability)
-- **No API costs** (no OpenAI charges)
-- **Offline testing** (no internet required)
+1. Flip the app into test mode (`window.__TEST_MODE__ = true`), so the store
+   persists to `coo-test-storage` instead of `coo-storage`.
+2. Pre-seed `settings.apiKey` into that storage so the composer enables
+   without any Settings interaction.
 
-Example:
-```typescript
+**Do not** duplicate this init in individual specs — the fixture handles it.
+
+In live mode (`TEST_MODE=live`) the fixture seeds the real `coo-storage` key
+with `process.env.OPENAI_API_KEY`.
+
+## Page Object Model
+
+Tests talk to the app through POMs. Prefer the focused sub-POMs on
+`ChatPage` over generic method names:
+
+```ts
+await chatPage.selection.selectInComposer('component-based');
+await chatPage.cards.createCard(0);
+await chatPage.editMode.clickEdit();
+await chatPage.exportDialog.confirm('My Note');
+```
+
+`ChatPage` also exposes legacy façade methods (`selectTextInComposer`,
+`createCard`, `clickEditMode`, `confirmExport`, …) that delegate to the
+sub-POM, so older specs continue to work.
+
+## Mocking OpenAI
+
+All mock-suite tests intercept `https://api.openai.com/v1/responses`:
+
+```ts
 import { ApiMocker, MOCK_RESPONSES } from '../utils/api-mocks';
 
 const apiMocker = new ApiMocker(page);
 await apiMocker.mockChatSuccess(MOCK_RESPONSES.chat.simple);
+await apiMocker.mockAllBlockActions();
 ```
 
-### Page Object Model (POM)
+Additional helpers for features added after the initial suite:
 
-Tests use the Page Object Model pattern for maintainable, reusable code:
+- `mockTitleGeneration(title)` — background thread-title gen (`gpt-5.4-mini`).
+- `captureResponseRequests()` — records every Responses API request body so
+  you can assert ask-chain `previous_response_id` threading.
+- `captureObsidianUri()` + `readCapturedObsidianUris()` — patches
+  `HTMLAnchorElement.prototype.click` so `obsidian://new?…` navigations land
+  in `window.__OBSIDIAN_URIS__` instead of the browser's protocol handler.
 
-```typescript
-import { LandingPage } from '../page-objects/LandingPage';
-import { ChatPage } from '../page-objects/ChatPage';
+## Writing a new spec
 
-const landingPage = new LandingPage(page);
-const chatPage = new ChatPage(page);
-
-await landingPage.submitFirstPrompt('Explain React');
-await chatPage.selectBlock(0);
-```
-
-### Test Mode
-
-Tests run with `NEXT_PUBLIC_TEST_MODE=true`, which:
-- Uses an isolated `coo-test-storage` localStorage key so test runs don't
-  pollute real user data
-- Lets the shared fixture (`e2e/utils/test-fixtures.ts`) pre-seed a dummy
-  `settings.apiKey` so the composer enables without Settings interaction
-- Paired with mocked `api.openai.com/v1/responses` calls for deterministic,
-  offline-safe runs
-
-## Test Files
-
-### chat-basic.spec.ts (P0)
-Tests fundamental chat functionality:
-- Creating new threads
-- Sending messages
-- Parsing markdown responses
-- Multiple message exchanges
-
-### block-actions.spec.ts (P0)
-Tests block transformation features:
-- Block selection
-- ELI5, Translate, Expand, Example actions
-- Deselection with Escape key
-
-### text-selection.spec.ts (P1)
-Tests text selection and rewrite:
-- Highlighting text within blocks
-- Creating selection chips
-- Rewriting blocks with selections
-- Undo/redo functionality
-
-### thread-nav.spec.ts (P1)
-Tests navigation and persistence:
-- Navigating between threads
-- Thread list updates
-- State preservation across navigation
-
-### errors.spec.ts (P2)
-Tests error handling:
-- API errors
-- Validation errors
-- Error recovery
-- Missing API key scenarios
-
-### keyboard.spec.ts (P2)
-Tests keyboard shortcuts:
-- Enter to submit
-- Escape to deselect
-- Ctrl/Cmd+Enter for text capture
-- Shift+Enter for multiline input
-
-## Writing New Tests
-
-### Basic Test Structure
-
-```typescript
-import { test, expect } from '@playwright/test';
+```ts
+import { test, expect } from '../utils/test-fixtures';
 import { LandingPage } from '../page-objects/LandingPage';
 import { ChatPage } from '../page-objects/ChatPage';
 import { ApiMocker, MOCK_RESPONSES } from '../utils/api-mocks';
 
-test.describe('Feature Name', () => {
+test.describe('Feature X', () => {
   let landingPage: LandingPage;
   let chatPage: ChatPage;
   let apiMocker: ApiMocker;
@@ -190,125 +128,48 @@ test.describe('Feature Name', () => {
     landingPage = new LandingPage(page);
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
-
-    // Set test mode
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
   });
 
-  test('should do something', async ({ page }) => {
-    // Mock API response
+  test('does the thing', async ({ page }) => {
     await apiMocker.mockChatSuccess(MOCK_RESPONSES.chat.simple);
-
-    // Perform actions
-    await landingPage.submitFirstPrompt('Test prompt');
-
-    // Verify results
-    await expect(page).toHaveURL(/\/t\/.+/);
+    await landingPage.submitFirstPrompt('Explain React');
+    await page.waitForURL(/\/t\/.+/);
+    await chatPage.waitForResponse();
+    // ...
   });
 });
 ```
 
-### Best Practices
+### Conventions
 
-1. **Use Page Objects**: Don't access page elements directly in tests
-2. **Mock All APIs**: Use `ApiMocker` for all API calls
-3. **Wait for State**: Use `waitForResponse()`, `waitForURL()`, etc.
-4. **Descriptive Names**: Test names should clearly describe what they test
-5. **Independent Tests**: Each test should be able to run in isolation
-6. **Clean Data**: Don't rely on data from previous tests
+- Use POMs — don't reach into DOM selectors from tests.
+- Use semantic waits (`waitForResponse`, `waitForURL`, `expect.poll`) over
+  `waitForTimeout`.
+- One thing per test. Independent tests.
 
-## Debugging Failed Tests
+## Known quirks
 
-### View Test Report
-```bash
-npm run test:e2e:report
-```
+- **Contenteditable composer.** `div#prompt` is contenteditable, not a
+  `<textarea>`. POMs use `pressSequentially` for short text and direct
+  `textContent` assignment for long text.
+- **Gutter click delay.** Gutter single-click has a 200ms delay to
+  disambiguate from the card-creating double-click — `selectBlock` accounts
+  for this.
+- **WebKit pointer interception.** `clickCardClear` / `clickCardExport` use
+  `dispatchEvent('click')` because WebKit intermittently reports the button
+  as overlapped.
+- **Auto title generation is skipped in test mode.** `lib/api/generateThreadTitle.ts`
+  returns `null` when `window.__TEST_MODE__` is set. Specs that exercise the
+  title flow must opt out explicitly.
 
-### Check Screenshots
-Failed tests automatically capture screenshots in `test-results/`
+## CI
 
-### Watch Videos
-Failed tests record videos in `test-results/`
+The GitHub Actions workflow is currently disabled (see commit
+`chore: disable E2E workflow on GitHub CI`). Re-enable once Phase 4
+stability work lands.
 
-### Use UI Mode
-```bash
-npm run test:e2e:ui
-```
-UI mode provides:
-- Time-travel debugging
-- Step-by-step execution
-- DOM inspector
-- Network activity viewer
+## References
 
-### Debug Mode
-```bash
-npm run test:e2e:debug
-```
-Opens Playwright Inspector for step-by-step debugging
-
-## CI/CD Integration
-
-Tests run automatically on:
-- Every push to `main` or `develop`
-- Every pull request
-
-See `.github/workflows/e2e-tests.yml` for configuration.
-
-### CI Environment Variables
-- `NEXT_PUBLIC_TEST_MODE=true`
-- `OPENAI_API_KEY=test_mock_key`
-- `CI=true` (enables retries and single-worker mode)
-
-## Configuration
-
-See `playwright.config.ts` in the project root for:
-- Test directory location
-- Browsers to test (Chromium, Firefox, WebKit)
-- Retry strategy (2 retries on CI, 0 locally)
-- Timeout settings
-- Dev server configuration
-
-## Known Issues & Limitations
-
-### Contenteditable Input
-The prompt input uses a contenteditable div (not a textarea) to support text selection. Page objects use `evaluate()` to set text content rather than `fill()`.
-
-### Test Mode Limitations
-In test mode the store persists to `coo-test-storage` instead of
-`coo-storage`, so:
-- Data is isolated from the user's real browser state
-- State survives within a test run (same tab), but tests clear between
-  specs via the seeded fixture
-
-### Browser Differences
-Some tests may behave differently across browsers:
-- Text selection behavior varies
-- Keyboard shortcuts (Cmd vs Ctrl)
-- CSS rendering differences
-
-## Troubleshooting
-
-### Tests Timeout
-- Increase timeout in playwright.config.ts
-- Check if dev server is running properly
-- Verify API mocks are set up correctly
-
-### Selector Not Found
-- Check if element exists in DOM
-- Verify selector matches actual HTML
-- Use UI mode to inspect page state
-
-### Flaky Tests
-- Add explicit waits (`waitForSelector()`)
-- Increase timeout for specific assertions
-- Check for race conditions in test logic
-
-## Resources
-
-- [Playwright Documentation](https://playwright.dev/docs/intro)
-- [Best Practices](https://playwright.dev/docs/best-practices)
-- [API Reference](https://playwright.dev/docs/api/class-playwright)
+- [Playwright docs](https://playwright.dev/docs/intro)
+- [Playwright best practices](https://playwright.dev/docs/best-practices)

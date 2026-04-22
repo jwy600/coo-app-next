@@ -37,10 +37,6 @@ test.describe('Card Mode - Basic Operations', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
     await apiMocker.mockChatSuccess(CARD_RESPONSE);
     await landingPage.submitFirstPrompt('Explain something');
@@ -162,10 +158,6 @@ test.describe('Card Mode - Card Controls', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
     await apiMocker.mockChatSuccess(CARD_RESPONSE);
     await landingPage.submitFirstPrompt('Explain something');
@@ -278,10 +270,6 @@ test.describe('Card Mode - Persistence and Thread Navigation', () => {
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
 
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
-
     await landingPage.goto();
   });
 
@@ -343,10 +331,6 @@ test.describe('Card Mode - Export Integration', () => {
     landingPage = new LandingPage(page);
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
-
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
 
     await landingPage.goto();
     await apiMocker.mockChatSuccess(CARD_RESPONSE);
@@ -437,10 +421,6 @@ test.describe('Card Mode - Card and Selection Independence', () => {
     landingPage = new LandingPage(page);
     chatPage = new ChatPage(page);
     apiMocker = new ApiMocker(page);
-
-    await page.addInitScript(() => {
-      (window as any).__TEST_MODE__ = true;
-    });
 
     await landingPage.goto();
     await apiMocker.mockChatSuccess(CARD_RESPONSE);

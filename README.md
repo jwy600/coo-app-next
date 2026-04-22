@@ -34,8 +34,7 @@ If you want a longer write-up, check out my blog post: [ChatGPT, the Slot Machin
 - **Cards**: collect blocks into cards as visual anchors, then export to your PKM system
 - **Obsidian export**: save exports directly to an Obsidian vault folder on disk (or use browser download)
 - **Response language**: set preferred response language (English or Chinese) for AI outputs
-- **Multi-user auth**: Supabase Auth with Row Level Security for data isolation
-- **Local-first or database-backed**: works with localStorage, or with Supabase for persistence
+- **Browser-only**: no server, no database, no account — your API key and data stay in your browser (localStorage)
 
 ## Try Coo
 
@@ -53,10 +52,9 @@ Prefer to run it yourself? Clone the repo and configure your own API keys — se
 
 - **Framework**: Next.js 16 + React 19
 - **Language**: TypeScript (strict)
-- **State**: Zustand (with persistence)
+- **State**: Zustand (with localStorage persistence)
 - **UI**: Tailwind CSS + Radix UI
-- **AI**: OpenAI API (GPT-5.2, GPT-5-mini)
-- **DB**: Supabase (PostgreSQL)
+- **AI**: OpenAI API (GPT-5.4, GPT-5.4-mini) — called directly from the browser
 - **Tests**: Vitest + Playwright
 
 ## Getting Started
@@ -65,7 +63,7 @@ Prefer to run it yourself? Clone the repo and configure your own API keys — se
 
 - Node.js 18+
 - npm or yarn
-- OpenAI API key
+- OpenAI API key (entered in the Settings UI, not via env vars)
 
 ### Install
 
@@ -77,49 +75,9 @@ npm install
 
 ### Configure
 
-Create a `.env.local` in the project root:
+No environment variables are required to run the app. On first launch, open **Settings** (gear icon in the sidebar) and paste your OpenAI API key. The key is stored in your browser's localStorage and sent directly to OpenAI from the browser — it never touches a backend.
 
-```env
-# Required
-OPENAI_API_KEY=your_openai_api_key
-# Optional (persistence)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_key
-```
-
-Coo works with or without Supabase:
-- **With Supabase**: threads, messages, cards, and blocks are persisted (notes are ephemeral for now)
-- **Without Supabase**: data is stored in localStorage — export periodically if you want to keep long-term notes
-
-#### Supabase Setup (Optional)
-By default, Coo works without a database (data is stored in memory and lost on refresh). For persistent storage, set up Supabase:
-
-Create a Supabase project at supabase.com
-
-##### Run the database schema
-
-Go to your Supabase dashboard
-
-Navigate to SQL Editor
-
-Copy the contents of supabase/schema.sql
-
-Paste and click Run to create the required tables
-
-##### Get your credentials
-
-Go to Project Settings → API
-
-Copy the Project URL → use as NEXT_PUBLIC_SUPABASE_URL
-
-Copy the anon/public key → use as NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-
-Add to your .env.local:
-
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key
-
-The app will automatically detect Supabase configuration and enable persistence.
+Threads, messages, blocks, and cards are also persisted to localStorage. Export periodically if you want long-term notes.
 
 ### Run
 
@@ -202,11 +160,8 @@ Each card has its own **export** and **clear** actions.
 ```
 coo-app-next/
 ├── app/                    # Next.js app directory
-│   ├── api/               # API routes (chat, block-action, config)
-│   ├── auth/login/        # Login page
 │   └── t/[threadId]/      # Thread detail pages
 ├── components/            # React components
-│   ├── auth/             # Login form
 │   ├── chat/             # Chat UI (messages, blocks, controls)
 │   ├── composer/         # Message input + Ask/Edit toggle
 │   ├── content/          # Block content rendering (markdown, math)
@@ -214,16 +169,14 @@ coo-app-next/
 │   ├── settings/         # Settings dialog
 │   ├── landing/          # Landing page
 │   └── ui/               # Radix UI wrappers
-├── hooks/                 # Custom React hooks (auth, composer, streaming)
+├── hooks/                 # Custom React hooks (composer, streaming)
 ├── lib/
 │   ├── state/            # Pure state transformations (CRITICAL)
-│   ├── store/            # Zustand store + slices
-│   ├── api/              # API utilities
-│   ├── supabase/         # Database operations + auth
+│   ├── store/            # Zustand store + slices (localStorage persist)
+│   ├── api/              # Browser-side OpenAI client + prompt pipelines
 │   ├── rendering/        # Markdown + KaTeX rendering
 │   ├── export/           # Markdown export
 │   └── config/           # OpenAI settings + i18n prompts
-├── proxy.ts               # Auth middleware (session refresh)
 ├── types/                 # TypeScript definitions
 ├── tests/                 # Unit & integration tests
 └── e2e/                   # Playwright E2E tests

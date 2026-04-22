@@ -2,26 +2,19 @@
 
 ## Stack
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
-- **Zustand** for state management
-- **Supabase** (PostgreSQL + Auth) for persistence and authentication
+- **Zustand** for state management (localStorage persistence via `persist` middleware)
 - **shadcn/ui** + **Tailwind CSS** for UI
-- **OpenAI API** for AI features
+- **OpenAI API** for AI features — called directly from the browser using the user's API key
+
+There is no backend server and no database. All data (threads, messages, blocks, cards, settings) lives in the user's browser localStorage. The user's OpenAI API key is entered in the Settings UI and stored in localStorage alongside everything else.
 
 ## Project Structure
 ```
 app/                    # Next.js App Router
 ├── layout.tsx          # Root layout
-├── page.tsx            # Landing page (server component)
+├── page.tsx            # Landing page
 ├── globals.css         # Tailwind + CSS variables
-├── t/[threadId]/       # Thread detail pages
-├── auth/               # Authentication pages
-│   └── login/          # Login page
-└── api/                # Route handlers
-    ├── chat/           # POST - streaming & non-streaming
-    ├── block-action/   # POST - block transformations
-    └── config/         # GET - Supabase config
-
-proxy.ts               # Auth middleware (session refresh, auth page redirect)
+└── t/[threadId]/       # Thread detail pages
 
 prompts/                        # System prompt templates (language-neutral .md files)
 ├── developer.md                # Knowledge Assistant chat prompt (thorough explanations)
@@ -31,26 +24,24 @@ prompts/                        # System prompt templates (language-neutral .md 
 
 components/
 ├── ui/                 # shadcn/ui components
-├── auth/               # Auth forms (LoginForm)
 ├── chat/               # Message UI (AssistantMessage, BlockStack, DeleteThreadButton, etc.)
 ├── composer/           # Message input (Composer, BlockModeToggle, PromptInput)
 ├── content/            # Content rendering (BlockContent, Math)
 ├── sidebar/            # Navigation (AppSidebar, NewChatButton, ThreadList)
-├── settings/           # Settings UI
+├── settings/           # Settings UI (including OpenAI API key input)
 ├── landing/            # Landing page components
 └── layout/             # Layout wrappers
 
 lib/
 ├── state/              # Pure state functions (CRITICAL)
-├── store/              # Zustand store + slices
-├── api/                # API client functions
-├── supabase/           # Database operations
+├── store/              # Zustand store + slices (localStorage persist)
+├── api/                # Browser-side OpenAI client (openAiClient.ts) + chat/block-action pipelines
 ├── rendering/          # Markdown, KaTeX rendering
 ├── config/             # OpenAI settings + prompt loader (prompts.ts)
 ├── export/             # Markdown export utilities
 └── utils/              # Helpers (cn, validation, etc.)
 
-hooks/                  # Custom React hooks (useAuth, useComposer, useStreaming, etc.)
+hooks/                  # Custom React hooks (useComposer, useStreaming, etc.)
 types/                  # TypeScript definitions
 tests/                  # Vitest tests
 e2e/                    # Playwright tests
@@ -243,15 +234,17 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 ```
 
-## API Endpoints
+## OpenAI Integration
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/chat` | POST | Chat completion (supports streaming) |
-| `/api/block-action` | POST | Block transformations |
-| `/api/config` | GET | Supabase config |
+The app has no backend route handlers for chat. Instead, the browser calls OpenAI directly using the user-supplied API key stored in `settings.apiKey`.
 
-Streaming uses Server-Sent Events (SSE) with events: `token`, `response_id`, `done`, `error`
+| Module | Purpose |
+|--------|---------|
+| `lib/api/openAiClient.ts` | Thin wrapper around `openai` SDK (`dangerouslyAllowBrowser: true`), exposes `createResponse` and `createResponseStream` |
+| `lib/api/chat.ts` | `fetchChatCompletionStream(prompt, callbacks, threadId, previousResponseId, settings)` — streams assistant replies via callbacks |
+| `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt, translateLanguage, settings)` — one-shot transformations (ELI5, translate, expand, etc.) |
+
+Streaming is handled by the OpenAI SDK's async iterator; the client dispatches `onToken`, `onResponseId`, `onComplete`, and `onError` callbacks to the store.
 
 ## Export Feature
 
@@ -307,15 +300,6 @@ Key files:
 - `lib/store/slices/settingsSlice.ts` — Zustand actions
 - `components/settings/SettingsForm.tsx` — Export destination radio + vault path input
 
-### Offline Mode
-
-When Supabase is not configured (env vars missing), the app runs in "offline mode":
-- Data persists in memory only (lost on refresh)
-- Yellow warning banner shown at top
-- Export button remains functional for local backups
-
-Detection: `lib/supabase/client.ts` — `isOfflineMode()` checks for env vars
-
 ## Thread Management
 
 ### Delete Thread Flow
@@ -326,20 +310,18 @@ Users can delete threads via the trash icon button in the chat toolbar (left of 
 DeleteThreadButton (UI)
   → AlertDialog (confirmation with title + message count)
   → store.deleteThread (Zustand action)
-  → stateFns.deleteThread (pure function)
-  → deleteThreadFromSupabase (database cascade delete)
+  → stateFns.deleteThread (pure function) — removes thread + cascading messages/blocks/cards
+  → Zustand persist middleware flushes to localStorage
   → Navigation (router.push to adjacent thread or home)
 ```
 
 Edge cases:
 - **Delete last thread**: Navigates to landing page (`/`)
 - **Delete active thread**: Navigates to adjacent thread (previous > next)
-- **DB error**: Local state updated optimistically; error logged
 
 Key files:
 - `lib/state/thread.ts` — `deleteThread()` pure function
 - `lib/store/slices/threadSlice.ts` — `deleteThread` action
-- `lib/supabase/threads.ts` — `deleteThreadFromSupabase()`
 - `components/chat/DeleteThreadButton.tsx` — UI component
 
 ## Direct Block Editing
@@ -414,7 +396,7 @@ This separation means the translate action uses the user's chosen *translation t
 - `lib/config/prompts.ts` — `replaceLanguageTag()`, `replaceTranslationLanguageTag()`, prompt loaders with caching
 - `lib/state/settings.ts` — Default settings with `responseLanguage` and `translateLanguage`
 - `components/settings/SettingsForm.tsx` — Language selector UI
-- `app/api/chat/route.ts` and `app/api/block-action/route.ts` — Pass language settings to prompt loaders
+- `lib/api/chat.ts` and `lib/api/blockAction.ts` — Pass language settings to prompt loaders
 
 ## Card System
 
@@ -470,51 +452,22 @@ Key files:
 - `components/chat/CardControls.tsx` — Card UI controls
 - `lib/export/markdownExport.ts` — `blocksToCardMarkdown()` function
 
-## Authentication
+## Persistence
 
-### Supabase Auth
-
-The app uses Supabase Auth with email/password authentication and Row Level Security (RLS):
+All user data is persisted to **localStorage** via Zustand's `persist` middleware. There is no server, no database, and no authentication layer.
 
 ```
-lib/supabase/
-├── client.ts    # Browser client (session persistence enabled)
-├── server.ts    # Server-side client (cookie-based auth)
-├── auth.ts      # Auth helpers (signIn, signOut)
-└── types.ts     # Database types (all include user_id)
-
-app/auth/
-├── layout.tsx   # Minimal auth layout
-└── login/       # Login page
-
-components/auth/
-└── LoginForm.tsx   # Login form component
-
-proxy.ts         # Auth middleware (session refresh)
-hooks/useAuth.ts # Client-side auth state hook
+Zustand store
+  ├── threads, messages, blocks, cards  ← persisted to localStorage
+  ├── settings (including apiKey)       ← persisted to localStorage
+  └── ephemeral UI state                ← not persisted (re-derived on load)
 ```
 
-### Authentication Flow
-
-1. **Unauthenticated users** are redirected to `/auth/login`
-2. **Login/Signup** uses Supabase Auth with cookie-based sessions
-3. **Protected routes** check session via middleware
-4. **Database access** is secured by RLS policies (each user sees only their own data)
-
-### Data Isolation
-
-All database tables include a `user_id` column with RLS policies:
-- `threads`, `messages`, `blocks`, `cards` all have `user_id`
-- RLS policy: `auth.uid() = user_id` for all operations
-- INSERT operations automatically include the current user's ID
-
-### Session Management
-
-- Browser: Session persisted in cookies (auto-refresh enabled)
-- Server components: Use `createServerSupabaseClient()` for authenticated requests
-- Logout: Clears session and resets Zustand store
+Notes:
+- The user's OpenAI API key lives in the same localStorage payload. Users enter it once via Settings; the browser reads it and hands it to the `openai` SDK on every request (`dangerouslyAllowBrowser: true`).
+- To clear all data, users can reset the browser's site data or use the "Reset to Defaults" button in Settings (which only clears settings, not threads).
+- There is no cross-device sync. Export threads/cards as markdown for long-term storage.
 
 ## Related Docs
 
-- [docs/database.md](./database.md) — Database schema and RLS setup
 - [docs/testing.md](./testing.md) — Test structure and patterns

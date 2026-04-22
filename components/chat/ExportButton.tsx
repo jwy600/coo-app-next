@@ -24,6 +24,7 @@ import {
   blocksToCardMarkdown,
   generateCardFilename,
   exportMarkdown,
+  computeDefaultCardTitle,
 } from '@/lib/export';
 import { ExportCardDialog } from './ExportCardDialog';
 
@@ -153,6 +154,11 @@ export function ExportButton() {
         onOpenChange={setDialogOpen}
         onConfirm={handleExportAllCards}
         selectedBlockCount={exportBlockCount}
+        defaultTitle={computeDefaultCardTitle(
+          activeThread?.title ?? '',
+          cards,
+          allBlocks,
+        )}
       />
     </>
   );

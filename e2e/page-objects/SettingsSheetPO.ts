@@ -61,9 +61,11 @@ export class SettingsSheetPO {
     return await this.obsidianVaultInput.inputValue();
   }
 
-  /** Pick a model by label ("GPT-5.4-mini", "GPT-5.4"). */
+  /** Pick a model by label ("GPT-5.4-mini", "GPT-5.4"). Uses exact match. */
   async selectModel(label: 'GPT-5.4-mini' | 'GPT-5.4'): Promise<void> {
-    await this.sheet.locator('button', { hasText: label }).click();
+    await this.sheet
+      .locator('button', { hasText: new RegExp(`^${label}$`) })
+      .click();
   }
 
   /** Pick reasoning effort ("None" | "Low" | "Medium" | "High"). */

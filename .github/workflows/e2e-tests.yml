@@ -39,14 +39,12 @@ jobs:
         env:
           NEXT_PUBLIC_TEST_MODE: true
           OPENAI_API_KEY: test_mock_key
-          # No Supabase env vars - app runs in offline mode
 
       - name: Run E2E tests
         run: npm run test:e2e -- --project=${{ matrix.browser }} --workers=1
         env:
           NEXT_PUBLIC_TEST_MODE: true
           OPENAI_API_KEY: test_mock_key
-          # No Supabase env vars - app runs in offline mode
           CI: true
 
       - name: Upload Playwright report

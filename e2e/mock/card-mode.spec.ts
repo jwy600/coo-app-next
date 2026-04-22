@@ -309,9 +309,6 @@ test.describe('Card Mode - Persistence and Thread Navigation', () => {
     // Create a different card in the second thread
     await chatPage.createCard(1);
     expect(await chatPage.getCardCount()).toBe(1);
-
-    // Note: Full cross-thread persistence testing requires integration tests
-    // with real Supabase, as cards are persisted to database (not sessionStorage)
   });
 
   test('should maintain cards within the same thread session', async ({ page }) => {

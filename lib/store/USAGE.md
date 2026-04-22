@@ -231,31 +231,6 @@ function ModeSwitch() {
 }
 ```
 
-### Loading Thread from Database
-
-```typescript
-import { loadThreadFromSupabase, loadMessagesForThread, loadBlocksForThread } from '@/lib/supabase';
-
-async function loadThread(threadId: string) {
-  const thread = await loadThreadFromSupabase(threadId);
-  const messages = await loadMessagesForThread(threadId);
-  const blocks = await loadBlocksForThread(threadId);
-
-  if (thread) {
-    // Merge into store
-    const mergeThreadFromSupabase = useStore.getState().mergeThreadFromSupabase;
-    mergeThreadFromSupabase(thread, messages, blocks);
-  }
-}
-
-function ThreadLoader({ threadId }: { threadId: string }) {
-  useEffect(() => {
-    loadThread(threadId);
-  }, [threadId]);
-
-  return <div>Loading thread...</div>;
-}
-```
 
 ### Optimistic Updates
 

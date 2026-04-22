@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   useStore,
   selectActiveThread,
@@ -11,22 +11,6 @@ import {
   selectBlocksByThread,
 } from "@/lib/store/useStore";
 import type { StoreState } from "@/lib/store/useStore";
-
-// Mock Supabase modules
-vi.mock("@/lib/supabase/threads", () => ({
-  persistThreadSnapshot: vi.fn().mockResolvedValue(undefined),
-  updateThreadMetadata: vi.fn().mockResolvedValue(undefined),
-  deleteThreadFromSupabase: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/supabase/blocks", () => ({
-  persistBlockUpdate: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/supabase/cards", () => ({
-  persistCard: vi.fn().mockResolvedValue(undefined),
-  deleteCard: vi.fn().mockResolvedValue(undefined),
-}));
 
 describe("Store Selectors", () => {
   beforeEach(() => {

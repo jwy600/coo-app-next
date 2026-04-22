@@ -26,13 +26,13 @@ export interface StreamChatParams {
   settings?: Settings;
 }
 
-export interface StreamChatCallbacks {
+export interface StreamingCallbacks {
   onComplete?: (blocks: BlockData[], responseId?: string) => void;
   onError?: (errorMessage: string) => void;
 }
 
 export interface UseStreamingReturn {
-  streamChat: (params: StreamChatParams, callbacks?: StreamChatCallbacks) => Promise<void>;
+  streamChat: (params: StreamChatParams, callbacks?: StreamingCallbacks) => Promise<void>;
 }
 
 export function useStreaming(): UseStreamingReturn {
@@ -56,7 +56,7 @@ export function useStreaming(): UseStreamingReturn {
    * 4. On error, clears stream and calls onError
    */
   const streamChat = useCallback(
-    async (params: StreamChatParams, callbacks?: StreamChatCallbacks) => {
+    async (params: StreamChatParams, callbacks?: StreamingCallbacks) => {
       const { prompt, threadId, messageId, previousResponseId, settings } = params;
 
       // Initialize streaming state

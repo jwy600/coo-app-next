@@ -8,14 +8,6 @@ export const getOpenAIModelConfig = (): OpenAIModelConfig => {
   };
 };
 
-// System prompts loaded from .md files via lib/config/prompts.ts
-export {
-  getChatPrompt,
-  getDeveloperPrompt,
-  getBlockActionPrompt,
-  getTranslatePrompt,
-} from "./prompts";
-
 // Model pricing per 1M tokens (January 2026)
 const MODEL_PRICING: Record<
   string,

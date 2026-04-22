@@ -25,25 +25,15 @@ export * from './card';
  * Create initial application state
  */
 export const createInitialState = (
-  idFactory: () => string,
-  nowFactory: () => number
+  _idFactory: () => string,
+  _nowFactory: () => number
 ): AppState => {
-  const threadId = idFactory();
-  const now = nowFactory();
   return {
     mode: 'landing',
     selectedBlockId: null,
     cards: [],
-    activeThreadId: threadId,
-    threads: [
-      {
-        id: threadId,
-        title: 'current thread',
-        createdAt: now,
-        updatedAt: now,
-        messages: [],
-      },
-    ],
+    activeThreadId: null,
+    threads: [],
     blocks: [],
     isAwaitingResponse: false,
     error: null,

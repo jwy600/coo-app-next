@@ -9,6 +9,7 @@
 import type { Settings } from "@/types/settings";
 import { createResponse } from "./openAiClient";
 import { getThreadTitlePrompt } from "@/lib/config/prompts";
+import { isTestMode } from "@/lib/utils/testMode";
 
 const TITLE_MODEL = "gpt-5.4-mini";
 const MAX_WORDS = 5;
@@ -44,6 +45,7 @@ export async function generateThreadTitle(
   settings: Settings,
 ): Promise<string | null> {
   if (!settings?.apiKey) return null;
+  if (isTestMode()) return null;
 
   try {
     const result = await createResponse({

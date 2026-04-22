@@ -2,20 +2,8 @@
  * Tests for Zustand store
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore, selectActiveThread, selectSelectedBlock } from '@/lib/store/useStore';
-import * as supabaseThreads from '@/lib/supabase/threads';
-import * as supabaseBlocks from '@/lib/supabase/blocks';
-
-// Mock Supabase modules
-vi.mock('@/lib/supabase/threads', () => ({
-  persistThreadSnapshot: vi.fn().mockResolvedValue(undefined),
-  updateThreadMetadata: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('@/lib/supabase/blocks', () => ({
-  persistBlockUpdate: vi.fn().mockResolvedValue(undefined),
-}));
 
 describe('useStore', () => {
   beforeEach(() => {
@@ -29,9 +17,6 @@ describe('useStore', () => {
       cards: [],
       isAwaitingResponse: false,
     });
-
-    // Clear all mocks
-    vi.clearAllMocks();
   });
 
   describe('Thread Actions', () => {
@@ -69,7 +54,7 @@ describe('useStore', () => {
       expect(thread?.title).toBe('New Title');
     });
 
-    it('should add user message and persist to Supabase', async () => {
+    it('should add user message', () => {
       const { createThread, addUserMessage } = useStore.getState();
 
       createThread('thread-1');
@@ -81,10 +66,6 @@ describe('useStore', () => {
 
       const state = useStore.getState();
       expect(state.blocks).toHaveLength(1);
-
-      // Wait for async persistence
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      expect(supabaseThreads.persistThreadSnapshot).toHaveBeenCalled();
     });
 
     it('should add assistant message with multiple blocks', () => {
@@ -102,61 +83,16 @@ describe('useStore', () => {
       const state = useStore.getState();
       expect(state.blocks).toHaveLength(2);
     });
-
-    it('should merge thread from Supabase', () => {
-      const { mergeThreadFromSupabase } = useStore.getState();
-
-      const messages = [
-        {
-          id: 'msg-1',
-          threadId: 'thread-from-db',
-          role: 'user' as const,
-          createdAt: Date.now(),
-          content: [{ blockId: 'block-1' }],
-          meta: {},
-        },
-      ];
-
-      const thread = {
-        id: 'thread-from-db',
-        title: 'Loaded Thread',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        messages: messages,
-      };
-
-      const blocks = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'paragraph' as const,
-          text: 'Hello',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-      ];
-
-      mergeThreadFromSupabase(thread, messages, blocks);
-
-      const state = useStore.getState();
-      expect(state.threads).toHaveLength(1);
-      expect(state.threads[0].messages).toHaveLength(1);
-      expect(state.blocks).toHaveLength(1);
-    });
   });
 
   describe('Block Actions', () => {
     beforeEach(() => {
-      // Setup a thread with a message and block
       const { createThread, addUserMessage } = useStore.getState();
       createThread('thread-1');
       addUserMessage('Test message');
-      vi.clearAllMocks(); // Clear mocks after setup
     });
 
-    it('should add selection to block', async () => {
+    it('should add selection to block', () => {
       const state = useStore.getState();
       const blockId = state.blocks[0].id;
 
@@ -165,10 +101,6 @@ describe('useStore', () => {
       const updatedState = useStore.getState();
       const block = updatedState.blocks.find((b) => b.id === blockId);
       expect(block?.selections).toContain('selected text');
-
-      // Wait for async persistence
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      expect(supabaseBlocks.persistBlockUpdate).toHaveBeenCalled();
     });
 
     it('should remove selection from block', () => {
@@ -220,7 +152,6 @@ describe('useStore', () => {
       expect(block?.text).toBe(originalText);
       expect(block?.isRewritten).toBe(false);
     });
-
   });
 
   describe('UI Actions', () => {
@@ -332,6 +263,5 @@ describe('useStore', () => {
       expect(stateAfter.threads).not.toBe(threadsBefore);
       expect(stateAfter.blocks).not.toBe(blocksBefore);
     });
-
   });
 });

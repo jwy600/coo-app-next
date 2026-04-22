@@ -35,18 +35,11 @@ describe('State Management - Core Functions', () => {
   describe('createInitialState', () => {
     it('should create initial state with default values', () => {
       expect(state).toHaveProperty('mode', 'landing');
-      expect(state).toHaveProperty('selectedBlockId');
       expect(state.selectedBlockId).toBeNull();
-      expect(state).toHaveProperty('cards');
       expect(state.cards).toEqual([]);
-      expect(state).toHaveProperty('activeThreadId');
-      expect(state.threads).toHaveLength(1);
+      expect(state.activeThreadId).toBeNull();
+      expect(state.threads).toHaveLength(0);
       expect(state.blocks).toHaveLength(0);
-    });
-
-    it('should create a default thread with title "current thread"', () => {
-      expect(state.threads[0].title).toBe('current thread');
-      expect(state.threads[0].messages).toEqual([]);
     });
   });
 
@@ -79,6 +72,11 @@ describe('State Management - Core Functions', () => {
   });
 
   describe('updateThreadTitle', () => {
+    beforeEach(() => {
+      const result = createThread(state, 'thread-1', nowFactory, 'First');
+      state = result.state;
+    });
+
     it('should update thread title and updatedAt', () => {
       const threadId = state.activeThreadId!;
       const nextState = updateThreadTitle(state, threadId, 'New Title', nowFactory);
@@ -103,7 +101,7 @@ describe('State Management - Core Functions', () => {
       const result = createThread(state, 'new-thread', nowFactory, 'Test Thread');
       expect(result.thread.id).toBe('new-thread');
       expect(result.thread.title).toBe('Test Thread');
-      expect(result.state.threads).toHaveLength(2);
+      expect(result.state.threads).toHaveLength(1);
       expect(result.state.activeThreadId).toBe('new-thread');
     });
   });
@@ -165,6 +163,11 @@ describe('State Management - Core Functions', () => {
   });
 
   describe('addUserMessage', () => {
+    beforeEach(() => {
+      const result = createThread(state, 'thread-1', nowFactory, 'Test');
+      state = result.state;
+    });
+
     it('should add a user message to the active thread', () => {
       const result = addUserMessage(state, 'Hello world', idFactory, nowFactory);
 
@@ -179,6 +182,11 @@ describe('State Management - Core Functions', () => {
   });
 
   describe('addAssistantMessage', () => {
+    beforeEach(() => {
+      const result = createThread(state, 'thread-1', nowFactory, 'Test');
+      state = result.state;
+    });
+
     it('should add assistant message with multiple blocks', () => {
       const blocksData = [
         { text: 'Block 1', type: 'paragraph' as const },
@@ -211,6 +219,11 @@ describe('State Management - Core Functions', () => {
   });
 
   describe('addAssistantMessageToThread', () => {
+    beforeEach(() => {
+      const result = createThread(state, 'thread-1', nowFactory, 'Test');
+      state = result.state;
+    });
+
     it('should add message to specific thread', () => {
       const newThread = createThread(state, 'thread-2', nowFactory);
       state = newThread.state;
@@ -259,6 +272,11 @@ describe('State Management - Core Functions', () => {
   });
 
   describe('getLastAssistantResponseId', () => {
+    beforeEach(() => {
+      const result = createThread(state, 'thread-1', nowFactory, 'Test');
+      state = result.state;
+    });
+
     it('should return undefined when thread has no messages', () => {
       const responseId = getLastAssistantResponseId(state, state.activeThreadId!);
       expect(responseId).toBeUndefined();

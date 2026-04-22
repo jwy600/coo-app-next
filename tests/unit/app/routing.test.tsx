@@ -1,14 +1,13 @@
 /**
  * Tests for Pages & Routing
  *
- * Verifies landing page and thread detail page work correctly with new AppLayout
+ * Verifies landing page and thread detail page render correctly with AppLayout.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import LandingPage from '@/app/page';
 import ThreadPage from '@/app/t/[threadId]/page';
-import type { Thread } from '@/types/thread';
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
@@ -22,34 +21,9 @@ vi.mock('next/navigation', () => ({
   useParams: vi.fn(() => ({})),
 }));
 
-// Mock Supabase operations
-vi.mock('@/lib/supabase/threads', () => ({
-  loadAllThreads: vi.fn(),
-  loadThreadFromSupabase: vi.fn(),
-}));
-
-vi.mock('@/lib/supabase/messages', () => ({
-  loadMessagesForThread: vi.fn(),
-}));
-
-vi.mock('@/lib/supabase/blocks', () => ({
-  loadBlocksForThread: vi.fn(),
-}));
-
-// Mock server-side Supabase client
-const mockSupabaseFrom = vi.fn();
-vi.mock('@/lib/supabase/server', () => ({
-  createServerSupabaseClient: vi.fn(() => Promise.resolve({
-    from: mockSupabaseFrom,
-  })),
-}));
-
-// Mock AppLayout and related components
 vi.mock('@/components/layout/AppLayout', () => ({
-  AppLayout: ({ children, threads }: { children: React.ReactNode; threads: Thread[] }) => (
-    <div data-testid="app-layout" data-thread-count={threads.length}>
-      {children}
-    </div>
+  AppLayout: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="app-layout">{children}</div>
   ),
 }));
 
@@ -68,42 +42,9 @@ describe('Landing Page', () => {
     vi.clearAllMocks();
   });
 
-  it('should render with thread list', async () => {
-    // Mock server-side Supabase query
-    const mockDbThreads = [
-      {
-        id: 'thread-1',
-        title: 'Test Thread',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-    mockSupabaseFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: mockDbThreads, error: null }),
-      }),
-    });
-
-    const Component = await LandingPage();
-    render(Component);
-
+  it('should render with landing content', () => {
+    render(<LandingPage />);
     expect(screen.getByTestId('app-layout')).toBeInTheDocument();
-    expect(screen.getByTestId('app-layout')).toHaveAttribute('data-thread-count', '1');
-    expect(screen.getByTestId('landing-content')).toBeInTheDocument();
-  });
-
-  it('should render with empty thread list', async () => {
-    // Mock empty result
-    mockSupabaseFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: [], error: null }),
-      }),
-    });
-
-    const Component = await LandingPage();
-    render(Component);
-
-    expect(screen.getByTestId('app-layout')).toHaveAttribute('data-thread-count', '0');
     expect(screen.getByTestId('landing-content')).toBeInTheDocument();
   });
 });
@@ -114,21 +55,6 @@ describe('Thread Detail Page', () => {
   });
 
   it('should render thread page with correct threadId', async () => {
-    // Mock server-side Supabase query
-    const mockDbThreads = [
-      {
-        id: 'thread-1',
-        title: 'Test Thread',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-    mockSupabaseFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: mockDbThreads, error: null }),
-      }),
-    });
-
     const params = Promise.resolve({ threadId: 'thread-1' });
     const Component = await ThreadPage({ params });
     render(Component);

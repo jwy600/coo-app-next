@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { MockOpenAI } = vi.hoisted(() => {
   // Must be a function usable with `new` (constructor)
@@ -20,34 +20,23 @@ import {
 import type { StreamEventHandler } from "@/lib/api/openAiClient";
 
 describe("openAiClient", () => {
-  const originalKey = process.env.OPENAI_API_KEY;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.OPENAI_API_KEY = "test-key";
-  });
-
-  afterEach(() => {
-    if (originalKey !== undefined) {
-      process.env.OPENAI_API_KEY = originalKey;
-    } else {
-      delete process.env.OPENAI_API_KEY;
-    }
   });
 
   describe("getOpenAiClient", () => {
-    it("should throw when API key is not configured", () => {
-      delete process.env.OPENAI_API_KEY;
-      expect(() => getOpenAiClient()).toThrow("Missing OpenAI API key");
+    it("should throw when API key is empty", () => {
+      expect(() => getOpenAiClient("")).toThrow("Missing OpenAI API key");
     });
 
-    it("should create OpenAI client when key is set", () => {
+    it("should create OpenAI client when key is passed in", () => {
       MockOpenAI.prototype.responses = {};
-      const client = getOpenAiClient();
+      const client = getOpenAiClient("sk-user-key");
       expect(client).toBeDefined();
       expect(MockOpenAI).toHaveBeenCalledWith(
         expect.objectContaining({
-          apiKey: "test-key",
+          apiKey: "sk-user-key",
+          dangerouslyAllowBrowser: true,
           timeout: 60000,
           maxRetries: 2,
         }),
@@ -65,6 +54,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       const result = await createResponse({
+        apiKey: "sk-test",
         model: "gpt-5.4-mini",
         input: "Hello",
         instructions: "Be helpful",
@@ -91,6 +81,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
+        apiKey: "sk-test",
         model: "gpt-5.4-mini",
         input: "Continue",
         previousResponseId: "resp-1",
@@ -112,6 +103,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
+        apiKey: "sk-test",
         model: "gpt-5.4-mini",
         input: "Think hard",
         reasoningEffort: "high",
@@ -133,6 +125,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
+        apiKey: "sk-test",
         model: "gpt-5.4-mini",
         input: "Quick",
         reasoningEffort: "none",
@@ -151,6 +144,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await createResponse({
+        apiKey: "sk-test",
         model: "gpt-5.4-mini",
         input: "Search this",
         webSearchEnabled: true,
@@ -172,6 +166,7 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       const result = await createResponse({
+        apiKey: "sk-test",
         model: "gpt-5.4-mini",
         input: "Hello",
       });
@@ -187,7 +182,11 @@ describe("openAiClient", () => {
       MockOpenAI.prototype.responses = { create: mockCreate };
 
       await expect(
-        createResponse({ model: "gpt-5.4-mini", input: "Hello" }),
+        createResponse({
+          apiKey: "sk-test",
+          model: "gpt-5.4-mini",
+          input: "Hello",
+        }),
       ).rejects.toThrow("API rate limited");
     });
   });
@@ -219,7 +218,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 
@@ -245,7 +244,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 
@@ -279,7 +278,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 
@@ -305,7 +304,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
         handler,
       );
 

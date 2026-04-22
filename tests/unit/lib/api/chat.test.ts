@@ -1,209 +1,134 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+const { mockCreateResponseStream } = vi.hoisted(() => ({
+  mockCreateResponseStream: vi.fn(),
+}));
+
+vi.mock("@/lib/api/openAiClient", () => ({
+  createResponseStream: mockCreateResponseStream,
+}));
+
+vi.mock("@/lib/config/prompts", () => ({
+  getChatPrompt: vi.fn(() => "chat prompt"),
+}));
+
 import { fetchChatCompletionStream } from "@/lib/api/chat";
 import type { StreamChatCallbacks } from "@/lib/api/chat";
+import type { Settings } from "@/types/settings";
+
+const baseSettings: Settings = {
+  apiKey: "sk-test",
+  model: "gpt-5.4-mini",
+  reasoningEffort: "none",
+  responseLanguage: "en",
+  translateLanguage: "Chinese",
+  webSearchEnabled: false,
+  exportDestination: "local",
+  obsidianVaultName: "",
+  systemPromptFile: "default",
+};
+
+const makeCallbacks = (): StreamChatCallbacks => ({
+  onToken: vi.fn(),
+  onResponseId: vi.fn(),
+  onComplete: vi.fn(),
+  onError: vi.fn(),
+});
 
 describe("fetchChatCompletionStream", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.restoreAllMocks();
   });
 
-  const makeCallbacks = (): StreamChatCallbacks => ({
-    onToken: vi.fn(),
-    onResponseId: vi.fn(),
-    onComplete: vi.fn(),
-    onError: vi.fn(),
-  });
-
-  it("throws on empty prompt", async () => {
+  it("calls onError on empty prompt", async () => {
     const callbacks = makeCallbacks();
-    await expect(fetchChatCompletionStream("   ", callbacks)).rejects.toThrow();
-  });
-
-  it("calls onError when response is not ok", async () => {
-    const callbacks = makeCallbacks();
-
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: false,
-      json: async () => ({ error: "Bad request" }),
-    } as Response);
-
-    await fetchChatCompletionStream("Hello", callbacks);
-
-    expect(callbacks.onError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Bad request" }),
+    await fetchChatCompletionStream(
+      "   ",
+      callbacks,
+      undefined,
+      undefined,
+      baseSettings,
     );
+    expect(callbacks.onError).toHaveBeenCalled();
+    expect(mockCreateResponseStream).not.toHaveBeenCalled();
   });
 
-  it("calls onError when response body is null", async () => {
+  it("calls onError when apiKey is missing", async () => {
     const callbacks = makeCallbacks();
-
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      body: null,
-    } as Response);
-
-    await fetchChatCompletionStream("Hello", callbacks);
-
-    expect(callbacks.onError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "No response body available" }),
+    await fetchChatCompletionStream(
+      "Hello",
+      callbacks,
+      undefined,
+      undefined,
+      { ...baseSettings, apiKey: "" },
     );
-  });
-
-  it("processes token events from SSE stream", async () => {
-    const callbacks = makeCallbacks();
-
-    const encoder = new TextEncoder();
-    const chunks = [
-      'data: {"type":"token","content":"Hello"}\n\n',
-      'data: {"type":"token","content":" world"}\n\n',
-      'data: {"type":"done"}\n\n',
-    ];
-
-    let chunkIndex = 0;
-    const mockReader = {
-      read: vi.fn(async () => {
-        if (chunkIndex < chunks.length) {
-          return {
-            done: false,
-            value: encoder.encode(chunks[chunkIndex++]),
-          };
-        }
-        return { done: true, value: undefined };
+    expect(callbacks.onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("Missing OpenAI API key"),
       }),
-      releaseLock: vi.fn(),
-    };
-
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      body: { getReader: () => mockReader },
-    } as unknown as Response);
-
-    await fetchChatCompletionStream("Hello", callbacks);
-
-    expect(callbacks.onToken).toHaveBeenCalledWith("Hello");
-    expect(callbacks.onToken).toHaveBeenCalledWith(" world");
-    expect(callbacks.onComplete).toHaveBeenCalled();
-  });
-
-  it("processes response_id events", async () => {
-    const callbacks = makeCallbacks();
-
-    const encoder = new TextEncoder();
-    const chunks = [
-      'data: {"type":"response_id","responseId":"resp-123"}\n\ndata: {"type":"done"}\n\n',
-    ];
-
-    let chunkIndex = 0;
-    const mockReader = {
-      read: vi.fn(async () => {
-        if (chunkIndex < chunks.length) {
-          return {
-            done: false,
-            value: encoder.encode(chunks[chunkIndex++]),
-          };
-        }
-        return { done: true, value: undefined };
-      }),
-      releaseLock: vi.fn(),
-    };
-
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      body: { getReader: () => mockReader },
-    } as unknown as Response);
-
-    await fetchChatCompletionStream("Hello", callbacks);
-
-    expect(callbacks.onResponseId).toHaveBeenCalledWith("resp-123");
-  });
-
-  it("processes error events from stream", async () => {
-    const callbacks = makeCallbacks();
-
-    const encoder = new TextEncoder();
-    const chunks = ['data: {"type":"error","error":"Rate limited"}\n\n'];
-
-    let chunkIndex = 0;
-    const mockReader = {
-      read: vi.fn(async () => {
-        if (chunkIndex < chunks.length) {
-          return {
-            done: false,
-            value: encoder.encode(chunks[chunkIndex++]),
-          };
-        }
-        return { done: true, value: undefined };
-      }),
-      releaseLock: vi.fn(),
-    };
-
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      body: { getReader: () => mockReader },
-    } as unknown as Response);
-
-    await fetchChatCompletionStream("Hello", callbacks);
-
-    expect(callbacks.onError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Rate limited" }),
     );
+    expect(mockCreateResponseStream).not.toHaveBeenCalled();
   });
 
-  it("calls onError on network failure", async () => {
+  it("calls onError when settings are missing entirely", async () => {
     const callbacks = makeCallbacks();
+    await fetchChatCompletionStream("Hello", callbacks);
+    expect(callbacks.onError).toHaveBeenCalled();
+    expect(mockCreateResponseStream).not.toHaveBeenCalled();
+  });
 
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(
-      new Error("Network failure"),
+  it("forwards params to createResponseStream", async () => {
+    const callbacks = makeCallbacks();
+    mockCreateResponseStream.mockResolvedValue(undefined);
+
+    await fetchChatCompletionStream(
+      "Hello world",
+      callbacks,
+      "thread-1",
+      "prev-resp-id",
+      baseSettings,
     );
 
-    await fetchChatCompletionStream("Hello", callbacks);
-
-    expect(callbacks.onError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Network failure" }),
-    );
+    expect(mockCreateResponseStream).toHaveBeenCalledTimes(1);
+    const [params, handler] = mockCreateResponseStream.mock.calls[0];
+    expect(params.apiKey).toBe("sk-test");
+    expect(params.model).toBe("gpt-5.4-mini");
+    expect(params.input).toBe("Hello world");
+    expect(params.instructions).toBe("chat prompt");
+    expect(params.previousResponseId).toBe("prev-resp-id");
+    expect(handler).toBe(callbacks);
   });
 
-  it("releases reader lock on completion", async () => {
+  it("trims whitespace from the prompt", async () => {
     const callbacks = makeCallbacks();
+    mockCreateResponseStream.mockResolvedValue(undefined);
 
-    const encoder = new TextEncoder();
-    const releaseLock = vi.fn();
-    const mockReader = {
-      read: vi.fn(async () => ({
-        done: true,
-        value: encoder.encode('data: {"type":"done"}\n\n'),
-      })),
-      releaseLock,
-    };
+    await fetchChatCompletionStream(
+      "  Hello  ",
+      callbacks,
+      undefined,
+      undefined,
+      baseSettings,
+    );
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      body: { getReader: () => mockReader },
-    } as unknown as Response);
-
-    await fetchChatCompletionStream("Hello", callbacks);
-
-    expect(releaseLock).toHaveBeenCalled();
+    const params = mockCreateResponseStream.mock.calls[0][0];
+    expect(params.input).toBe("Hello");
   });
 
-  it("passes threadId and previousResponseId", async () => {
+  it("passes reasoning and web search settings through", async () => {
     const callbacks = makeCallbacks();
+    mockCreateResponseStream.mockResolvedValue(undefined);
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      body: null,
-    } as Response);
-
-    await fetchChatCompletionStream("Hello", callbacks, "t1", "prev-resp");
-
-    const body = JSON.parse(
-      (vi.mocked(globalThis.fetch).mock.calls[0][1] as RequestInit)
-        .body as string,
+    await fetchChatCompletionStream(
+      "Hello",
+      callbacks,
+      undefined,
+      undefined,
+      { ...baseSettings, reasoningEffort: "high", webSearchEnabled: true },
     );
-    expect(body.threadId).toBe("t1");
-    expect(body.previousResponseId).toBe("prev-resp");
-    expect(body.stream).toBe(true);
+
+    const params = mockCreateResponseStream.mock.calls[0][0];
+    expect(params.reasoningEffort).toBe("high");
+    expect(params.webSearchEnabled).toBe(true);
   });
 });

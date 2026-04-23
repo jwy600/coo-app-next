@@ -42,7 +42,6 @@ interface MockStoreState {
     webSearchEnabled: boolean;
     exportDestination: string;
     obsidianVaultName: string;
-    systemPromptFile: string;
   };
   updateApiKey: ReturnType<typeof vi.fn>;
   updateModel: ReturnType<typeof vi.fn>;
@@ -52,7 +51,6 @@ interface MockStoreState {
   updateWebSearchEnabled: ReturnType<typeof vi.fn>;
   updateExportDestination: ReturnType<typeof vi.fn>;
   updateObsidianVaultName: ReturnType<typeof vi.fn>;
-  updateSystemPromptFile: ReturnType<typeof vi.fn>;
   resetSettings: ReturnType<typeof vi.fn>;
 }
 
@@ -83,7 +81,6 @@ export function createMockStoreState(
       webSearchEnabled: false,
       exportDestination: "local",
       obsidianVaultName: "",
-      systemPromptFile: "default",
     },
     updateApiKey: vi.fn(),
     updateModel: vi.fn(),
@@ -93,7 +90,6 @@ export function createMockStoreState(
     updateWebSearchEnabled: vi.fn(),
     updateExportDestination: vi.fn(),
     updateObsidianVaultName: vi.fn(),
-    updateSystemPromptFile: vi.fn(),
     resetSettings: vi.fn(),
     ...overrides,
   };

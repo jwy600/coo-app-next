@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { getOpenAIModelConfig, calculateCost } from "@/lib/config/openai";
 import {
   _clearPromptCache,
-  getDeveloperPrompt,
+  getChatPrompt,
   getBlockActionPrompt,
 } from "@/lib/config/prompts";
 
@@ -30,33 +30,32 @@ describe("getOpenAIModelConfig", () => {
   });
 });
 
-describe("getDeveloperPrompt", () => {
+describe("getChatPrompt", () => {
   beforeEach(() => {
     _clearPromptCache();
   });
 
   it("returns English prompt by default", () => {
-    const prompt = getDeveloperPrompt();
-    expect(prompt).toContain("knowledgeable assistant");
-    expect(prompt).toContain("<response_approach>");
+    const prompt = getChatPrompt();
+    expect(prompt).toContain("helpful, warm assistant");
     expect(prompt).not.toContain("Simplified Chinese");
   });
 
   it("returns English prompt for 'en'", () => {
-    const prompt = getDeveloperPrompt("en");
-    expect(prompt).toContain("knowledgeable assistant");
+    const prompt = getChatPrompt("en");
+    expect(prompt).toContain("helpful, warm assistant");
     expect(prompt).not.toContain("Simplified Chinese");
   });
 
   it("returns Chinese prompt for 'zh'", () => {
-    const prompt = getDeveloperPrompt("zh");
-    expect(prompt).toContain("knowledgeable assistant");
+    const prompt = getChatPrompt("zh");
+    expect(prompt).toContain("helpful, warm assistant");
     expect(prompt).toContain("Simplified Chinese");
   });
 
   it("returns the same content on repeated calls (caching)", () => {
-    const first = getDeveloperPrompt("en");
-    const second = getDeveloperPrompt("en");
+    const first = getChatPrompt("en");
+    const second = getChatPrompt("en");
     expect(first).toBe(second);
   });
 });
@@ -92,9 +91,9 @@ describe("getBlockActionPrompt", () => {
 
 describe("calculateCost", () => {
   it("calculates cost for known model", () => {
-    // gpt-5.4-mini: input=0.25, output=2.00 per 1M tokens
+    // gpt-5.4-mini: input=0.75, output=4.50 per 1M tokens
     const cost = calculateCost("gpt-5.4-mini", 1_000_000, 1_000_000);
-    expect(cost).toBeCloseTo(0.25 + 2.0);
+    expect(cost).toBeCloseTo(0.75 + 4.5);
   });
 
   it("returns 0 for unknown model", () => {

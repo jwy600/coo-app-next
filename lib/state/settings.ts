@@ -5,7 +5,6 @@
 
 import type {
   Settings,
-  SystemPromptFile,
   ModelType,
   ReasoningEffort,
   ResponseLanguage,
@@ -33,16 +32,6 @@ export const updateApiKey = (
   apiKey: string,
 ): Settings => {
   return { ...settings, apiKey };
-};
-
-/**
- * Update the system prompt file
- */
-export const updateSystemPromptFile = (
-  settings: Settings,
-  systemPromptFile: SystemPromptFile,
-): Settings => {
-  return { ...settings, systemPromptFile };
 };
 
 /**

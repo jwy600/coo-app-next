@@ -13,7 +13,6 @@ const mockState = createMockStoreState({
     webSearchEnabled: false,
     exportDestination: "local",
     obsidianVaultName: "",
-    systemPromptFile: "default",
   },
 });
 

@@ -18,7 +18,6 @@ import type { Settings } from "@/types/settings";
 const baseSettings: Settings = {
   apiKey: "sk-test",
   model: "gpt-5.4", // deliberately different — function must ignore this and use gpt-5.4-mini
-  systemPromptFile: "developer",
   reasoningEffort: "none",
   webSearchEnabled: false,
   responseLanguage: "en",

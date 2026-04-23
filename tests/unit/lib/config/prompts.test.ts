@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   getChatPrompt,
-  getDeveloperPrompt,
   getBlockActionPrompt,
   getTranslatePrompt,
   replaceLanguageTag,
@@ -15,99 +14,56 @@ describe("prompt loader", () => {
     _clearPromptCache();
   });
 
-  describe("getDeveloperPrompt", () => {
-    it("loads developer prompt for all supported languages", () => {
+  describe("getChatPrompt", () => {
+    it("loads prompt for all supported languages without error", () => {
       const languages: ResponseLanguage[] = ["en", "es", "fr", "zh", "ja"];
       for (const lang of languages) {
-        expect(() => getDeveloperPrompt(lang)).not.toThrow();
-        expect(getDeveloperPrompt(lang).length).toBeGreaterThan(0);
+        expect(() => getChatPrompt(lang)).not.toThrow();
+        expect(getChatPrompt(lang).length).toBeGreaterThan(0);
       }
     });
 
     it("defaults to English when no language specified", () => {
-      const prompt = getDeveloperPrompt();
+      const prompt = getChatPrompt();
       expect(prompt).not.toContain("<language>");
       expect(prompt).not.toContain("Always respond in");
     });
 
     it("removes language tag for English", () => {
-      const prompt = getDeveloperPrompt("en");
+      const prompt = getChatPrompt("en");
       expect(prompt).not.toContain("<language>");
       expect(prompt).not.toContain("</language>");
     });
 
     it("injects language directive for Chinese", () => {
-      const prompt = getDeveloperPrompt("zh");
+      const prompt = getChatPrompt("zh");
       expect(prompt).toContain("Always respond in Simplified Chinese.");
       expect(prompt).toContain("<language>");
     });
 
     it("injects language directive for Japanese", () => {
-      const prompt = getDeveloperPrompt("ja");
+      const prompt = getChatPrompt("ja");
       expect(prompt).toContain("Always respond in Japanese.");
     });
 
     it("injects language directive for Spanish", () => {
-      const prompt = getDeveloperPrompt("es");
+      const prompt = getChatPrompt("es");
       expect(prompt).toContain("Always respond in Spanish.");
     });
 
     it("injects language directive for French", () => {
-      const prompt = getDeveloperPrompt("fr");
+      const prompt = getChatPrompt("fr");
       expect(prompt).toContain("Always respond in French.");
     });
 
-    it("caches templates after first read", () => {
-      const first = getDeveloperPrompt("en");
-      const second = getDeveloperPrompt("en");
-      expect(first).toBe(second);
-    });
-  });
-
-  describe("getChatPrompt", () => {
-    it("loads developer prompt by default", () => {
-      const prompt = getChatPrompt();
-      expect(prompt).toContain("knowledgeable assistant");
-    });
-
-    it("loads developer prompt explicitly", () => {
-      const prompt = getChatPrompt("developer", "en");
-      expect(prompt).toContain("knowledgeable assistant");
-    });
-
-    it("loads chatgpt prompt", () => {
-      const prompt = getChatPrompt("chatgpt", "en");
+    it("contains chatgpt-style persona", () => {
+      const prompt = getChatPrompt("en");
       expect(prompt).toContain("helpful, warm assistant");
     });
 
-    it("injects language into chatgpt prompt", () => {
-      const prompt = getChatPrompt("chatgpt", "zh");
-      expect(prompt).toContain("Always respond in Simplified Chinese.");
-      expect(prompt).toContain("helpful, warm assistant");
-    });
-
-    it("removes language tag for English in chatgpt prompt", () => {
-      const prompt = getChatPrompt("chatgpt", "en");
-      expect(prompt).not.toContain("<language>");
-      expect(prompt).not.toContain("</language>");
-    });
-
-    it("loads all prompt files for all languages without error", () => {
-      const files = ["developer", "chatgpt"] as const;
-      const languages: ResponseLanguage[] = ["en", "es", "fr", "zh", "ja"];
-      for (const file of files) {
-        for (const lang of languages) {
-          expect(() => getChatPrompt(file, lang)).not.toThrow();
-          expect(getChatPrompt(file, lang).length).toBeGreaterThan(0);
-        }
-      }
-    });
-
-    it("returns same result as getDeveloperPrompt for developer file", () => {
-      const languages: ResponseLanguage[] = ["en", "es", "fr", "zh", "ja"];
-      for (const lang of languages) {
-        expect(getChatPrompt("developer", lang)).toBe(getDeveloperPrompt(lang));
-      }
+    it("contains formatting rules", () => {
+      const prompt = getChatPrompt("en");
+      expect(prompt).toContain("NEVER use numbered lists");
     });
   });
 
@@ -212,9 +168,9 @@ describe("prompt loader", () => {
 
   describe("cache management", () => {
     it("clears cache correctly", () => {
-      getDeveloperPrompt("en");
+      getChatPrompt("en");
       _clearPromptCache();
-      expect(() => getDeveloperPrompt("en")).not.toThrow();
+      expect(() => getChatPrompt("en")).not.toThrow();
     });
   });
 });

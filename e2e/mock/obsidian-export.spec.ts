@@ -27,7 +27,6 @@ const VAULT_SEED = (apiKey = 'sk-test', vaultName = 'MyVault') => ({
     activeThreadId: null,
     settings: {
       apiKey,
-      systemPromptFile: 'developer',
       model: 'gpt-5.4-mini',
       reasoningEffort: 'none',
       webSearchEnabled: false,

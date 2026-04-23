@@ -1,5 +1,5 @@
 import { getOpenAIModelConfig, calculateCost } from "@/lib/config/openai";
-import { getDeveloperPrompt } from "@/lib/config/prompts";
+import { getChatPrompt } from "@/lib/config/prompts";
 import {
   testReporter,
   analyzeResponseQuality,
@@ -61,7 +61,7 @@ export async function callChatApiWithMetrics(
   const completion = await openai.chat.completions.create({
     model: modelConfig.model,
     messages: [
-      { role: "developer", content: getDeveloperPrompt() },
+      { role: "developer", content: getChatPrompt() },
       { role: "user", content: prompt },
     ],
   });

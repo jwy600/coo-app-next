@@ -13,11 +13,8 @@ const MODEL_PRICING: Record<
   string,
   { input: number; cachedInput: number; output: number }
 > = {
-  "gpt-5.4": { input: 1.75, cachedInput: 0.175, output: 14.0 },
-  "gpt-5.1": { input: 1.25, cachedInput: 0.125, output: 10.0 },
-  "gpt-5": { input: 1.25, cachedInput: 0.125, output: 10.0 },
-  "gpt-5.4-mini": { input: 0.25, cachedInput: 0.025, output: 2.0 },
-  "gpt-5-nano": { input: 0.05, cachedInput: 0.005, output: 0.4 },
+  "gpt-5.4": { input: 2.5, cachedInput: 0.25, output: 15.0 },
+  "gpt-5.4-mini": { input: 0.75, cachedInput: 0.075, output: 4.5 },
 };
 
 export const calculateCost = (

@@ -7,23 +7,6 @@ export type TranslateLanguage =
   | "Spanish"
   | "French"
   | "Japanese";
-/**
- * Single source of truth for system prompts.
- * To add a new prompt: create prompts/{key}.md, then add an entry here.
- */
-export const SYSTEM_PROMPT_OPTIONS = {
-  developer: {
-    label: "Knowledge Assistant",
-    description: "Thorough explanations with examples",
-  },
-  chatgpt: {
-    label: "ChatGPT",
-    description: "Original ChatGPT style",
-  },
-} as const satisfies Record<string, { label: string; description: string }>;
-
-export type SystemPromptFile = keyof typeof SYSTEM_PROMPT_OPTIONS;
-
 /** Maps response language codes to full language names (for prompt injection) */
 export const LANGUAGE_MAP: Record<ResponseLanguage, string> = {
   en: "English",
@@ -65,7 +48,6 @@ export type ExportDestination = "local" | "obsidian";
 
 export interface Settings {
   apiKey: string;
-  systemPromptFile: SystemPromptFile;
   model: ModelType;
   reasoningEffort: ReasoningEffort;
   webSearchEnabled: boolean;
@@ -77,7 +59,6 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   apiKey: "",
-  systemPromptFile: "developer",
   model: "gpt-5.4-mini",
   reasoningEffort: "none",
   webSearchEnabled: false,

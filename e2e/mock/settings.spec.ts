@@ -84,21 +84,12 @@ test.describe('Settings sheet', () => {
     expect(s2?.exportDestination).toBe('local');
   });
 
-  test('selects a system prompt', async ({ page }) => {
-    await settings.open();
-    await settings.selectSystemPrompt('chatgpt');
-    await settings.close();
-
-    expect((await readSettings(page))?.systemPromptFile).toBe('chatgpt');
-  });
-
   test('reset to defaults restores defaults for non-apiKey settings', async ({
     page,
   }) => {
     // Mutate a few things first.
     await settings.open();
     await settings.selectModel('GPT-5.4');
-    await settings.selectSystemPrompt('chatgpt');
     await settings.setObsidianVault('MyVault');
 
     await settings.resetDefaults();
@@ -106,7 +97,6 @@ test.describe('Settings sheet', () => {
 
     const s = await readSettings(page);
     expect(s?.model).toBe('gpt-5.4-mini');
-    expect(s?.systemPromptFile).toBe('developer');
     expect(s?.obsidianVaultName ?? '').toBe('');
     expect(s?.exportDestination).toBe('local');
   });

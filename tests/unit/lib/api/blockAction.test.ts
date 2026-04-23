@@ -27,7 +27,6 @@ const baseSettings: Settings = {
   webSearchEnabled: false,
   exportDestination: "local",
   obsidianVaultName: "",
-  systemPromptFile: "default",
 };
 
 describe("fetchBlockAction", () => {

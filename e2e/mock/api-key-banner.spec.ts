@@ -20,7 +20,6 @@ const EMPTY_SEED = {
     activeThreadId: null,
     settings: {
       apiKey: '',
-      systemPromptFile: 'developer',
       model: 'gpt-5.4-mini',
       reasoningEffort: 'none',
       webSearchEnabled: false,

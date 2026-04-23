@@ -44,10 +44,7 @@ export async function fetchChatCompletionStream(
       apiKey: settings.apiKey,
       model: settings.model,
       input: trimmedPrompt,
-      instructions: getChatPrompt(
-        settings.systemPromptFile,
-        settings.responseLanguage,
-      ),
+      instructions: getChatPrompt(settings.responseLanguage),
       previousResponseId,
       reasoningEffort: settings.reasoningEffort,
       webSearchEnabled: settings.webSearchEnabled,

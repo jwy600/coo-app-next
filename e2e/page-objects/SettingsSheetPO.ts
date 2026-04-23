@@ -83,11 +83,6 @@ export class SettingsSheetPO {
       .click();
   }
 
-  /** Select a system prompt by the radio id suffix ("developer", "chatgpt"). */
-  async selectSystemPrompt(key: string): Promise<void> {
-    await this.sheet.locator(`label[for="prompt-${key}"]`).click();
-  }
-
   async resetDefaults(): Promise<void> {
     await this.resetButton.click();
   }

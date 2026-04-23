@@ -251,8 +251,7 @@ React"; wait.
 3. **response language change** — pick 中文 → `responseLanguage === 'zh'`.
 4. **vault flips export destination** — set vault → `"obsidian"`; clear →
    `"local"`.
-5. **system prompt radio** — `systemPromptFile === "chatgpt"`.
-6. **reset to defaults** — mutate + Reset → defaults restored.
+5. **reset to defaults** — mutate + Reset → defaults restored.
 
 ---
 

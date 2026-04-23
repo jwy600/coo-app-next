@@ -1,6 +1,5 @@
 "use client";
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStore } from "@/lib/store/useStore";
-import {
-  TRANSLATE_TO_RESPONSE_MAP,
-  SYSTEM_PROMPT_OPTIONS,
-} from "@/types/settings";
+import { TRANSLATE_TO_RESPONSE_MAP } from "@/types/settings";
 import type {
-  SystemPromptFile,
   ModelType,
   ReasoningEffort,
   ResponseLanguage,
@@ -66,9 +61,6 @@ const ALL_TRANSLATE_OPTIONS: { value: TranslateLanguage; label: string }[] = [
 export function SettingsForm() {
   const settings = useStore((state) => state.settings);
   const updateApiKey = useStore((state) => state.updateApiKey);
-  const updateSystemPromptFile = useStore(
-    (state) => state.updateSystemPromptFile,
-  );
   const updateModel = useStore((state) => state.updateModel);
   const updateReasoningEffort = useStore(
     (state) => state.updateReasoningEffort,
@@ -242,37 +234,6 @@ export function SettingsForm() {
               On
             </Button>
           </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">System Prompt</Label>
-          <RadioGroup
-            value={settings.systemPromptFile}
-            onValueChange={(value) =>
-              updateSystemPromptFile(value as SystemPromptFile)
-            }
-            className="grid gap-2"
-          >
-            {Object.entries(SYSTEM_PROMPT_OPTIONS).map(([key, option]) => (
-              <label
-                key={key}
-                htmlFor={`prompt-${key}`}
-                className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                  settings.systemPromptFile === key
-                    ? "border-foreground/20 bg-accent"
-                    : "border-border hover:bg-muted/50"
-                }`}
-              >
-                <RadioGroupItem value={key} id={`prompt-${key}`} />
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{option.label}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {option.description}
-                  </span>
-                </div>
-              </label>
-            ))}
-          </RadioGroup>
       </div>
 
     </div>

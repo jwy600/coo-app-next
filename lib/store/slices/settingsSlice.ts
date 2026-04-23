@@ -6,7 +6,6 @@ import { StateCreator } from "zustand";
 import * as settingsFns from "@/lib/state/settings";
 import type {
   Settings,
-  SystemPromptFile,
   ModelType,
   ReasoningEffort,
   ResponseLanguage,
@@ -19,7 +18,6 @@ export interface SettingsSlice {
 
   // Actions that wrap pure functions
   updateApiKey: (apiKey: string) => void;
-  updateSystemPromptFile: (file: SystemPromptFile) => void;
   updateModel: (model: ModelType) => void;
   updateReasoningEffort: (effort: ReasoningEffort) => void;
   updateWebSearchEnabled: (enabled: boolean) => void;
@@ -40,11 +38,6 @@ export const settingsSlice: StateCreator<
 
   updateApiKey: (apiKey) => {
     const updated = settingsFns.updateApiKey(get().settings, apiKey);
-    set({ settings: updated });
-  },
-
-  updateSystemPromptFile: (file) => {
-    const updated = settingsFns.updateSystemPromptFile(get().settings, file);
     set({ settings: updated });
   },
 

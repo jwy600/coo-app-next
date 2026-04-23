@@ -254,9 +254,10 @@ test.describe('Direct Edit - Strikethrough', () => {
     // Select all and press backspace
     await chatPage.selectAllAndPress('Backspace');
 
-    // Verify text is wrapped in strikethrough
-    const newText = await chatPage.getPromptValue();
-    expect(newText).toBe(`~~${originalText}~~`);
+    // Verify the composer renders a <del> element (visual strikethrough)
+    const delEl = chatPage.promptInput.locator('del');
+    await expect(delEl).toBeVisible();
+    await expect(delEl).toHaveText(originalText);
   });
 
   test('should render strikethrough in block after Replace', async ({ page }) => {

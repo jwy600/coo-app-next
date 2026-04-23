@@ -112,6 +112,11 @@
     @apply text-gray-400 pointer-events-none;
   }
 
+  /* Strikethrough text */
+  del {
+    text-decoration: line-through;
+  }
+
   /* Text selection marks */
   mark.anno {
     @apply bg-yellow-200 rounded-sm;

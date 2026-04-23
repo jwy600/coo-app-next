@@ -58,14 +58,45 @@ export function PromptInput({
       return;
     }
 
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const offset = range?.startOffset || 0;
+
+    // Render strikethrough markdown (~~text~~) as a <del> element for visual feedback
+    const strikethroughMatch = value.match(/^~~([\s\S]+)~~$/);
+    if (strikethroughMatch) {
+      const innerText = strikethroughMatch[1];
+      const childNodes = inputRef.current.childNodes;
+      const alreadyDel =
+        childNodes.length === 1 &&
+        childNodes[0].nodeName === 'DEL' &&
+        (childNodes[0] as HTMLElement).textContent === innerText;
+
+      if (!alreadyDel) {
+        const delEl = document.createElement('del');
+        delEl.textContent = innerText;
+        inputRef.current.innerHTML = '';
+        inputRef.current.appendChild(delEl);
+
+        if (selection && delEl.firstChild) {
+          try {
+            const newRange = document.createRange();
+            const maxOffset = (delEl.firstChild.textContent || '').length;
+            newRange.setStart(delEl.firstChild, Math.min(offset, maxOffset));
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+          } catch (e) {
+            // Ignore cursor restoration errors
+          }
+        }
+      }
+      return;
+    }
+
     // Only sync if value is actually different (external change)
     const currentText = inputRef.current.textContent || '';
     if (currentText.trim() !== value.trim()) {
-      // Save cursor position
-      const selection = window.getSelection();
-      const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-      const offset = range?.startOffset || 0;
-
       // Update content
       inputRef.current.textContent = value;
 
@@ -89,8 +120,15 @@ export function PromptInput({
   const handleInput = () => {
     if (inputRef.current) {
       isUserInputRef.current = true;
-      const text = inputRef.current.textContent || '';
-      onChange(text.replace(/\u00a0/g, ' ').trim());
+      const childNodes = inputRef.current.childNodes;
+      // Preserve strikethrough markdown when entire content is a <del> element
+      if (childNodes.length === 1 && childNodes[0].nodeName === 'DEL') {
+        const delText = (childNodes[0] as HTMLElement).textContent || '';
+        onChange('~~' + delText.replace(/\u00a0/g, ' ').trim() + '~~');
+      } else {
+        const text = inputRef.current.textContent || '';
+        onChange(text.replace(/\u00a0/g, ' ').trim());
+      }
     }
   };
 
@@ -117,17 +155,18 @@ export function PromptInput({
 
       e.preventDefault();
 
-      // Wrap entire text in strikethrough
-      const newText = '~~' + fullText + '~~';
+      // Render visual strikethrough in the contenteditable using <del>
+      const delEl = document.createElement('del');
+      delEl.textContent = fullText;
+      inputRef.current.innerHTML = '';
+      inputRef.current.appendChild(delEl);
 
       isUserInputRef.current = true;
-      onChange(newText.replace(/\u00a0/g, ' ').trim());
+      onChange('~~' + fullText.replace(/\u00a0/g, ' ').trim() + '~~');
 
-      // Update DOM and position cursor at the end
-      inputRef.current.textContent = newText;
-
+      // Position cursor at end of del content
       try {
-        const textNode = inputRef.current.firstChild;
+        const textNode = delEl.firstChild;
         if (textNode && selection) {
           const newRange = document.createRange();
           const maxOffset = (textNode.textContent || '').length;

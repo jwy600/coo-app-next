@@ -5,6 +5,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import { remarkSourcePositions } from '@/lib/selection/remarkSourcePositions';
 import { sanitizeHref } from '@/lib/utils/safeHref';
 
 export interface MarkdownContentProps {
@@ -12,7 +13,7 @@ export interface MarkdownContentProps {
   className?: string;
 }
 
-const remarkPlugins = [remarkGfm, remarkMath];
+const remarkPlugins = [remarkGfm, remarkMath, remarkSourcePositions];
 const rehypePlugins = [rehypeKatex];
 
 const components: Components = {

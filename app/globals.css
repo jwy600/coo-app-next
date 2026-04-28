@@ -335,6 +335,23 @@
     gap: 8px;
   }
 
+  /*
+   * Wrapping container for MarkdownContent (focus-mode renderer). Mirrors the
+   * old `.block-stack` rhythm so paragraphs / headings / lists / code blocks
+   * have the same vertical breathing room as the previous block-mode UI.
+   */
+  .markdown-content {
+    display: grid;
+    gap: 16px;
+  }
+
+  /* Headings hug the paragraph that follows them — same as `.doc-heading`'s
+   * old margin-bottom: 4px override. */
+  .markdown-content > .doc-heading + .doc-paragraph,
+  .markdown-content > .doc-heading + .doc-list {
+    margin-top: -8px;
+  }
+
   .doc-paragraph {
     margin: 0;
     font-size: 0.9375rem;

@@ -105,9 +105,12 @@ export const MarkdownContent = React.memo(function MarkdownContent({
   }
 
   const normalized = normalizeMathDelimiters(text);
+  const wrapperClass = className
+    ? `markdown-content ${className}`
+    : 'markdown-content';
 
   return (
-    <div className={className || undefined}>
+    <div className={wrapperClass}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

@@ -62,14 +62,22 @@ export function useComposer(): UseComposerReturn {
         setError(null);
         try {
           const settings = useStore.getState().settings;
+          const referenceQuestion = focus.lastResponseId
+            ? undefined
+            : focus.referenceQuestion;
           const result = await fetchBlockAction(
             'ask',
             focus.buffer,
             trimmed,
             undefined,
             settings,
+            focus.lastResponseId,
+            referenceQuestion,
           );
           setPrompt(result.text);
+          if (result.responseId) {
+            useStore.getState().setFocusLastResponseId(result.responseId);
+          }
         } catch (err) {
           setError(getErrorMessage(err, 'Ask failed.'));
         } finally {

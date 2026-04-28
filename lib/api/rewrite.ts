@@ -39,6 +39,7 @@ export async function fetchRewrite(
     instructions,
     reasoningEffort: settings.reasoningEffort,
     webSearchEnabled: settings.webSearchEnabled,
+    label: "rewrite",
   });
 
   return { text: result.text, responseId: result.responseId };

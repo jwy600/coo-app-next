@@ -1,19 +1,30 @@
 import { AppState } from '@/types/state';
+import { Message } from '@/types/message';
+import { FocusActive } from '@/types/state/ui';
 import { findMessage, replaceMessageRange } from './message';
 
-export interface FocusActive {
-  messageId: string;
-  range: [number, number];
-  buffer: string;
-  notes: string[];
-  prevBuffer: string | null;
-}
+export type { FocusActive };
+
+const findPriorUserMessageText = (
+  state: AppState,
+  messageId: string,
+): string | undefined => {
+  for (const thread of state.threads) {
+    const idx = thread.messages.findIndex((m) => m.id === messageId);
+    if (idx <= 0) continue;
+    const prev = thread.messages[idx - 1];
+    return prev.role === 'user' ? prev.text : undefined;
+  }
+  return undefined;
+};
 
 /**
  * Opens the focus editor on a slice of `message.text`. Initializes the
- * buffer to the slice and clears notes / Rewrite undo state. If another
- * editor is already active, it is auto-saved (closeEditor) first so its
- * edits aren't lost. No-op if the target message can't be found.
+ * buffer to the slice and clears notes / Rewrite undo state. Captures the
+ * assistant message's `responseId` as the chain head, or falls back to the
+ * prior user message's text as a reference question. If another editor is
+ * already active, it is auto-saved (closeEditor) first so its edits aren't
+ * lost. No-op if the target message can't be found.
  */
 export const openEditor = (
   state: AppState,
@@ -24,9 +35,23 @@ export const openEditor = (
   const message = findMessage(baseState, messageId);
   if (!message) return baseState;
   const buffer = message.text.slice(range[0], range[1]);
+  const lastResponseId = (message as Message).meta?.openaiResponseId as
+    | string
+    | undefined;
+  const referenceQuestion = lastResponseId
+    ? undefined
+    : findPriorUserMessageText(baseState, messageId);
   return {
     ...baseState,
-    focus: { messageId, range, buffer, notes: [], prevBuffer: null },
+    focus: {
+      messageId,
+      range,
+      buffer,
+      notes: [],
+      prevBuffer: null,
+      lastResponseId,
+      referenceQuestion,
+    },
   };
 };
 
@@ -72,6 +97,18 @@ export const setRewriteResult = (state: AppState, buffer: string): AppState => {
       notes: [],
     },
   };
+};
+
+/**
+ * Updates the focus chain head with a new responseId returned by OpenAI.
+ * No-op if no editor is active.
+ */
+export const setFocusLastResponseId = (
+  state: AppState,
+  responseId: string,
+): AppState => {
+  if (!state.focus) return state;
+  return { ...state, focus: { ...state.focus, lastResponseId: responseId } };
 };
 
 /**

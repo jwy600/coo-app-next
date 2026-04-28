@@ -120,14 +120,25 @@ The trick that makes drag-select-to-edit work is mapping DOM selections back to 
 ```typescript
 interface FocusActive {
   messageId: string;
-  range: [number, number];   // character offsets into message.text
-  buffer: string;            // editable markdown — initialized from message.text.slice(...)
-  notes: string[];           // accumulated via appendNote
-  prevBuffer: string | null; // single-step Rewrite undo
+  range: [number, number];     // character offsets into message.text
+  buffer: string;              // editable markdown — initialized from message.text.slice(...)
+  notes: string[];             // accumulated via appendNote
+  prevBuffer: string | null;   // single-step Rewrite undo
+  lastResponseId?: string;     // OpenAI chain head for the next focus call
+  referenceQuestion?: string;  // fallback context (only when lastResponseId is missing)
 }
 ```
 
 Persisted shape on disk: nothing. Focus is purely in-memory.
+
+### Context chaining for focus calls
+Every focus-mode call (Translate / ELI5 / Summarize / Example / Expand / Ask — *not* Rewrite) sends a `previous_response_id` so the model inherits the conversation that produced the assistant message. The chain head is captured at editor open from `message.meta.openaiResponseId` and updated after each successful focus call. Closing the editor discards it; reopening starts fresh from the new message's responseId.
+
+The fenced input format is `<passage>...</passage>`. The system prompt explicitly scopes the action to the passage and labels prior turns as reference-only (otherwise Translate/Summarize would happily consume the entire chained context).
+
+For legacy persisted messages that lack a captured responseId, `openEditor` falls back to capturing the immediately-prior user message text as `referenceQuestion`. The first focus call injects it as a `<reference-question>...</reference-question>` block (with no chain). Subsequent calls in the same session use the chain returned by that first response and stop injecting.
+
+See `docs/ideas/focus-mode-context-chaining.md` for the full scenario matrix.
 
 ### Editor lifecycle
 1. **Open** — `useFocusSelection` (mounted on each `AssistantMessage`) listens for `mouseup` / `touchend` and calls `domToSource(getSelection().getRangeAt(0))`. If the result anchors inside this message and meets the minimum-length rule, it dispatches `openEditor(messageId, [start, end])`. The hook is disabled while the message is streaming or already in focus mode.
@@ -200,7 +211,7 @@ Notes:
 |--------|---------|
 | `lib/api/openAiClient.ts` | Thin wrapper around the `openai` SDK; exposes `createResponse` and `createResponseStream` |
 | `lib/api/chat.ts` | `fetchChatCompletionStream(prompt, callbacks, threadId, previousResponseId, settings)` — streams assistant replies via SDK callbacks |
-| `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt?, translateLanguage?, settings, previousResponseId?)` — one-shot transforms (`translate`, `eli5`, `summarize`, `ask`, plus legacy `expand` / `example`) |
+| `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt?, translateLanguage?, settings, previousResponseId?, referenceQuestion?)` — one-shot transforms (`translate`, `eli5`, `summarize`, `ask`, plus legacy `expand` / `example`). Wraps `blockText` in `<passage>...</passage>`. Injects `<reference-question>...</reference-question>` only when `previousResponseId` is absent. |
 | `lib/api/rewrite.ts` | `fetchRewrite(buffer, notes, settings)` — atomic Markdown rewrite for the focus editor; uses `REWRITE_PROMPT` |
 | `lib/api/generateThreadTitle.ts` | One-off title generation for new threads |
 

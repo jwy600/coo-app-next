@@ -38,6 +38,7 @@ export interface CreateResponseParams {
   previousResponseId?: string;
   reasoningEffort?: ReasoningEffort;
   webSearchEnabled?: boolean;
+  label?: string;
 }
 
 export interface ResponseResult {
@@ -45,42 +46,43 @@ export interface ResponseResult {
   responseId: string;
 }
 
+const tag = (label: string | undefined, kind: "Request" | "Response" | "Error") =>
+  label ? `[OpenAI ${kind} ${label}]` : `[OpenAI ${kind}]`;
+
 const logRequest = (
   params: Omit<CreateResponseParams, "apiKey">,
   streaming: boolean,
 ) => {
   if (!isDev) return;
-  const inputPreview =
-    params.input.length > 100
-      ? params.input.substring(0, 100) + "..."
-      : params.input;
-  console.log("\n[OpenAI Request]", {
+  console.log(`\n${tag(params.label, "Request")}`, {
     model: params.model,
     streaming,
     reasoningEffort: params.reasoningEffort || "none",
     webSearch: params.webSearchEnabled || false,
-    previousResponseId: params.previousResponseId
-      ? "..." + params.previousResponseId.slice(-8)
-      : null,
-    inputPreview,
+    previousResponseId: params.previousResponseId ?? null,
+    instructions: params.instructions ?? null,
+    input: params.input,
   });
 };
 
-const logResponse = (responseId: string, text: string, streaming: boolean) => {
+const logResponse = (
+  label: string | undefined,
+  responseId: string,
+  text: string,
+  streaming: boolean,
+) => {
   if (!isDev) return;
-  const outputPreview =
-    text.length > 200 ? text.substring(0, 200) + "..." : text;
-  console.log("[OpenAI Response]", {
-    responseId: "..." + responseId.slice(-8),
+  console.log(tag(label, "Response"), {
+    responseId,
     streaming,
     outputLength: text.length,
-    outputPreview,
+    output: text,
   });
 };
 
-const logError = (error: Error) => {
+const logError = (label: string | undefined, error: Error) => {
   if (!isDev) return;
-  console.error("[OpenAI Error]", error.message);
+  console.error(tag(label, "Error"), error.message);
 };
 
 const buildRequestBody = (params: CreateResponseParams) => ({
@@ -109,10 +111,10 @@ export const createResponse = async (
   try {
     const response = await client.responses.create(buildRequestBody(params));
     const text = response.output_text?.trim() || "";
-    logResponse(response.id, text, false);
+    logResponse(params.label, response.id, text, false);
     return { text, responseId: response.id };
   } catch (error) {
-    logError(error as Error);
+    logError(params.label, error as Error);
     throw error;
   }
 };
@@ -150,12 +152,12 @@ export const createResponseStream = async (
           handler.onToken(event.delta);
         }
       } else if (event.type === "response.completed") {
-        logResponse(responseId, fullText, true);
+        logResponse(params.label, responseId, fullText, true);
         handler.onComplete();
       }
     }
   } catch (error) {
-    logError(error as Error);
+    logError(params.label, error as Error);
     handler.onError(error as Error);
   }
 };

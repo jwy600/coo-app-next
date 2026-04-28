@@ -20,6 +20,7 @@ export interface FocusSlice {
   appendNote: (text: string) => void;
   setRewriteResult: (text: string) => void;
   revertRewrite: () => void;
+  setFocusLastResponseId: (responseId: string) => void;
 }
 
 export const focusSlice: StateCreator<
@@ -57,6 +58,11 @@ export const focusSlice: StateCreator<
 
   revertRewrite: () => {
     const next = stateFns.revertRewrite(get());
+    set({ focus: next.focus });
+  },
+
+  setFocusLastResponseId: (responseId) => {
+    const next = stateFns.setFocusLastResponseId(get(), responseId);
     set({ focus: next.focus });
   },
 });

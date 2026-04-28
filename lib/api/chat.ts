@@ -48,6 +48,7 @@ export async function fetchChatCompletionStream(
       previousResponseId,
       reasoningEffort: settings.reasoningEffort,
       webSearchEnabled: settings.webSearchEnabled,
+      label: "chat:send",
     },
     callbacks,
   );

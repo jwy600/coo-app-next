@@ -32,6 +32,7 @@ export function Composer({
   const setComposerPrompt = useStore((s) => s.setComposerPrompt);
   const setError = useStore((s) => s.setError);
   const appendNote = useStore((s) => s.appendNote);
+  const setFocusLastResponseId = useStore((s) => s.setFocusLastResponseId);
 
   const formRef = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState<EditorActionId | null>(null);
@@ -41,6 +42,10 @@ export function Composer({
       if (!focus) return;
       const settings = useStore.getState().settings;
       const language = action === 'translate' ? settings.translateLanguage : undefined;
+      const previousResponseId = focus.lastResponseId;
+      const referenceQuestion = previousResponseId
+        ? undefined
+        : focus.referenceQuestion;
       setBusy(action);
       setError(null);
       try {
@@ -50,15 +55,20 @@ export function Composer({
           undefined,
           language,
           settings,
+          previousResponseId,
+          referenceQuestion,
         );
         setComposerPrompt(result.text);
+        if (result.responseId) {
+          setFocusLastResponseId(result.responseId);
+        }
       } catch (err) {
         setError(getErrorMessage(err, `${action} failed.`));
       } finally {
         setBusy(null);
       }
     },
-    [focus, setComposerPrompt, setError],
+    [focus, setComposerPrompt, setError, setFocusLastResponseId],
   );
 
   // Drag-select inside the composer → append the highlighted text to the

@@ -16,23 +16,29 @@ import { createResponse } from "./openAiClient";
 
 const ACTION_PREAMBLES: Record<BlockAction, (prompt?: string) => string> = {
   translate: () => "",
-  eli5: () => "Explain the following text like I'm 5:",
-  example: () => "Give a concrete example that illustrates the following text:",
-  expand: () => "Expand the following text with more detail and context:",
-  summarize: () => "Summarize the following text concisely:",
+  eli5: () => "Explain the passage like I'm 5.",
+  example: () => "Give a concrete example that illustrates the passage.",
+  expand: () => "Expand the passage with more detail and context.",
+  summarize: () => "Summarize the passage concisely.",
   rewrite: (prompt) =>
-    `Rewrite the following text according to this instruction: ${prompt ?? ""}`,
+    `Rewrite the passage according to this instruction: ${prompt ?? ""}`,
   ask: (prompt) =>
-    `Answer the following question about the text below.\n\nQuestion: ${prompt ?? ""}\n\nText:`,
+    `Answer this question about the passage.\n\nQuestion: ${prompt ?? ""}`,
 };
 
 const buildInput = (
   action: BlockAction,
   blockText: string,
   prompt?: string,
+  referenceQuestion?: string,
 ): string => {
   const preamble = ACTION_PREAMBLES[action](prompt);
-  return preamble ? `${preamble}\n\n${blockText}` : blockText;
+  const passage = `<passage>\n${blockText}\n</passage>`;
+  const reference = referenceQuestion
+    ? `<reference-question>\n${referenceQuestion}\n</reference-question>\n\n`
+    : "";
+  const body = preamble ? `${preamble}\n\n${passage}` : passage;
+  return `${reference}${body}`;
 };
 
 export async function fetchBlockAction(
@@ -42,6 +48,7 @@ export async function fetchBlockAction(
   translateLanguage?: TranslateLanguage,
   settings?: Settings,
   previousResponseId?: string,
+  referenceQuestion?: string,
 ): Promise<BlockActionResponse> {
   const trimmedBlockText = parseString(blockText);
   const trimmedPrompt = parseString(prompt);
@@ -61,14 +68,18 @@ export async function fetchBlockAction(
       ? getTranslatePrompt(translateLanguage)
       : getBlockActionPrompt(settings.responseLanguage);
 
-  // Chained 'ask' follow-ups: send the raw question only. The block text is
-  // already carried through OpenAI's previous_response_id chain, and omitting
-  // the "Answer the question about this text..." preamble lets the model
-  // resolve the question against the prior answer when appropriate.
-  const input =
-    action === "ask" && previousResponseId
-      ? (trimmedPrompt as string)
-      : buildInput(action, trimmedBlockText, trimmedPrompt);
+  // Inject the reference question only when the chain is unavailable.
+  // Once previousResponseId is set, the prior turns are carried server-side.
+  const trimmedReference = previousResponseId
+    ? undefined
+    : parseString(referenceQuestion) || undefined;
+
+  const input = buildInput(
+    action,
+    trimmedBlockText,
+    trimmedPrompt,
+    trimmedReference,
+  );
 
   const result = await createResponse({
     apiKey: settings.apiKey,
@@ -78,6 +89,7 @@ export async function fetchBlockAction(
     reasoningEffort: settings.reasoningEffort,
     webSearchEnabled: settings.webSearchEnabled,
     previousResponseId,
+    label: `focus:${action}`,
   });
 
   return { text: result.text, responseId: result.responseId };

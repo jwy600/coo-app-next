@@ -6,8 +6,9 @@ import {
   appendNote,
   setRewriteResult,
   revertRewrite,
+  setFocusLastResponseId,
 } from '@/lib/state/focus';
-import { addAssistantMessage } from '@/lib/state/message';
+import { addAssistantMessage, addUserMessage } from '@/lib/state/message';
 import type { AppState } from '@/types/state';
 
 let idCounter = 0;
@@ -77,6 +78,71 @@ describe('openEditor', () => {
     expect(second.threads[0].messages[0].text).toBe('Howdy world');
     // Second editor reads its slice from the *post-save* text.
     expect(second.focus?.buffer).toBe('world');
+  });
+
+  it('captures lastResponseId from the assistant message meta', () => {
+    const seeded = addAssistantMessage(
+      makeBaseState(),
+      'Hello world',
+      idFactory,
+      nowFactory,
+      'resp_abc123',
+    );
+    const next = openEditor(seeded.state, seeded.message.id, [0, 5]);
+    expect(next.focus?.lastResponseId).toBe('resp_abc123');
+    expect(next.focus?.referenceQuestion).toBeUndefined();
+  });
+
+  it('falls back to referenceQuestion when assistant message lacks responseId', () => {
+    const withUser = addUserMessage(
+      makeBaseState(),
+      'What does saturator do?',
+      idFactory,
+      nowFactory,
+    );
+    const withAssistant = addAssistantMessage(
+      withUser.state,
+      'Saturator adds harmonics.',
+      idFactory,
+      nowFactory,
+    );
+    const next = openEditor(withAssistant.state, withAssistant.message.id, [0, 9]);
+    expect(next.focus?.lastResponseId).toBeUndefined();
+    expect(next.focus?.referenceQuestion).toBe('What does saturator do?');
+  });
+
+  it('leaves both context fields undefined when there is no prior message and no responseId', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const next = openEditor(state, messageId, [0, 5]);
+    expect(next.focus?.lastResponseId).toBeUndefined();
+    expect(next.focus?.referenceQuestion).toBeUndefined();
+  });
+});
+
+describe('setFocusLastResponseId', () => {
+  it('updates lastResponseId on the active editor', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    const next = setFocusLastResponseId(opened, 'resp_new');
+    expect(next.focus?.lastResponseId).toBe('resp_new');
+  });
+
+  it('overwrites a previously captured lastResponseId', () => {
+    const seeded = addAssistantMessage(
+      makeBaseState(),
+      'Hello world',
+      idFactory,
+      nowFactory,
+      'resp_initial',
+    );
+    const opened = openEditor(seeded.state, seeded.message.id, [0, 5]);
+    const next = setFocusLastResponseId(opened, 'resp_followup');
+    expect(next.focus?.lastResponseId).toBe('resp_followup');
+  });
+
+  it('is a no-op when no editor is active', () => {
+    const { state } = seedAssistant('Hi');
+    expect(setFocusLastResponseId(state, 'resp_x')).toBe(state);
   });
 });
 

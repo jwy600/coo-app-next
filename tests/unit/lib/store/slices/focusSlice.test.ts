@@ -62,4 +62,15 @@ describe('focusSlice', () => {
       'Howdy\n\n> **Note:** a note world',
     );
   });
+
+  it('setFocusLastResponseId updates the active focus chain head', () => {
+    useStore.getState().openEditor(messageId, [0, 5]);
+    useStore.getState().setFocusLastResponseId('resp_followup');
+    expect(useStore.getState().focus?.lastResponseId).toBe('resp_followup');
+  });
+
+  it('setFocusLastResponseId is a no-op when no editor is active', () => {
+    useStore.getState().setFocusLastResponseId('resp_x');
+    expect(useStore.getState().focus).toBeNull();
+  });
 });

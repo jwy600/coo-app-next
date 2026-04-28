@@ -52,8 +52,8 @@ describe("fetchBlockAction", () => {
     const params = mockCreateResponse.mock.calls[0][0];
     expect(params.apiKey).toBe("sk-test");
     expect(params.model).toBe("gpt-5.4-mini");
-    expect(params.input).toContain("Explain the following text like I'm 5");
-    expect(params.input).toContain("Complex text here");
+    expect(params.input).toContain("Explain the passage like I'm 5");
+    expect(params.input).toContain("<passage>\nComplex text here\n</passage>");
     expect(result.text).toBe("Simplified");
   });
 
@@ -127,7 +127,7 @@ describe("fetchBlockAction", () => {
     expect(params.instructions).toBe("translate prompt for Spanish");
   });
 
-  it("forwards previousResponseId and drops preamble on chained ask", async () => {
+  it("forwards previousResponseId and keeps the wrapped passage on chained ask", async () => {
     mockCreateResponse.mockResolvedValue({
       text: "Follow-up answer",
       responseId: "resp-2",
@@ -145,13 +145,12 @@ describe("fetchBlockAction", () => {
     const params = mockCreateResponse.mock.calls[0][0];
     expect(params.previousResponseId).toBe("resp-1");
     expect(result.responseId).toBe("resp-2");
-    // Chained ask sends just the raw question — no preamble, no block text.
-    expect(params.input).toBe("what is abc?");
-    expect(params.input).not.toContain("Answer the following question");
-    expect(params.input).not.toContain("block text");
+    // The dead "drop block text on chain" branch is gone — passage always sent.
+    expect(params.input).toContain("<passage>\nblock text\n</passage>");
+    expect(params.input).toContain("what is abc?");
   });
 
-  it("keeps the preamble on the first ask (no previousResponseId)", async () => {
+  it("keeps the preamble and wraps the passage on the first ask", async () => {
     mockCreateResponse.mockResolvedValue({
       text: "First answer",
       responseId: "resp-1",
@@ -166,9 +165,95 @@ describe("fetchBlockAction", () => {
     );
 
     const params = mockCreateResponse.mock.calls[0][0];
-    expect(params.input).toContain("Answer the following question");
+    expect(params.input).toContain("Answer this question about the passage");
     expect(params.input).toContain("what does warp mean?");
-    expect(params.input).toContain("block text");
+    expect(params.input).toContain("<passage>\nblock text\n</passage>");
+  });
+
+  it("wraps every action's blockText in a <passage> fence", async () => {
+    mockCreateResponse.mockResolvedValue({ text: "ok", responseId: "r" });
+
+    for (const action of ["translate", "summarize", "expand", "example"] as const) {
+      mockCreateResponse.mockClear();
+      await fetchBlockAction(
+        action,
+        "passage body",
+        action === "ask" || action === "rewrite" ? "prompt" : undefined,
+        action === "translate" ? "Spanish" : undefined,
+        baseSettings,
+      );
+      const params = mockCreateResponse.mock.calls[0][0];
+      expect(params.input).toContain("<passage>\npassage body\n</passage>");
+    }
+  });
+
+  it("injects <reference-question> when no previousResponseId is set", async () => {
+    mockCreateResponse.mockResolvedValue({ text: "ok", responseId: "r" });
+
+    await fetchBlockAction(
+      "summarize",
+      "passage body",
+      undefined,
+      undefined,
+      baseSettings,
+      undefined,
+      "What does saturator do?",
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.input).toContain(
+      "<reference-question>\nWhat does saturator do?\n</reference-question>",
+    );
+    expect(params.input).toContain("<passage>\npassage body\n</passage>");
+  });
+
+  it("drops <reference-question> when previousResponseId is set (chain wins)", async () => {
+    mockCreateResponse.mockResolvedValue({ text: "ok", responseId: "r" });
+
+    await fetchBlockAction(
+      "summarize",
+      "passage body",
+      undefined,
+      undefined,
+      baseSettings,
+      "resp_M",
+      "What does saturator do?",
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.input).not.toContain("<reference-question>");
+    expect(params.input).toContain("<passage>\npassage body\n</passage>");
+    expect(params.previousResponseId).toBe("resp_M");
+  });
+
+  it("does not inject <reference-question> when neither chain nor reference is set", async () => {
+    mockCreateResponse.mockResolvedValue({ text: "ok", responseId: "r" });
+
+    await fetchBlockAction(
+      "summarize",
+      "passage body",
+      undefined,
+      undefined,
+      baseSettings,
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.input).not.toContain("<reference-question>");
+  });
+
+  it("tags the request with focus:<action> label", async () => {
+    mockCreateResponse.mockResolvedValue({ text: "ok", responseId: "r" });
+
+    await fetchBlockAction(
+      "summarize",
+      "block text",
+      undefined,
+      undefined,
+      baseSettings,
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.label).toBe("focus:summarize");
   });
 
   it("uses block action instructions for non-translate actions", async () => {

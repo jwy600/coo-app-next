@@ -5,6 +5,7 @@ import { fetchBlockAction, fetchRewrite } from '@/lib/api';
 import { useStore } from '@/lib/store/useStore';
 import { Badge } from '@/components/ui/badge';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { splitNotes } from '@/lib/state/focus';
 import { EditorActions, type EditorActionId } from './EditorActions';
 
 /**
@@ -26,7 +27,7 @@ export function EditorControls() {
   const setRewriteResult = useStore((s) => s.setRewriteResult);
   const revertRewrite = useStore((s) => s.revertRewrite);
   const setFocusLastResponseId = useStore((s) => s.setFocusLastResponseId);
-  const appendNote = useStore((s) => s.appendNote);
+  const appendNoteToBuffer = useStore((s) => s.appendNoteToBuffer);
   const setError = useStore((s) => s.setError);
 
   const [shortcutBusy, setShortcutBusy] = useState<EditorActionId | null>(null);
@@ -46,12 +47,13 @@ export function EditorControls() {
       const referenceQuestion = previousResponseId
         ? undefined
         : focus.referenceQuestion;
+      const { passage, notes } = splitNotes(focus.buffer);
       setShortcutBusy(action);
       setError(null);
       try {
         const result = await fetchBlockAction(
           action,
-          focus.buffer,
+          passage,
           undefined,
           language,
           settings,
@@ -59,7 +61,11 @@ export function EditorControls() {
           referenceQuestion,
         );
         if (useStore.getState().focus?.messageId !== focus.messageId) return;
-        setShortcutResult(result.text);
+        const merged =
+          notes.length === 0
+            ? result.text
+            : `${result.text}\n\n${notes.map((n) => `> **Note:** ${n}`).join('\n\n')}`;
+        setShortcutResult(merged);
         if (result.responseId) setFocusLastResponseId(result.responseId);
       } catch (err) {
         setError(getErrorMessage(err, `${action} failed.`));
@@ -87,12 +93,13 @@ export function EditorControls() {
       const referenceQuestion = previousResponseId
         ? undefined
         : focus.referenceQuestion;
+      const { passage } = splitNotes(focus.buffer);
       setAskBusy(true);
       setError(null);
       try {
         const result = await fetchBlockAction(
           'ask',
-          focus.buffer,
+          passage,
           trimmed,
           undefined,
           settings,
@@ -100,7 +107,7 @@ export function EditorControls() {
           referenceQuestion,
         );
         if (useStore.getState().focus?.messageId !== focus.messageId) return;
-        appendNote(result.text);
+        appendNoteToBuffer(result.text);
         if (result.responseId) setFocusLastResponseId(result.responseId);
         setAskInput('');
       } catch (err) {
@@ -113,7 +120,7 @@ export function EditorControls() {
       focus,
       anyBusy,
       askInput,
-      appendNote,
+      appendNoteToBuffer,
       setFocusLastResponseId,
       setError,
     ],
@@ -122,10 +129,11 @@ export function EditorControls() {
   const handleRewrite = useCallback(async () => {
     if (!focus || anyBusy) return;
     const settings = useStore.getState().settings;
+    const { passage, notes } = splitNotes(focus.buffer);
     setRewriteBusy(true);
     setError(null);
     try {
-      const result = await fetchRewrite(focus.buffer, focus.notes, settings);
+      const result = await fetchRewrite(passage, notes, settings);
       if (useStore.getState().focus?.messageId !== focus.messageId) return;
       setRewriteResult(result.text);
     } catch (err) {

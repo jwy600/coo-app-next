@@ -3,11 +3,12 @@ import {
   openEditor,
   closeEditor,
   updateBuffer,
-  appendNote,
+  appendNoteToBuffer,
   setRewriteResult,
   setShortcutResult,
   revertRewrite,
   setFocusLastResponseId,
+  splitNotes,
 } from '@/lib/state/focus';
 import { addAssistantMessage, addUserMessage } from '@/lib/state/message';
 import type { AppState } from '@/types/state';
@@ -44,14 +45,13 @@ function seedAssistant(text: string): { state: AppState; messageId: string } {
 }
 
 describe('openEditor', () => {
-  it('initializes buffer to the slice of message.text and notes to []', () => {
+  it('initializes buffer to the slice of message.text and prevBuffer to null', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const next = openEditor(state, messageId, [0, 5]);
     expect(next.focus).toEqual({
       messageId,
       range: [0, 5],
       buffer: 'Hello',
-      notes: [],
       prevBuffer: null,
     });
   });
@@ -75,9 +75,7 @@ describe('openEditor', () => {
     const first = openEditor(state, messageId, [0, 5]);
     const edited = updateBuffer(first, 'Howdy');
     const second = openEditor(edited, messageId, [6, 11]);
-    // First editor's edit was saved before the second opened.
     expect(second.threads[0].messages[0].text).toBe('Howdy world');
-    // Second editor reads its slice from the *post-save* text.
     expect(second.focus?.buffer).toBe('world');
   });
 
@@ -118,6 +116,15 @@ describe('openEditor', () => {
     expect(next.focus?.lastResponseId).toBeUndefined();
     expect(next.focus?.referenceQuestion).toBeUndefined();
   });
+
+  it('round-trips notes inside the buffer when the slice contains them', () => {
+    const seeded = seedAssistant(
+      'Hello\n\n> **Note:** an annotation world',
+    );
+    const text = seeded.state.threads[0].messages[0].text;
+    const next = openEditor(seeded.state, seeded.messageId, [0, text.length]);
+    expect(next.focus?.buffer).toBe(text);
+  });
 });
 
 describe('setFocusLastResponseId', () => {
@@ -148,12 +155,11 @@ describe('setFocusLastResponseId', () => {
 });
 
 describe('updateBuffer', () => {
-  it('replaces only the buffer on the active editor', () => {
+  it('replaces the buffer on the active editor', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const opened = openEditor(state, messageId, [0, 5]);
     const next = updateBuffer(opened, 'Howdy');
     expect(next.focus?.buffer).toBe('Howdy');
-    expect(next.focus?.notes).toEqual([]);
     expect(next.focus?.range).toEqual([0, 5]);
   });
 
@@ -163,31 +169,47 @@ describe('updateBuffer', () => {
   });
 });
 
-describe('appendNote', () => {
-  it('pushes a note string into notes[]', () => {
+describe('appendNoteToBuffer', () => {
+  it('appends a `> **Note:** ...` line separated by a blank line', () => {
     const { state, messageId } = seedAssistant('Hello world');
-    const opened = openEditor(state, messageId, [0, 11]);
-    const next = appendNote(opened, 'first');
-    const nextTwo = appendNote(next, 'second');
-    expect(nextTwo.focus?.notes).toEqual(['first', 'second']);
+    const opened = openEditor(state, messageId, [0, 5]);
+    const next = appendNoteToBuffer(opened, 'first');
+    expect(next.focus?.buffer).toBe('Hello\n\n> **Note:** first');
+    const nextTwo = appendNoteToBuffer(next, 'second');
+    expect(nextTwo.focus?.buffer).toBe(
+      'Hello\n\n> **Note:** first\n\n> **Note:** second',
+    );
+  });
+
+  it('trims whitespace from the note', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    const next = appendNoteToBuffer(opened, '  padded  ');
+    expect(next.focus?.buffer).toBe('Hello\n\n> **Note:** padded');
+  });
+
+  it('is a no-op for an empty or whitespace-only note', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    expect(appendNoteToBuffer(opened, '')).toBe(opened);
+    expect(appendNoteToBuffer(opened, '   ')).toBe(opened);
   });
 
   it('is a no-op when no editor is active', () => {
     const { state } = seedAssistant('Hi');
-    expect(appendNote(state, 'note')).toBe(state);
+    expect(appendNoteToBuffer(state, 'note')).toBe(state);
   });
 });
 
 describe('setRewriteResult and revertRewrite', () => {
-  it('setRewriteResult stores prev buffer, replaces buffer, and clears notes', () => {
+  it('setRewriteResult stores prev buffer and replaces buffer', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const opened = openEditor(state, messageId, [0, 5]);
-    const withNote = appendNote(opened, 'tighten');
+    const withNote = appendNoteToBuffer(opened, 'tighten');
     const rewritten = setRewriteResult(withNote, 'Hi there');
 
     expect(rewritten.focus?.buffer).toBe('Hi there');
-    expect(rewritten.focus?.prevBuffer).toBe('Hello');
-    expect(rewritten.focus?.notes).toEqual([]);
+    expect(rewritten.focus?.prevBuffer).toBe('Hello\n\n> **Note:** tighten');
   });
 
   it('revertRewrite restores prev buffer and clears prevBuffer', () => {
@@ -221,15 +243,13 @@ describe('setRewriteResult and revertRewrite', () => {
 });
 
 describe('setShortcutResult', () => {
-  it('replaces the buffer, stashes prevBuffer, and preserves notes', () => {
+  it('replaces the buffer and stashes prevBuffer', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const opened = openEditor(state, messageId, [0, 5]);
-    const withNotes = appendNote(appendNote(opened, 'first'), 'second');
-    const next = setShortcutResult(withNotes, 'Hola');
+    const next = setShortcutResult(opened, 'Hola');
 
     expect(next.focus?.buffer).toBe('Hola');
     expect(next.focus?.prevBuffer).toBe('Hello');
-    expect(next.focus?.notes).toEqual(['first', 'second']);
   });
 
   it('is a no-op when no editor is active', () => {
@@ -259,19 +279,59 @@ describe('closeEditor', () => {
     expect(closed.threads[0].messages[0].text).toBe('Howdy world');
   });
 
-  it('appends notes as blockquote-format Markdown after a blank line', () => {
+  it('persists notes already inline in the buffer (no extra serialization)', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const opened = openEditor(state, messageId, [0, 5]);
-    const withNotes = appendNote(appendNote(opened, 'first note'), 'second');
+    const withNotes = appendNoteToBuffer(
+      appendNoteToBuffer(opened, 'first'),
+      'second',
+    );
     const closed = closeEditor(withNotes);
 
     expect(closed.threads[0].messages[0].text).toBe(
-      'Hello\n\n> **Note:** first note\n\n> **Note:** second world',
+      'Hello\n\n> **Note:** first\n\n> **Note:** second world',
     );
   });
 
   it('is a no-op when no editor is active', () => {
     const { state } = seedAssistant('Hi');
     expect(closeEditor(state)).toBe(state);
+  });
+});
+
+describe('splitNotes', () => {
+  it('returns the whole buffer as passage when there are no notes', () => {
+    expect(splitNotes('plain passage')).toEqual({
+      passage: 'plain passage',
+      notes: [],
+    });
+  });
+
+  it('splits a single trailing note', () => {
+    expect(splitNotes('passage\n\n> **Note:** answer')).toEqual({
+      passage: 'passage',
+      notes: ['answer'],
+    });
+  });
+
+  it('splits multiple trailing notes in order', () => {
+    expect(
+      splitNotes('passage\n\n> **Note:** first\n\n> **Note:** second'),
+    ).toEqual({ passage: 'passage', notes: ['first', 'second'] });
+  });
+
+  it('treats a buffer that is only notes as having an empty passage', () => {
+    expect(splitNotes('> **Note:** only')).toEqual({
+      passage: '',
+      notes: ['only'],
+    });
+  });
+
+  it('does not match blockquotes that are not in the trailing run', () => {
+    const buffer = '> **Note:** stray\n\nactual passage';
+    expect(splitNotes(buffer)).toEqual({
+      passage: '> **Note:** stray\n\nactual passage',
+      notes: [],
+    });
   });
 });

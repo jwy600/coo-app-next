@@ -52,8 +52,8 @@ describe('EditorControls', () => {
     expect(revert.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('clicking a shortcut mutates the buffer via setShortcutResult and preserves notes', async () => {
-    useStore.getState().appendNote('keep me');
+  it('clicking a shortcut sends only the passage to the API and merges trailing notes back into the buffer', async () => {
+    useStore.getState().appendNoteToBuffer('keep me');
     mockFetchBlockAction.mockResolvedValue({ text: 'Hola', responseId: 'r1' });
 
     render(<EditorControls />);
@@ -62,10 +62,13 @@ describe('EditorControls', () => {
     });
 
     await waitFor(() => {
-      expect(useStore.getState().focus?.buffer).toBe('Hola');
+      expect(useStore.getState().focus?.buffer).toBe(
+        'Hola\n\n> **Note:** keep me',
+      );
     });
-    expect(useStore.getState().focus?.prevBuffer).toBe('Hello');
-    expect(useStore.getState().focus?.notes).toEqual(['keep me']);
+    expect(useStore.getState().focus?.prevBuffer).toBe(
+      'Hello\n\n> **Note:** keep me',
+    );
     expect(mockFetchBlockAction).toHaveBeenCalledWith(
       'translate',
       'Hello',
@@ -92,7 +95,7 @@ describe('EditorControls', () => {
     expect(useStore.getState().focus?.prevBuffer).toBeNull();
   });
 
-  it('submitting the ask input appends the answer to notes and clears the input', async () => {
+  it('submitting the ask input appends the answer as inline `> **Note:** ...` markdown and clears the input', async () => {
     mockFetchBlockAction.mockResolvedValue({
       text: 'It is a greeting.',
       responseId: 'r1',
@@ -109,10 +112,11 @@ describe('EditorControls', () => {
     });
 
     await waitFor(() => {
-      expect(useStore.getState().focus?.notes).toEqual(['It is a greeting.']);
+      expect(useStore.getState().focus?.buffer).toBe(
+        'Hello\n\n> **Note:** It is a greeting.',
+      );
     });
     expect(input.value).toBe('');
-    expect(useStore.getState().focus?.buffer).toBe('Hello');
     expect(mockFetchBlockAction).toHaveBeenCalledWith(
       'ask',
       'Hello',
@@ -137,8 +141,8 @@ describe('EditorControls', () => {
     expect(mockFetchBlockAction).not.toHaveBeenCalled();
   });
 
-  it('clicking Rewrite calls fetchRewrite with buffer + notes and applies the result', async () => {
-    useStore.getState().appendNote('tighten it');
+  it('clicking Rewrite splits inline notes from the buffer and sends passage + notes to fetchRewrite', async () => {
+    useStore.getState().appendNoteToBuffer('tighten it');
     mockFetchRewrite.mockResolvedValue({ text: 'Howdy', responseId: 'r1' });
 
     render(<EditorControls />);
@@ -154,6 +158,8 @@ describe('EditorControls', () => {
       ['tighten it'],
       expect.objectContaining({ apiKey: expect.any(String) }),
     );
-    expect(useStore.getState().focus?.prevBuffer).toBe('Hello');
+    expect(useStore.getState().focus?.prevBuffer).toBe(
+      'Hello\n\n> **Note:** tighten it',
+    );
   });
 });

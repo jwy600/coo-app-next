@@ -24,22 +24,23 @@ describe('focusSlice', () => {
       messageId,
       range: [0, 5],
       buffer: 'Hello',
-      notes: [],
       prevBuffer: null,
     });
   });
 
-  it('updateBuffer mutates only the buffer', () => {
+  it('updateBuffer mutates the buffer', () => {
     useStore.getState().openEditor(messageId, [0, 5]);
     useStore.getState().updateBuffer('Howdy');
     expect(useStore.getState().focus?.buffer).toBe('Howdy');
   });
 
-  it('appendNote pushes into notes', () => {
+  it('appendNoteToBuffer appends inline `> **Note:** ...` markdown to the buffer', () => {
     useStore.getState().openEditor(messageId, [0, 5]);
-    useStore.getState().appendNote('first');
-    useStore.getState().appendNote('second');
-    expect(useStore.getState().focus?.notes).toEqual(['first', 'second']);
+    useStore.getState().appendNoteToBuffer('first');
+    useStore.getState().appendNoteToBuffer('second');
+    expect(useStore.getState().focus?.buffer).toBe(
+      'Hello\n\n> **Note:** first\n\n> **Note:** second',
+    );
   });
 
   it('setRewriteResult and revertRewrite round-trip', () => {
@@ -51,10 +52,10 @@ describe('focusSlice', () => {
     expect(useStore.getState().focus?.prevBuffer).toBeNull();
   });
 
-  it('closeEditor saves buffer + notes back to the message and clears focus', () => {
+  it('closeEditor saves buffer (notes inline) back to the message and clears focus', () => {
     useStore.getState().openEditor(messageId, [0, 5]);
     useStore.getState().updateBuffer('Howdy');
-    useStore.getState().appendNote('a note');
+    useStore.getState().appendNoteToBuffer('a note');
     useStore.getState().closeEditor();
 
     expect(useStore.getState().focus).toBeNull();

@@ -47,13 +47,15 @@ export function EditorControls() {
       const referenceQuestion = previousResponseId
         ? undefined
         : focus.referenceQuestion;
-      const { passage, notes } = splitNotes(focus.buffer);
+      // Shortcuts (translate / eli5 / summarize) transform the whole buffer,
+      // notes included — translating a passage and its annotations together
+      // is what the user expects.
       setShortcutBusy(action);
       setError(null);
       try {
         const result = await fetchBlockAction(
           action,
-          passage,
+          focus.buffer,
           undefined,
           language,
           settings,
@@ -61,11 +63,7 @@ export function EditorControls() {
           referenceQuestion,
         );
         if (useStore.getState().focus?.messageId !== focus.messageId) return;
-        const merged =
-          notes.length === 0
-            ? result.text
-            : `${result.text}\n\n${notes.map((n) => `> **Note:** ${n}`).join('\n\n')}`;
-        setShortcutResult(merged);
+        setShortcutResult(result.text);
         if (result.responseId) setFocusLastResponseId(result.responseId);
       } catch (err) {
         setError(getErrorMessage(err, `${action} failed.`));

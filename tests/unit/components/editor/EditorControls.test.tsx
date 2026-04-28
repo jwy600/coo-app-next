@@ -52,9 +52,12 @@ describe('EditorControls', () => {
     expect(revert.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('clicking a shortcut sends only the passage to the API and merges trailing notes back into the buffer', async () => {
+  it('clicking a shortcut transforms the whole buffer (notes included) and replaces it with the result', async () => {
     useStore.getState().appendNoteToBuffer('keep me');
-    mockFetchBlockAction.mockResolvedValue({ text: 'Hola', responseId: 'r1' });
+    mockFetchBlockAction.mockResolvedValue({
+      text: 'Hola\n\n> **Nota:** mantenme',
+      responseId: 'r1',
+    });
 
     render(<EditorControls />);
     await act(async () => {
@@ -63,7 +66,7 @@ describe('EditorControls', () => {
 
     await waitFor(() => {
       expect(useStore.getState().focus?.buffer).toBe(
-        'Hola\n\n> **Note:** keep me',
+        'Hola\n\n> **Nota:** mantenme',
       );
     });
     expect(useStore.getState().focus?.prevBuffer).toBe(
@@ -71,7 +74,7 @@ describe('EditorControls', () => {
     );
     expect(mockFetchBlockAction).toHaveBeenCalledWith(
       'translate',
-      'Hello',
+      'Hello\n\n> **Note:** keep me',
       undefined,
       expect.any(String),
       expect.objectContaining({ apiKey: expect.any(String) }),

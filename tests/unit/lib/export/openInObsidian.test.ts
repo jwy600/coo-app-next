@@ -17,7 +17,7 @@ describe("openInObsidian", () => {
 
   const getTriggeredUri = (): string => {
     const anchorCall = createElementSpy.mock.results.find(
-      (r) => (r.value as HTMLElement).tagName === "A",
+      (r: { value: unknown }) => (r.value as HTMLElement).tagName === "A",
     );
     return (anchorCall?.value as HTMLAnchorElement).href;
   };

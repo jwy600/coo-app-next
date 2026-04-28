@@ -11,8 +11,9 @@
 
 import { useCallback } from 'react';
 import { useStore } from '@/lib/store/useStore';
-import { generateThreadTitle } from '@/lib/api';
+import { fetchBlockAction, generateThreadTitle } from '@/lib/api';
 import { getLastAssistantResponseId, getThreadById } from '@/lib/state';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { useStreaming } from './useStreaming';
 
 export interface UseComposerReturn {
@@ -51,6 +52,31 @@ export function useComposer(): UseComposerReturn {
 
       const trimmed = prompt.trim();
       if (isSubmitting || !trimmed) return;
+
+      // Focus mode: composer is input AND output. Ask about the editor's
+      // buffer; replace the prompt with the answer; do NOT add thread
+      // messages, do NOT stream.
+      const focus = useStore.getState().focus;
+      if (focus) {
+        setAwaitingResponse(true);
+        setError(null);
+        try {
+          const settings = useStore.getState().settings;
+          const result = await fetchBlockAction(
+            'ask',
+            focus.buffer,
+            trimmed,
+            undefined,
+            settings,
+          );
+          setPrompt(result.text);
+        } catch (err) {
+          setError(getErrorMessage(err, 'Ask failed.'));
+        } finally {
+          setAwaitingResponse(false);
+        }
+        return;
+      }
 
       setAwaitingResponse(true);
       setError(null);
@@ -120,6 +146,7 @@ export function useComposer(): UseComposerReturn {
       addUserMessage,
       createThread,
       setMode,
+      setPrompt,
       updateThreadTitle,
       setAwaitingResponse,
       setError,

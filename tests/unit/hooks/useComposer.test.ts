@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useStore } from '@/lib/store/useStore';
 
-const { mockStreamChat } = vi.hoisted(() => ({ mockStreamChat: vi.fn() }));
+const { mockStreamChat, mockFetchBlockAction } = vi.hoisted(() => ({
+  mockStreamChat: vi.fn(),
+  mockFetchBlockAction: vi.fn(),
+}));
 
 vi.mock('@/hooks/useStreaming', () => ({
   useStreaming: () => ({ streamChat: mockStreamChat }),
@@ -10,6 +13,7 @@ vi.mock('@/hooks/useStreaming', () => ({
 
 vi.mock('@/lib/api', () => ({
   generateThreadTitle: vi.fn().mockResolvedValue(null),
+  fetchBlockAction: mockFetchBlockAction,
 }));
 
 import { useComposer } from '@/hooks/useComposer';
@@ -109,6 +113,75 @@ describe('useComposer', () => {
       expect(useStore.getState().mode).toBe('thread');
       expect(useStore.getState().threads).toHaveLength(1);
       expect(useStore.getState().threads[0].title).toBe('First message');
+    });
+
+    describe('focus mode (ask flow)', () => {
+      function openFocus() {
+        const message = useStore.getState().addAssistantMessage(
+          'Hello world from the assistant.',
+        );
+        useStore.getState().openEditor(message.id, [0, 5]);
+      }
+
+      it('routes the prompt through fetchBlockAction("ask") when an editor is active', async () => {
+        openFocus();
+        mockFetchBlockAction.mockResolvedValue({
+          text: 'It greets the world.',
+          responseId: 'resp-ask-1',
+        });
+        useStore.setState({ composerPrompt: 'what does this mean?' });
+
+        const { result } = renderHook(() => useComposer());
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(mockFetchBlockAction).toHaveBeenCalledWith(
+          'ask',
+          'Hello',
+          'what does this mean?',
+          undefined,
+          expect.any(Object),
+        );
+        // Answer replaces the composer prompt.
+        expect(useStore.getState().composerPrompt).toBe('It greets the world.');
+        // No new thread messages.
+        expect(useStore.getState().threads[0].messages).toHaveLength(1); // just the seed
+        // streaming hook is not used.
+        expect(mockStreamChat).not.toHaveBeenCalled();
+      });
+
+      it('clears isAwaitingResponse when the ask returns', async () => {
+        openFocus();
+        mockFetchBlockAction.mockResolvedValue({
+          text: 'answer',
+          responseId: 'r',
+        });
+        useStore.setState({ composerPrompt: 'q' });
+        const { result } = renderHook(() => useComposer());
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(useStore.getState().isAwaitingResponse).toBe(false);
+      });
+
+      it('surfaces an error when the ask request fails', async () => {
+        openFocus();
+        mockFetchBlockAction.mockRejectedValue(new Error('upstream down'));
+        useStore.setState({ composerPrompt: 'q' });
+        const { result } = renderHook(() => useComposer());
+
+        await act(async () => {
+          await result.current.handleSubmit();
+        });
+
+        expect(useStore.getState().error).toContain('upstream down');
+        // Prompt is preserved on error so the user can retry.
+        expect(useStore.getState().composerPrompt).toBe('q');
+        expect(useStore.getState().isAwaitingResponse).toBe(false);
+      });
     });
   });
 });

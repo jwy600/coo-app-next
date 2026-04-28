@@ -4,497 +4,258 @@
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
 - **Zustand** for state management (localStorage persistence via `persist` middleware)
 - **shadcn/ui** + **Tailwind CSS** for UI
+- **react-markdown** + **remark-gfm** + **remark-math** + **rehype-katex** for rendering
 - **OpenAI API** for AI features — called directly from the browser using the user's API key
 
-There is no backend server and no database. All data (threads, messages, blocks, cards, settings) lives in the user's browser localStorage. The user's OpenAI API key is entered in the Settings UI and stored in localStorage alongside everything else.
+There is no backend server and no database. All data (threads, messages, settings) lives in the user's browser localStorage. The user's OpenAI API key is entered in the Settings UI and stored in localStorage alongside everything else.
 
 ## Project Structure
 ```
-app/                    # Next.js App Router
-├── layout.tsx          # Root layout
-├── page.tsx            # Landing page
-├── globals.css         # Tailwind + CSS variables
-└── t/[threadId]/       # Thread detail pages
-
-prompts/                        # System prompt templates (language-neutral .md files)
-├── developer.md                # Knowledge Assistant chat prompt (thorough explanations)
-├── chatgpt.md                  # ChatGPT-style chat prompt (warm, conversational)
-├── block-action.md             # Block action system prompt (ELI5, expand, etc.)
-└── block-action-translate.md   # Translate action system prompt (separate template)
+app/                            # Next.js App Router
+├── layout.tsx                  # Root layout
+├── page.tsx                    # Landing page
+├── globals.css                 # Tailwind + CSS variables
+└── t/[threadId]/               # Thread detail pages
 
 components/
-├── ui/                 # shadcn/ui components
-├── chat/               # Message UI (AssistantMessage, BlockStack, DeleteThreadButton, etc.)
-├── composer/           # Message input (Composer, BlockModeToggle, PromptInput)
-├── content/            # Content rendering (BlockContent, Math)
-├── sidebar/            # Navigation (AppSidebar, NewChatButton, ThreadList)
-├── settings/           # Settings UI (including OpenAI API key input)
-├── landing/            # Landing page components
-└── layout/             # Layout wrappers
+├── ui/                         # shadcn/ui components
+├── chat/                       # ChatContainer, MessageList, AssistantMessage, UserMessage,
+│                               # ExportButton, DeleteThreadButton, PendingMessage, ErrorMessage
+├── editor/                     # Focus mode: FocusEditor, EditorControls
+├── composer/                   # Composer, EditorActions, ComposerHint, PromptInput
+├── content/                    # MarkdownContent (the only renderer)
+├── sidebar/                    # AppSidebar, NewChatButton, etc.
+├── settings/                   # Settings UI (incl. OpenAI API key input)
+├── empty-state/                # Landing page hero
+└── layout/                     # Layout wrappers
 
 lib/
-├── state/              # Pure state functions (CRITICAL)
-├── store/              # Zustand store + slices (localStorage persist)
-├── api/                # Browser-side OpenAI client (openAiClient.ts) + chat/block-action pipelines
-├── rendering/          # Markdown, KaTeX rendering
-├── config/             # OpenAI settings + prompt loader (prompts.ts)
-├── export/             # Markdown export utilities
-└── utils/              # Helpers (cn, validation, etc.)
+├── state/                      # Pure state functions (CRITICAL — see below)
+├── store/                      # Zustand store + slices + persist migration
+├── selection/                  # DOM ↔ source mapping (focus mode core)
+├── api/                        # Browser-side OpenAI client + chat / block-action / rewrite pipelines
+├── config/                     # OpenAI settings, prompt templates and loader
+├── export/                     # Markdown export utilities
+└── utils/                      # Helpers (cn, validation, idFactory, etc.)
 
-hooks/                  # Custom React hooks (useComposer, useStreaming, etc.)
-types/                  # TypeScript definitions
-tests/                  # Vitest tests
-e2e/                    # Playwright tests
+hooks/                          # Custom React hooks
+types/                          # TypeScript definitions
+tests/                          # Vitest tests
+e2e/                            # Playwright tests
 ```
 
 ## State Management
 
-### State Categories (types/state/)
+### State Categories (`types/state/`)
+- **CoreState** (`core.ts`) — Persistent data (`threads`, `activeThreadId`)
+- **UIState** (`ui.ts`) — Ephemeral UI (`mode`, `isAwaitingResponse`, `error`, `focus`, `composerPrompt`)
+- **StreamingState** — `streamingMessageId: string | null`
+- **SettingsState** — Persisted user preferences
 
-State is organized into semantic categories:
-- **CoreState** (`types/state/core.ts`) — Persistent data (threads, blocks, cards, activeThreadId)
-- **UIState** (`types/state/ui.ts`) — Ephemeral UI (mode, selectedBlockId, isAwaitingResponse, error)
-- **StreamingState** — Temporary streaming data (already isolated)
-- **SettingsState** — Persisted user preferences (already isolated)
+Combined as `AppState = CoreState & UIState`.
 
-Combined as: `AppState = CoreState & UIState`
-
-### Pure Functions (lib/state/)
+### Pure Functions (`lib/state/`)
 All state logic lives here as pure functions with **narrow signatures**:
 
 ```typescript
-// UI state functions accept only the fields they need
-export const selectBlock = (
-  mode: AppMode,                   // Only need mode
-  selectedBlockId: string | null,  // Only need current selection
-  blockId: string
-): SelectBlockResult => {
-  if (mode !== 'thread') {
-    return { selectedBlockId: null };
-  }
-  // Toggle: if same block, deselect; otherwise select the new block
-  if (selectedBlockId === blockId) {
-    return { selectedBlockId: null };
-  }
-  return { selectedBlockId: blockId };
-};
+export const replaceMessageRange = (
+  state: AppState,
+  messageId: string,
+  range: [number, number],
+  replacement: string,
+): AppState => { … };
 
-// Slices orchestrate pure function calls
-selectBlock: (blockId) => {
-  const { mode, selectedBlockId } = get();
-  const result = stateFns.selectBlock(mode, selectedBlockId, blockId);
-  set(result);
-}
+export const openEditor = (
+  state: AppState,
+  messageId: string,
+  range: [number, number],
+): AppState => { … };  // auto-saves any active editor first
 ```
+
+The Zustand slices in `lib/store/slices/` are thin wrappers that call these pure functions and write the result into the store.
 
 Key files:
-- `lib/state/index.ts` — Main orchestration, `createInitialState`, UI state functions
-- `lib/state/thread.ts` — Thread CRUD
-- `lib/state/message.ts` — Message operations
-- `lib/state/block.ts` — Block operations
-- `lib/state/parser.ts` — Markdown → blocks
-- `lib/state/heading.ts` — Section/heading card range logic
-- `lib/state/card.ts` — Card operations (create, remove, scope calculation)
+- `lib/state/index.ts` — `createInitialState`, `setMode`
+- `lib/state/thread.ts` — Thread CRUD, `getLastAssistantResponseId`
+- `lib/state/message.ts` — Message ops on `text: string`: `addUserMessage`, `addAssistantMessage`, `appendMessageText`, `replaceMessageRange`, `setMessageResponseId`, `removeMessage`, `findMessage`
+- `lib/state/focus.ts` — Focus editor lifecycle: `openEditor`, `closeEditor`, `updateBuffer`, `appendNote`, `setRewriteResult`, `revertRewrite`
+- `lib/state/settings.ts` — User settings reducer
 
-### Block-Based Content Model
-AI responses are split into **blocks** (paragraphs, lists, code). Each block:
-- Has its own ID and is independently editable/selectable
-- Supports rewrite with undo (`prevText`, `isRewritten`)
+### Why this pattern?
+- **Testability** — pure functions are easy to unit test
+- **Predictability** — no hidden side effects
+- **Debugging** — state changes are traceable
+
+## Message model
+
+Each message is a single markdown string:
 
 ```typescript
-interface Block {
+interface Message {
   id: string;
-  messageId: string;
-  type: 'paragraph' | 'list' | 'code' | 'heading';
+  threadId: string;
+  role: 'user' | 'assistant';
   text: string;
-  edited: boolean;
-  selections: string[];     // Text selections for rewrite
-  prevText: string | null;  // For undo after rewrite
-  isRewritten: boolean;
+  createdAt: number;
+  meta: Record<string, unknown>;  // e.g. { openaiResponseId }
 }
 ```
 
-#### Block Rewrite Operations
-Block rewrites use separate functions for better UX:
-- `rewriteBlock(state, blockId, newText)` — Applies a rewrite (can be chained)
-- `undoRewrite(state, blockId)` — Reverts to previous text if available
+There is **no block model**. Markdown is rendered straight into HTML by `MarkdownContent`. Streaming appends tokens directly to `message.text` via `appendMessageText`; the live message renders through the same pipeline as completed ones.
 
-This allows users to create new highlights and rewrite multiple times without needing to exit block mode. The "Rewrite" and "Undo" buttons are decoupled in the UI.
+## Focus mode (the core UX)
 
-Selection state:
-- `selectedBlockId` — Currently selected block (single selection)
-- When a block is selected, it enters "block mode" for transformations
-- Clicking outside or pressing Escape exits block mode
+### Selection layer (`lib/selection/`)
+The trick that makes drag-select-to-edit work is mapping DOM selections back to source markdown character offsets:
 
-### Zustand Store (lib/store/)
-Thin wrappers that call pure functions:
+1. **`remarkSourcePositions`** — a remark plugin that visits every mdast node carrying a `position` and writes `data-md-start` / `data-md-end` onto its rendered HTML element via `data.hProperties`.
+2. **`rehypeWrapText`** — a rehype plugin that:
+   - Wraps each hast text node in `<span data-md-text="true" data-md-start data-md-end>` so DOM ranges anchored inside text get character-precise mapping.
+   - Wraps `math-inline` / `math-display` elements in an outer `<span data-md-atomic="true">` whose source offsets survive `rehype-katex`'s element replacement.
+
+   Must run **before** `rehype-katex`.
+3. **`domToSource(range)`** — given a DOM `Range`, walks up to the closest `[data-message-id]` ancestor, reads source offsets from the wrapping spans, and returns `{ messageId, start, end }` (or `null` if the range is invalid / sub-word / cross-message).
+
+### Focus state (`UIState.focus`)
 ```typescript
-// lib/store/slices/messageSlice.ts
-addUserMessage: (text) => {
-  const { state, message } = stateFns.addUserMessage(
-    get(), text, idFactory, nowFactory
-  );
-  set({ messages: state.messages });
-  return message;
+interface FocusActive {
+  messageId: string;
+  range: [number, number];   // character offsets into message.text
+  buffer: string;            // editable markdown — initialized from message.text.slice(...)
+  notes: string[];           // accumulated via appendNote
+  prevBuffer: string | null; // single-step Rewrite undo
 }
 ```
 
-### Why This Pattern?
-- **Testability**: Pure functions are easy to unit test
-- **Predictability**: No hidden side effects
-- **Debugging**: State changes are traceable
-- **Framework-agnostic**: Core logic works without React
+Persisted shape on disk: nothing. Focus is purely in-memory.
 
-## Adding New Features
+### Editor lifecycle
+1. **Open** — `useFocusSelection` (mounted on each `AssistantMessage`) listens for `mouseup` / `touchend` and calls `domToSource(getSelection().getRangeAt(0))`. If the result anchors inside this message and meets the minimum-length rule, it dispatches `openEditor(messageId, [start, end])`. The hook is disabled while the message is streaming or already in focus mode.
+2. **Render split** — when `focus.messageId === message.id`, `AssistantMessage` renders three parts: `<MarkdownContent text={text.slice(0, start)} />` + `<FocusEditor />` + `<MarkdownContent text={text.slice(end)} />`. The editor is a regular block element; surrounding text reflows around it.
+3. **Edit / notes** — typing flows through `updateBuffer`. `appendNote(text)` is called from two places: composer's drag-select handler, and the EditorActions buttons (currently lands in the composer prompt instead — see "Composer behavior" below).
+4. **Close** — `closeEditor` serializes notes as `> **Note:** <text>` blockquotes after a blank line, splices the result into `message.text` via `replaceMessageRange`, and clears `focus`. Triggered by:
+   - Click outside the editor (excluding `.composer`, which is part of the working surface)
+   - Opening another editor (auto-save then re-open)
 
-### Adding a State Function
-1. Write pure function in `lib/state/` with **narrow signature** (accept only needed fields):
-```typescript
-// Result type - only fields that change
-export interface MyFeatureResult {
-  field: string;
-}
+### Rewrite
+Atomic — `fetchRewrite(buffer, notes)` posts a `<passage>` / `<notes>` envelope with `REWRITE_PROMPT` instructions. While in flight, `EditorControls` shows "Rewriting…" and disables the buttons. On success `setRewriteResult(text)` stashes the prior buffer in `prevBuffer` and replaces the live buffer; Revert restores it (single-step). Notes are consumed (cleared) by Rewrite — they were folded into the prompt that produced the result.
 
-// Pure function with narrow signature
-export const myFeature = (
-  currentValue: string,  // Only what's needed
-  newValue: string
-): MyFeatureResult => {
-  return { field: newValue };
-};
+## Composer behavior
+
+### Submit (`useComposer.handleSubmit`)
+Behavior is derived from `focus`:
+
+- **No editor active** → chat. `addUserMessage(prompt)` then `streamChat(...)` which creates an empty assistant message and appends tokens into its `text`.
+- **Editor active** → ask. `fetchBlockAction('ask', focus.buffer, prompt)`. The answer **replaces the composer prompt in place**. No thread messages are added; no streaming. On error the prompt is preserved so the user can retry.
+
+(This deviates from the original spec, which routed the answer into the thread. See the project memory for rationale.)
+
+### Drag-select inside the composer
+When focus is active and the user drag-selects text inside the composer's form, the selected text is passed to `appendNote`. The selection is then cleared so subsequent drags trigger again.
+
+### Shortcut buttons (`EditorActions`)
+Translate / ELI5 / Summarize render as Badge buttons above the prompt input when focus is active. Each calls `fetchBlockAction(action, focus.buffer, ...)` and writes the result into the composer prompt. Co-locating button + result removes the eye-jump that an editor-side variant created.
+
+## Streaming
+
+`useStreaming.streamChat`:
+1. `addAssistantMessage('')` — creates an empty placeholder message.
+2. `startStreaming(messageId)` — records the in-flight id (used to disable focus mode for this message until completion).
+3. SDK callbacks:
+   - `onToken` → `appendMessageText(messageId, token)`
+   - `onResponseId` → `setMessageResponseId(messageId, id)`
+   - `onComplete` → `clearStream()`. If the message ended up empty (zero tokens), the placeholder is removed.
+   - `onError` → `clearStream()` + `removeMessage(messageId)` + caller's `onError`.
+
+There is **no separate streaming-render path**: the live message renders through the same `MarkdownContent` pipeline as completed ones.
+
+## Persistence
+
+All user data is persisted to **localStorage** via Zustand's `persist` middleware. Persist `version: 3`.
+
+```
+Zustand store
+  ├── threads (each with messages[]) ← persisted
+  ├── activeThreadId                 ← persisted
+  ├── settings (incl. apiKey)        ← persisted
+  └── ephemeral UI state (mode, focus, error, composerPrompt, streamingMessageId) ← not persisted
 ```
 
-2. Add tests in `tests/lib/state/`:
-```typescript
-test('myFeature updates field', () => {
-  const result = myFeature('old', 'new');
-  expect(result.field).toBe('new');
-});
-```
+### Migration (`lib/store/migration.ts`)
 
-3. Wrap in Zustand action in `lib/store/slices/`:
-```typescript
-myFeature: (newValue) => {
-  const { currentValue } = get();  // Extract only needed fields
-  const result = stateFns.myFeature(currentValue, newValue);
-  set(result);  // Merge result into state
-}
-```
+| From | To | Behavior |
+|---|---|---|
+| v<2 | v2 | Settings rename: `obsidianVaultPath` → `obsidianVaultName`; ensure `apiKey` exists |
+| <3 | v3 | Joins each message's `blocks[].text` into a single `message.text` field; deletes top-level `blocks` and `cards` arrays; deletes legacy `selectedBlockId` |
 
-### Adding a UI Component
-1. Check shadcn/ui first: `npx shadcn@latest add [name]`
-2. If custom, follow patterns in `components/ui/`:
-```typescript
-import { cn } from '@/lib/utils';
+The migration is idempotent — running it on already-migrated state is a no-op. Tests in `tests/unit/lib/store/migration.test.ts` exercise both paths plus an already-migrated payload.
 
-interface Props extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'secondary';
-}
+Notes:
+- The user's OpenAI API key lives in the same localStorage payload. Users enter it once via Settings; the browser hands it to the `openai` SDK on every request (`dangerouslyAllowBrowser: true`).
+- There is no cross-device sync. Export threads as markdown for long-term storage.
 
-const MyComponent = React.forwardRef<HTMLDivElement, Props>(
-  ({ className, variant = 'default', ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn('base-styles', variant === 'secondary' && 'alt', className)}
-      {...props}
-    />
-  )
-);
-```
-
-### Adding an API Route
-Create in `app/api/[name]/route.ts`:
-```typescript
-import { NextRequest, NextResponse } from 'next/server';
-
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  // Validate, process, return
-  return NextResponse.json({ data });
-}
-```
-
-## UI Patterns
-
-### shadcn/ui
-- Config: `components.json` (style: "new-york", base: "neutral")
-- Components live in `components/ui/`
-- Use `cn()` for class merging
-- Use CVA for variants
-
-### Styling
-- Tailwind CSS with CSS variables
-- Dark mode: class-based via `next-themes`
-- Custom classes in `globals.css` under `@layer components`
-
-### Path Aliases
-```typescript
-import { useStore } from '@/lib/store/useStore';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-```
-
-## OpenAI Integration
-
-The app has no backend route handlers for chat. Instead, the browser calls OpenAI directly using the user-supplied API key stored in `settings.apiKey`.
+## OpenAI integration
 
 | Module | Purpose |
 |--------|---------|
-| `lib/api/openAiClient.ts` | Thin wrapper around `openai` SDK (`dangerouslyAllowBrowser: true`), exposes `createResponse` and `createResponseStream` |
-| `lib/api/chat.ts` | `fetchChatCompletionStream(prompt, callbacks, threadId, previousResponseId, settings)` — streams assistant replies via callbacks |
-| `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt, translateLanguage, settings, previousResponseId)` — one-shot transformations (ELI5, translate, expand, etc.); returns `{ text, responseId }` |
+| `lib/api/openAiClient.ts` | Thin wrapper around the `openai` SDK; exposes `createResponse` and `createResponseStream` |
+| `lib/api/chat.ts` | `fetchChatCompletionStream(prompt, callbacks, threadId, previousResponseId, settings)` — streams assistant replies via SDK callbacks |
+| `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt?, translateLanguage?, settings, previousResponseId?)` — one-shot transforms (`translate`, `eli5`, `summarize`, `ask`, plus legacy `expand` / `example`) |
+| `lib/api/rewrite.ts` | `fetchRewrite(buffer, notes, settings)` — atomic Markdown rewrite for the focus editor; uses `REWRITE_PROMPT` |
+| `lib/api/generateThreadTitle.ts` | One-off title generation for new threads |
 
-Streaming is handled by the OpenAI SDK's async iterator; the client dispatches `onToken`, `onResponseId`, `onComplete`, and `onError` callbacks to the store.
+### Prompts (`lib/config/`)
+- `promptTemplates.ts` — Inline string templates: `CHATGPT_PROMPT`, `BLOCK_ACTION_PROMPT`, `BLOCK_ACTION_TRANSLATE_PROMPT`, `THREAD_TITLE_PROMPT`, `REWRITE_PROMPT`.
+- `prompts.ts` — `getChatPrompt`, `getBlockActionPrompt`, `getTranslatePrompt`, `getRewritePrompt` — apply language-tag substitution at runtime.
 
-### Ask-mode Q&A chain
+## Export
 
-When a block is selected, the composer is in `ask` mode. Each `'ask'` call stores the returned `responseId` in `useComposer`'s `askChainRef`, tagged with the block ID it belongs to. The next ask on the same block passes that ID as `previousResponseId`, chaining the Q&A server-side via OpenAI's `previous_response_id` so follow-up questions include prior answers as context.
+Whole-thread markdown export. `threadToMarkdown(thread, messages)` produces YAML frontmatter (title, derived first-question, date) followed by alternating `## User` / `## Assistant` sections. The Export Button is a single "Export Thread" action — there is no per-card or per-block export.
 
-**Prompt shape:**
-- *First ask:* the preamble anchors the model on the block — `"Answer the following question about the text below.\n\nQuestion: {prompt}\n\nText:\n\n{block}"`.
-- *Chained ask:* input is the raw `{prompt}` only. The block is already carried through the server-side chain; omitting the preamble lets the model resolve the question against the prior answer when that's what the user meant.
-
-**The chain is invalidated when any of the following happens** — the server-side stored context would otherwise go stale relative to what the user sees:
-1. The selected block changes (entering, switching, or leaving block mode).
-2. The selected block's `text`, `selections`, or `isRewritten` flag changes (edit, strikethrough, rewrite, undo) while it remains selected.
-3. A response arrives after the user switched blocks mid-request — the result is dropped (neither the prompt draft nor the chain is written) to avoid leaking state into the new session.
-4. Page reload — `askChainRef` is an in-memory ref; it does not persist.
-
-Other block actions (`translate`, `eli5`, `expand`, `example`, `rewrite`) remain one-shot and do not participate in the chain.
-
-## Export Feature
-
-### Export Button Behavior
-
-The export button adapts based on card state:
-
-- **No cards**: Simple "Export Thread" button that downloads the entire thread as markdown
-- **Has cards**: Split button with dropdown
-  - Main button: "Export Cards" opens a dialog to export all card blocks
-  - Chevron dropdown: "Export Thread" option to download the full thread
-
-This allows users to always access both export options when cards exist.
-
-### Markdown Export (`lib/export/`)
-
-Threads can be exported as markdown files with YAML frontmatter:
-
-```markdown
+```
 ---
 title: "Thread Title"
-exported: 2026-01-25T10:30:00.000Z
+question: "First user message…"
+created: 2026-04-28
 ---
 
 ## User
 
-Message content here...
+Q…
 
 ## Assistant
 
-Response with **markdown** preserved.
+A…
 ```
 
 Key files:
-- `lib/export/markdownExport.ts` — Pure function `threadToMarkdown(thread, messages, blocks)`
-- `lib/export/download.ts` — Browser download utility `downloadMarkdown(content, filename)`
-- `lib/export/exportMarkdown.ts` — Unified export dispatcher (local download or Obsidian vault)
-- `lib/export/saveToVault.ts` — Server action to save markdown to an Obsidian vault
-- `lib/export/defaultCardTitle.ts` — Pure function `computeDefaultCardTitle(threadTitle, cards, blocks)` used by the Export Cards dialog to pre-populate the filename based on card anchor headings
-- `lib/export/index.ts` — Re-exports
+- `lib/export/markdownExport.ts` — `threadToMarkdown`, `sanitizeFilename`, `generateExportFilename`
+- `lib/export/exportMarkdown.ts` — Dispatches local download or Obsidian-vault save
+- `lib/export/download.ts`, `openInObsidian.ts` — Destination implementations
 
-### Export Card Dialog Default Title
-
-When the Export Cards dialog opens, the filename input is pre-populated:
-
-- If a card's **anchor block** is a heading → `"{heading text} - {thread title}"` (picks the first heading-anchored card in document order)
-- Otherwise → `{thread title}`
-- If the thread title is empty, falls back to `"Untitled"`
-
-The per-card dialog (in `CardControls.tsx`) uses the same logic scoped to that single card. Thread title updates that arrive **while the dialog is already open** do not overwrite the user's in-progress edits — the default is only applied when the dialog transitions closed → open.
-
-### Export Destination Setting
-
-Users can choose where exports are saved via Settings:
-
-- **Local** (default) — Browser file download
-- **Obsidian** — Saves markdown directly to `{vaultPath}/Coo/{filename}` on disk
-
-When Obsidian is selected, a text input appears for the vault path. The `Coo/` subfolder is auto-created if missing. Toast notifications (via `sonner`) report success or errors for vault exports.
-
-Key files:
-- `types/settings.ts` — `ExportDestination` type, `exportDestination` and `obsidianVaultPath` in `Settings`
-- `lib/state/settings.ts` — `updateExportDestination()`, `updateObsidianVaultPath()` pure functions
-- `lib/store/slices/settingsSlice.ts` — Zustand actions
-- `components/settings/SettingsForm.tsx` — Export destination radio + vault path input
-
-## Thread Management
-
-### Delete Thread Flow
-
-Users can delete threads via the trash icon button in the chat toolbar (left of Export button):
+## Thread management
 
 ```
 DeleteThreadButton (UI)
   → AlertDialog (confirmation with title + message count)
   → store.deleteThread (Zustand action)
-  → stateFns.deleteThread (pure function) — removes thread + cascading messages/blocks/cards
+  → stateFns.deleteThread (pure function) — removes thread + cascading messages
   → Zustand persist middleware flushes to localStorage
   → Navigation (router.push to adjacent thread or home)
 ```
 
 Edge cases:
-- **Delete last thread**: Navigates to landing page (`/`)
-- **Delete active thread**: Navigates to adjacent thread (previous > next)
+- **Delete last thread**: Navigates to landing.
+- **Delete active thread**: Navigates to adjacent (previous > next).
 
-Key files:
-- `lib/state/thread.ts` — `deleteThread()` pure function
-- `lib/store/slices/threadSlice.ts` — `deleteThread` action
-- `components/chat/DeleteThreadButton.tsx` — UI component
+## Response language (i18n)
 
-## Direct Block Editing
+Users can set their preferred response language in Settings. Language is injected into prompt templates at runtime via XML tags — templates remain language-neutral on disk.
 
-Users can directly edit block content without AI transformation via the Ask/Edit toggle.
-
-### Composer Modes (`types/state/ui.ts`)
-
-```typescript
-type ComposerMode = 'chat' | 'ask' | 'edit';
-// chat: No block selected, normal chat input
-// ask:  Block selected, ask questions about it (default when block selected)
-// edit: Block selected, directly edit block text
-```
-
-### Edit Mode Flow
-
-```
-BlockModeToggle (Ask ↔ Edit switch)
-  → Edit mode: Composer fills with block text
-  → User edits text freely
-  → "Replace" button updates block directly (no API call)
-  → Block remains selected for continued editing
-  → Standalone Undo button available (when no selections)
-```
-
-### Strikethrough Support
-
-In edit mode, select-all + backspace wraps text in `~~strikethrough~~` instead of deleting. The markdown parser recognizes `~~text~~` and renders it with `<del>` tags.
-
-Key files:
-- `components/composer/BlockModeToggle.tsx` — Ask/Edit toggle UI
-- `hooks/useComposer.ts` — Edit mode logic and `handleDirectEdit`
-- `components/composer/PromptInput.tsx` — Strikethrough on select-all+backspace
-- `lib/rendering/markdown.ts` — Strikethrough parsing
-- `components/content/BlockContent.tsx` — `<del>` tag rendering
-
-## System Prompt Switching
-
-Users can switch between different system prompts that control the AI's response style:
-
-- **Knowledge Assistant** (`developer.md`) — Deep, thorough explanations with examples and context (default)
-- **ChatGPT** (`chatgpt.md`) — Warm, conversational style matching original ChatGPT
-
-The selected prompt file is stored in `settings.systemPromptFile` and sent with each chat request. Block-action prompts (`block-action.md`) are unaffected by this setting.
-
-**Adding a new system prompt** requires only 2 steps:
-1. Create `prompts/{name}.md` (include `<language></language>` tag for i18n)
-2. Add an entry to `SYSTEM_PROMPT_OPTIONS` in `types/settings.ts`
-
-The type, UI, and prompt loader all derive from `SYSTEM_PROMPT_OPTIONS` automatically.
-
-Key files:
-- `types/settings.ts` — `SYSTEM_PROMPT_OPTIONS` (single source of truth), `SystemPromptFile` type derived from it
-- `lib/config/prompts.ts` — `getChatPrompt(promptFile, lang)` loads the selected template
-- `components/settings/SettingsForm.tsx` — Auto-generates radio options from `SYSTEM_PROMPT_OPTIONS`
-
-## Response Language (i18n)
-
-Users can set their preferred response language in settings. Language is injected into prompt templates at runtime via XML tags — templates remain language-neutral on disk.
-
-### How it works
-
-- **Chat & block-action prompts** use a `<language></language>` tag. For English, the tag is removed entirely. For other languages, it's filled with e.g. `<language>Always respond in Simplified Chinese.</language>`.
-- **Translate prompt** uses a separate `<translationlanguage></translationlanguage>` tag in its own template (`block-action-translate.md`). This injects the target language directly from the `TranslateLanguage` setting (e.g. "Chinese", "Japanese") without any mapping.
-
-This separation means the translate action uses the user's chosen *translation target* language, while all other actions use the *response language* setting.
-
-### Key files
-
-- `types/settings.ts` — `ResponseLanguage` (`'en' | 'es' | 'fr' | 'zh' | 'ja'`), `TranslateLanguage`, `LANGUAGE_MAP`
-- `lib/config/prompts.ts` — `replaceLanguageTag()`, `replaceTranslationLanguageTag()`, prompt loaders with caching
-- `lib/state/settings.ts` — Default settings with `responseLanguage` and `translateLanguage`
-- `components/settings/SettingsForm.tsx` — Language selector UI
-- `lib/api/chat.ts` and `lib/api/blockAction.ts` — Pass language settings to prompt loaders
-
-## Card System
-
-Cards are user annotations marking important content for display and export.
-
-### Card Model
-
-```typescript
-interface Card {
-  id: string;
-  messageId: string;      // Cards are per-message
-  anchorBlockId: string;  // Block that "anchors" the card
-  blockIds: string[];     // All blocks in the card
-  createdAt: number;
-}
-```
-
-### Card Creation
-
-- **Double-click gutter** to create/toggle a card at that block
-- **Heading blocks** expand to include all content until the next same/higher-level heading
-- **Non-heading blocks** create single-block cards
-- Cards are **mutually exclusive** — blocks can only belong to one card
-
-### Card Range Logic (`lib/state/heading.ts`)
-
-For headings, cards are hierarchy-aware:
-```
-## Section A (H2)        ← Card starts here
-Paragraph 1              ← Included
-### Subsection (H3)      ← Included (lower level)
-Paragraph 2              ← Included
-## Section B (H2)        ← Card ends before this (same level)
-```
-
-### Card Export
-
-Cards can be exported as standalone markdown files:
-```yaml
----
-title: "User-defined title"
-original question: "Thread title"
-exported: 2026-01-28T10:00:00.000Z
-type: card
----
-
-Block content here...
-```
-
-Key files:
-- `lib/state/card.ts` — Pure card functions
-- `lib/store/slices/cardSlice.ts` — Zustand slice with persistence
-- `components/chat/CardControls.tsx` — Card UI controls
-- `lib/export/markdownExport.ts` — `blocksToCardMarkdown()` function
-
-## Persistence
-
-All user data is persisted to **localStorage** via Zustand's `persist` middleware. There is no server, no database, and no authentication layer.
-
-```
-Zustand store
-  ├── threads, messages, blocks, cards  ← persisted to localStorage
-  ├── settings (including apiKey)       ← persisted to localStorage
-  └── ephemeral UI state                ← not persisted (re-derived on load)
-```
-
-Notes:
-- The user's OpenAI API key lives in the same localStorage payload. Users enter it once via Settings; the browser reads it and hands it to the `openai` SDK on every request (`dangerouslyAllowBrowser: true`).
-- To clear all data, users can reset the browser's site data or use the "Reset to Defaults" button in Settings (which only clears settings, not threads).
-- There is no cross-device sync. Export threads/cards as markdown for long-term storage.
+- Chat / block-action / rewrite prompts use a `<language></language>` tag. For English, the tag is removed entirely. For other languages, it's filled with e.g. `<language>Always respond in Simplified Chinese.</language>`.
+- The Translate prompt uses a separate `<translationlanguage></translationlanguage>` tag, fed by the user's `translateLanguage` setting.
 
 ## Related Docs
-
 - [docs/testing.md](./testing.md) — Test structure and patterns
+- [docs/focus-mode-spec.md](./focus-mode-spec.md) — Original focus-mode spec
+- [docs/focus-mode-plan.md](./focus-mode-plan.md) — Phase-by-phase implementation plan

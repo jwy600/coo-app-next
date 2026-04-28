@@ -27,7 +27,7 @@ export const uiSlice: StateCreator<AppState & UISlice, [], [], UISlice> = (set) 
 
   setMode: (mode) => {
     const result = stateFns.setMode(mode);
-    set({ mode: result.mode });
+    set(mode === 'landing' ? { mode: result.mode, composerPrompt: '' } : { mode: result.mode });
   },
 
   setAwaitingResponse: (value) => set({ isAwaitingResponse: value }),

@@ -37,7 +37,7 @@ export const focusSlice: StateCreator<
 
   closeEditor: () => {
     const next = stateFns.closeEditor(get());
-    set({ threads: next.threads, focus: next.focus });
+    set({ threads: next.threads, focus: next.focus, composerPrompt: '' });
   },
 
   updateBuffer: (text) => {

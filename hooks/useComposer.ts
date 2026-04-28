@@ -1,19 +1,17 @@
 /**
  * useComposer Hook
  *
- * Owns the composer's text state, submission, and the user→assistant
- * round-trip. Block-level interactions (ask/edit modes, block actions)
- * are gone with the block model; focus-mode integration arrives in a
- * later phase.
+ * Owns the composer's text state and the user→assistant chat round-trip.
+ * The bottom composer is always in chat mode — focus-mode ask /
+ * shortcuts live inside the editor's action row.
  */
 
 'use client';
 
 import { useCallback } from 'react';
 import { useStore } from '@/lib/store/useStore';
-import { fetchBlockAction, generateThreadTitle } from '@/lib/api';
+import { generateThreadTitle } from '@/lib/api';
 import { getLastAssistantResponseId, getThreadById } from '@/lib/state';
-import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { useStreaming } from './useStreaming';
 
 export interface UseComposerReturn {
@@ -52,39 +50,6 @@ export function useComposer(): UseComposerReturn {
 
       const trimmed = prompt.trim();
       if (isSubmitting || !trimmed) return;
-
-      // Focus mode: composer is input AND output. Ask about the editor's
-      // buffer; replace the prompt with the answer; do NOT add thread
-      // messages, do NOT stream.
-      const focus = useStore.getState().focus;
-      if (focus) {
-        setAwaitingResponse(true);
-        setError(null);
-        try {
-          const settings = useStore.getState().settings;
-          const referenceQuestion = focus.lastResponseId
-            ? undefined
-            : focus.referenceQuestion;
-          const result = await fetchBlockAction(
-            'ask',
-            focus.buffer,
-            trimmed,
-            undefined,
-            settings,
-            focus.lastResponseId,
-            referenceQuestion,
-          );
-          setPrompt(result.text);
-          if (result.responseId) {
-            useStore.getState().setFocusLastResponseId(result.responseId);
-          }
-        } catch (err) {
-          setError(getErrorMessage(err, 'Ask failed.'));
-        } finally {
-          setAwaitingResponse(false);
-        }
-        return;
-      }
 
       setAwaitingResponse(true);
       setError(null);

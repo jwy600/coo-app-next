@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import type { BlockAction } from '@/types/api';
 
-/** Subset of BlockAction surfaced in the focus-mode composer toolbar. */
+/** Subset of BlockAction surfaced as one-shot shortcuts in the focus editor. */
 export type EditorActionId = Extract<
   BlockAction,
   'translate' | 'eli5' | 'summarize'

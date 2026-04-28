@@ -2,9 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useStore } from '@/lib/store/useStore';
 
-const { mockStreamChat, mockFetchBlockAction } = vi.hoisted(() => ({
+const { mockStreamChat } = vi.hoisted(() => ({
   mockStreamChat: vi.fn(),
-  mockFetchBlockAction: vi.fn(),
 }));
 
 vi.mock('@/hooks/useStreaming', () => ({
@@ -13,7 +12,6 @@ vi.mock('@/hooks/useStreaming', () => ({
 
 vi.mock('@/lib/api', () => ({
   generateThreadTitle: vi.fn().mockResolvedValue(null),
-  fetchBlockAction: mockFetchBlockAction,
 }));
 
 import { useComposer } from '@/hooks/useComposer';
@@ -115,175 +113,22 @@ describe('useComposer', () => {
       expect(useStore.getState().threads[0].title).toBe('First message');
     });
 
-    describe('focus mode (ask flow)', () => {
-      function openFocus() {
-        const message = useStore.getState().addAssistantMessage(
-          'Hello world from the assistant.',
-        );
-        useStore.getState().openEditor(message.id, [0, 5]);
-      }
+    it('still streams a chat reply when an editor is active (no ask short-circuit)', async () => {
+      const message = useStore.getState().addAssistantMessage(
+        'Hello world from the assistant.',
+      );
+      useStore.getState().openEditor(message.id, [0, 5]);
+      useStore.setState({ composerPrompt: 'follow-up question' });
 
-      it('routes the prompt through fetchBlockAction("ask") when an editor is active', async () => {
-        openFocus();
-        mockFetchBlockAction.mockResolvedValue({
-          text: 'It greets the world.',
-          responseId: 'resp-ask-1',
-        });
-        useStore.setState({ composerPrompt: 'what does this mean?' });
-
-        const { result } = renderHook(() => useComposer());
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-
-        expect(mockFetchBlockAction).toHaveBeenCalledWith(
-          'ask',
-          'Hello',
-          'what does this mean?',
-          undefined,
-          expect.any(Object),
-          undefined,
-          undefined,
-        );
-        // Answer replaces the composer prompt.
-        expect(useStore.getState().composerPrompt).toBe('It greets the world.');
-        // No new thread messages.
-        expect(useStore.getState().threads[0].messages).toHaveLength(1); // just the seed
-        // streaming hook is not used.
-        expect(mockStreamChat).not.toHaveBeenCalled();
+      const { result } = renderHook(() => useComposer());
+      await act(async () => {
+        await result.current.handleSubmit();
       });
 
-      it('first ask chains off the assistant message responseId', async () => {
-        const message = useStore
-          .getState()
-          .addAssistantMessage('Saturator adds harmonics.', 'resp_M');
-        useStore.getState().openEditor(message.id, [0, 9]);
-        mockFetchBlockAction.mockResolvedValue({
-          text: 'an answer',
-          responseId: 'resp_first_ask',
-        });
-        useStore.setState({ composerPrompt: 'what is a harmonic?' });
-
-        const { result } = renderHook(() => useComposer());
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-
-        expect(mockFetchBlockAction.mock.calls[0][5]).toBe('resp_M');
-        expect(useStore.getState().focus?.lastResponseId).toBe('resp_first_ask');
-      });
-
-      it('subsequent ask chains off the previous focus response', async () => {
-        const message = useStore
-          .getState()
-          .addAssistantMessage('Saturator adds harmonics.', 'resp_M');
-        useStore.getState().openEditor(message.id, [0, 9]);
-
-        mockFetchBlockAction
-          .mockResolvedValueOnce({ text: 'first', responseId: 'resp_one' })
-          .mockResolvedValueOnce({ text: 'second', responseId: 'resp_two' });
-
-        useStore.setState({ composerPrompt: 'q1' });
-        const { result } = renderHook(() => useComposer());
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-        expect(useStore.getState().focus?.lastResponseId).toBe('resp_one');
-
-        useStore.setState({ composerPrompt: 'q2' });
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-        expect(useStore.getState().focus?.lastResponseId).toBe('resp_two');
-
-        expect(mockFetchBlockAction.mock.calls[0][5]).toBe('resp_M');
-        expect(mockFetchBlockAction.mock.calls[1][5]).toBe('resp_one');
-      });
-
-      it('passes referenceQuestion (no chain) when the assistant message has no responseId', async () => {
-        useStore.getState().addUserMessage('What is saturator?');
-        const message = useStore
-          .getState()
-          .addAssistantMessage('Saturator adds harmonics.');
-        useStore.getState().openEditor(message.id, [0, 9]);
-        mockFetchBlockAction.mockResolvedValue({
-          text: 'an answer',
-          responseId: 'resp_first_ask',
-        });
-        useStore.setState({ composerPrompt: 'what is a harmonic?' });
-
-        const { result } = renderHook(() => useComposer());
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-
-        const call = mockFetchBlockAction.mock.calls[0];
-        expect(call[5]).toBeUndefined();
-        expect(call[6]).toBe('What is saturator?');
-        expect(useStore.getState().focus?.lastResponseId).toBe('resp_first_ask');
-
-        // Follow-up: chain takes over, fallback is dropped.
-        mockFetchBlockAction.mockResolvedValue({
-          text: 'follow-up answer',
-          responseId: 'resp_second_ask',
-        });
-        useStore.setState({ composerPrompt: 'and dynamics?' });
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-        const second = mockFetchBlockAction.mock.calls[1];
-        expect(second[5]).toBe('resp_first_ask');
-        expect(second[6]).toBeUndefined();
-      });
-
-      it('preserves lastResponseId when the ask request fails', async () => {
-        const message = useStore
-          .getState()
-          .addAssistantMessage('Hello world from the assistant.', 'resp_M');
-        useStore.getState().openEditor(message.id, [0, 5]);
-        mockFetchBlockAction.mockRejectedValue(new Error('boom'));
-        useStore.setState({ composerPrompt: 'q' });
-
-        const { result } = renderHook(() => useComposer());
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-
-        // Chain head unchanged on error — so a retry uses the original M.
-        expect(useStore.getState().focus?.lastResponseId).toBe('resp_M');
-      });
-
-      it('clears isAwaitingResponse when the ask returns', async () => {
-        openFocus();
-        mockFetchBlockAction.mockResolvedValue({
-          text: 'answer',
-          responseId: 'r',
-        });
-        useStore.setState({ composerPrompt: 'q' });
-        const { result } = renderHook(() => useComposer());
-
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-
-        expect(useStore.getState().isAwaitingResponse).toBe(false);
-      });
-
-      it('surfaces an error when the ask request fails', async () => {
-        openFocus();
-        mockFetchBlockAction.mockRejectedValue(new Error('upstream down'));
-        useStore.setState({ composerPrompt: 'q' });
-        const { result } = renderHook(() => useComposer());
-
-        await act(async () => {
-          await result.current.handleSubmit();
-        });
-
-        expect(useStore.getState().error).toContain('upstream down');
-        // Prompt is preserved on error so the user can retry.
-        expect(useStore.getState().composerPrompt).toBe('q');
-        expect(useStore.getState().isAwaitingResponse).toBe(false);
-      });
+      expect(mockStreamChat).toHaveBeenCalledTimes(1);
+      const messages = useStore.getState().threads[0].messages;
+      expect(messages.some((m) => m.role === 'user' && m.text === 'follow-up question')).toBe(true);
     });
+
   });
 });

@@ -19,6 +19,7 @@ export interface FocusSlice {
   updateBuffer: (text: string) => void;
   appendNote: (text: string) => void;
   setRewriteResult: (text: string) => void;
+  setShortcutResult: (text: string) => void;
   revertRewrite: () => void;
   setFocusLastResponseId: (responseId: string) => void;
 }
@@ -53,6 +54,11 @@ export const focusSlice: StateCreator<
 
   setRewriteResult: (text) => {
     const next = stateFns.setRewriteResult(get(), text);
+    set({ focus: next.focus });
+  },
+
+  setShortcutResult: (text) => {
+    const next = stateFns.setShortcutResult(get(), text);
     set({ focus: next.focus });
   },
 

@@ -5,6 +5,7 @@ import {
   updateBuffer,
   appendNote,
   setRewriteResult,
+  setShortcutResult,
   revertRewrite,
   setFocusLastResponseId,
 } from '@/lib/state/focus';
@@ -215,6 +216,34 @@ describe('setRewriteResult and revertRewrite', () => {
     const rew2 = setRewriteResult(rew1, 'Hey');
     const reverted = revertRewrite(rew2);
     expect(reverted.focus?.buffer).toBe('Hi');
+    expect(reverted.focus?.prevBuffer).toBeNull();
+  });
+});
+
+describe('setShortcutResult', () => {
+  it('replaces the buffer, stashes prevBuffer, and preserves notes', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    const withNotes = appendNote(appendNote(opened, 'first'), 'second');
+    const next = setShortcutResult(withNotes, 'Hola');
+
+    expect(next.focus?.buffer).toBe('Hola');
+    expect(next.focus?.prevBuffer).toBe('Hello');
+    expect(next.focus?.notes).toEqual(['first', 'second']);
+  });
+
+  it('is a no-op when no editor is active', () => {
+    const { state } = seedAssistant('Hi');
+    expect(setShortcutResult(state, 'x')).toBe(state);
+  });
+
+  it('subsequent revertRewrite restores the buffer and clears prevBuffer', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    const transformed = setShortcutResult(opened, 'Hola');
+    const reverted = revertRewrite(transformed);
+
+    expect(reverted.focus?.buffer).toBe('Hello');
     expect(reverted.focus?.prevBuffer).toBeNull();
   });
 });

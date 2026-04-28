@@ -100,6 +100,27 @@ export const setRewriteResult = (state: AppState, buffer: string): AppState => {
 };
 
 /**
+ * Replaces the buffer with the result of a one-shot shortcut (translate /
+ * eli5 / summarize) and stashes the previous one so revertRewrite can
+ * restore it. Notes are preserved — shortcuts transform the passage but
+ * don't consume the user's annotations.
+ */
+export const setShortcutResult = (
+  state: AppState,
+  buffer: string,
+): AppState => {
+  if (!state.focus) return state;
+  return {
+    ...state,
+    focus: {
+      ...state.focus,
+      prevBuffer: state.focus.buffer,
+      buffer,
+    },
+  };
+};
+
+/**
  * Updates the focus chain head with a new responseId returned by OpenAI.
  * No-op if no editor is active.
  */

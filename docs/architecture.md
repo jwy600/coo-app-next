@@ -21,8 +21,8 @@ components/
 ├── ui/                         # shadcn/ui components
 ├── chat/                       # ChatContainer, MessageList, AssistantMessage, UserMessage,
 │                               # ExportButton, DeleteThreadButton, PendingMessage, ErrorMessage
-├── editor/                     # Focus mode: FocusEditor, EditorControls
-├── composer/                   # Composer, EditorActions, ComposerHint, PromptInput
+├── editor/                     # Focus mode: FocusEditor, EditorControls (unified action row), EditorActions
+├── composer/                   # Bottom chat composer (chat mode only): Composer, ComposerHint, PromptInput
 ├── content/                    # MarkdownContent (the only renderer)
 ├── sidebar/                    # AppSidebar, NewChatButton, etc.
 ├── settings/                   # Settings UI (incl. OpenAI API key input)
@@ -78,7 +78,7 @@ Key files:
 - `lib/state/index.ts` — `createInitialState`, `setMode`
 - `lib/state/thread.ts` — Thread CRUD, `getLastAssistantResponseId`
 - `lib/state/message.ts` — Message ops on `text: string`: `addUserMessage`, `addAssistantMessage`, `appendMessageText`, `replaceMessageRange`, `setMessageResponseId`, `removeMessage`, `findMessage`
-- `lib/state/focus.ts` — Focus editor lifecycle: `openEditor`, `closeEditor`, `updateBuffer`, `appendNote`, `setRewriteResult`, `revertRewrite`
+- `lib/state/focus.ts` — Focus editor lifecycle: `openEditor`, `closeEditor`, `updateBuffer`, `appendNote`, `setRewriteResult`, `setShortcutResult`, `revertRewrite`, `setFocusLastResponseId`
 - `lib/state/settings.ts` — User settings reducer
 
 ### Why this pattern?
@@ -143,29 +143,37 @@ See `docs/ideas/focus-mode-context-chaining.md` for the full scenario matrix.
 ### Editor lifecycle
 1. **Open** — `useFocusSelection` (mounted on each `AssistantMessage`) listens for `mouseup` / `touchend` and calls `domToSource(getSelection().getRangeAt(0))`. If the result anchors inside this message and meets the minimum-length rule, it dispatches `openEditor(messageId, [start, end])`. The hook is disabled while the message is streaming or already in focus mode.
 2. **Render split** — when `focus.messageId === message.id`, `AssistantMessage` renders three parts: `<MarkdownContent text={text.slice(0, start)} />` + `<FocusEditor />` + `<MarkdownContent text={text.slice(end)} />`. The editor is a regular block element; surrounding text reflows around it.
-3. **Edit / notes** — typing flows through `updateBuffer`. `appendNote(text)` is called from two places: composer's drag-select handler, and the EditorActions buttons (currently lands in the composer prompt instead — see "Composer behavior" below).
+3. **Edit / notes** — typing flows through `updateBuffer`. `appendNote(text)` is called by the editor's ask flow (an answer arrives, gets appended). There is no drag-select-to-note: notes accumulate from ask answers and the buffer's existing markdown.
 4. **Close** — `closeEditor` serializes notes as `> **Note:** <text>` blockquotes after a blank line, splices the result into `message.text` via `replaceMessageRange`, and clears `focus`. Triggered by:
-   - Click outside the editor (excluding `.composer`, which is part of the working surface)
+   - Click outside the editor (the `.composer` selector is excluded for legacy reasons; bottom composer is now structurally separate from focus mode anyway)
    - Opening another editor (auto-save then re-open)
 
 ### Rewrite
-Atomic — `fetchRewrite(buffer, notes)` posts a `<passage>` / `<notes>` envelope with `REWRITE_PROMPT` instructions. While in flight, `EditorControls` shows "Rewriting…" and disables the buttons. On success `setRewriteResult(text)` stashes the prior buffer in `prevBuffer` and replaces the live buffer; Revert restores it (single-step). Notes are consumed (cleared) by Rewrite — they were folded into the prompt that produced the result.
+Atomic — `fetchRewrite(buffer, notes)` posts a `<passage>` / `<notes>` envelope with `REWRITE_PROMPT` instructions. While in flight, `EditorControls` shows "Rewriting…" and disables the row. On success `setRewriteResult(text)` stashes the prior buffer in `prevBuffer`, replaces the live buffer, and clears notes (they were folded into the prompt that produced the result). Revert restores the prior buffer (single-step).
 
 ## Composer behavior
 
+The bottom composer is **always in chat mode**. There is no state-driven mode flip — opening an editor does not change what the bottom composer does.
+
 ### Submit (`useComposer.handleSubmit`)
-Behavior is derived from `focus`:
+Always: `addUserMessage(prompt)` → `streamChat(...)`, which creates an empty assistant message and appends tokens into its `text`. Whether or not a focus editor is open is irrelevant.
 
-- **No editor active** → chat. `addUserMessage(prompt)` then `streamChat(...)` which creates an empty assistant message and appends tokens into its `text`.
-- **Editor active** → ask. `fetchBlockAction('ask', focus.buffer, prompt)`. The answer **replaces the composer prompt in place**. No thread messages are added; no streaming. On error the prompt is preserved so the user can retry.
+## Editor action row (`EditorControls`)
 
-(This deviates from the original spec, which routed the answer into the thread. See the project memory for rationale.)
+A single horizontal row at the foot of `FocusEditor` that owns every focus-mode action:
 
-### Drag-select inside the composer
-When focus is active and the user drag-selects text inside the composer's form, the selected text is passed to `appendNote`. The selection is then cleared so subsequent drags trigger again.
+```
+[Translate] [ELI5] [Summarize]   [ask input ........]   [Revert] [Rewrite]
+```
 
-### Shortcut buttons (`EditorActions`)
-Translate / ELI5 / Summarize render as Badge buttons above the prompt input when focus is active. Each calls `fetchBlockAction(action, focus.buffer, ...)` and writes the result into the composer prompt. Co-locating button + result removes the eye-jump that an editor-side variant created.
+| Action | Behavior |
+|---|---|
+| Shortcuts (`EditorActions`) | `fetchBlockAction(action, focus.buffer, ...)` → `setShortcutResult(text)` mutates the buffer; notes are preserved. Revert undoes. |
+| Ask input | Enter submits `fetchBlockAction('ask', focus.buffer, prompt)` → `appendNote(answer)`; input clears. Buffer unchanged. |
+| Revert | Restores `prevBuffer` from the last shortcut or rewrite. Single-step. |
+| Rewrite | `fetchRewrite(buffer, notes)` → `setRewriteResult(text)` (clears notes). |
+
+Only one action runs at a time; whichever is in flight disables the rest. Errors surface via `setError`. Each focus-mode call sends `previousResponseId` (the focus chain head — see "Context chaining for focus calls" above) and updates it on success.
 
 ## Streaming
 

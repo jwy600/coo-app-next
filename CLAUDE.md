@@ -8,8 +8,10 @@ A focus-mode chat wiki: drag-select any passage in an assistant message and an i
 |------|-------|
 | Architecture overview | `docs/architecture.md` |
 | Test patterns | `docs/testing.md` |
-| Focus-mode spec | `docs/focus-mode-spec.md` |
-| Focus-mode plan | `docs/focus-mode-plan.md` |
+| Focus-mode original spec (historical) | `docs/focus-mode-spec.md` |
+| Focus-mode original plan (historical) | `docs/focus-mode-plan.md` |
+| Unified-editor design rationale | `docs/ideas/focus-mode-unified-editor.md` |
+| Unified-editor implementation plan | `docs/focus-mode-unified-editor-plan.md` |
 | TypeScript types | `types/` |
 
 ## Tech Stack
@@ -54,10 +56,10 @@ components/
 │   └── ErrorMessage.tsx
 ├── editor/          # Focus mode
 │   ├── FocusEditor.tsx        # In-place textarea bound to focus.buffer
-│   └── EditorControls.tsx     # Revert + Rewrite buttons
-├── composer/        # Input area (also home of focus-mode shortcuts)
-│   ├── Composer.tsx           # Top-level form + selection-to-note hook
-│   ├── EditorActions.tsx      # Translate / ELI5 / Summarize badges
+│   ├── EditorControls.tsx     # Unified action row: shortcuts + ask input + Revert + Rewrite
+│   └── EditorActions.tsx      # Translate / ELI5 / Summarize badges
+├── composer/        # Bottom chat composer (chat mode only)
+│   ├── Composer.tsx           # Top-level form: prompt + Send + hint
 │   ├── ComposerHint.tsx
 │   └── PromptInput.tsx
 ├── content/
@@ -89,7 +91,7 @@ lib/selection/
 ### Hooks
 ```
 hooks/
-├── useComposer.ts        # Submit handler — chat-mode adds messages; focus-mode runs ask round-trip
+├── useComposer.ts        # Chat-mode submit handler (always streams; bottom composer is chat-only)
 ├── useStreaming.ts       # Creates an empty assistant message + appends tokens to its text
 ├── useFocusSelection.ts  # mouseup/touchend → domToSource → openEditor
 ├── useKeyboardShortcuts.ts
@@ -111,15 +113,19 @@ e2e/                 # Playwright tests (currently broken; rewrite in a later ph
 
 **Message model**: each `Message` carries a single `text: string` (markdown). No blocks, no per-block ids.
 
-**Focus editor**: `focus: FocusActive | null` in UIState. `FocusActive` = `{ messageId, range, buffer, notes[], prevBuffer }`. Drag-selecting an assistant message opens an in-place textarea seeded from `message.text.slice(start, end)`. Click-outside auto-saves the buffer + notes back into the message via `replaceMessageRange`.
+**Focus editor**: `focus: FocusActive | null` in UIState. `FocusActive` = `{ messageId, range, buffer, notes[], prevBuffer, lastResponseId?, referenceQuestion? }`. Drag-selecting an assistant message opens an in-place textarea seeded from `message.text.slice(start, end)`. Click-outside auto-saves the buffer + notes back into the message via `replaceMessageRange`.
 
 **Source-position attributes**: every rendered HTML element carries `data-md-start` / `data-md-end` (character offsets into `message.text`). Text nodes are wrapped in `<span data-md-text="true">`; math elements get an outer `<span data-md-atomic="true">` so KaTeX-rendered output keeps its source range.
 
-**Composer behavior** (derived from focus state):
-- *No editor*: chat — submit appends a user message and streams an assistant reply.
-- *Editor active*: ask — submit calls `fetchBlockAction('ask', focus.buffer, prompt)`, replaces the prompt with the answer, no thread messages added. Drag-selecting inside the composer appends the selection as a `> **Note:** …` blockquote in the editor.
+**Composer behavior**: the bottom composer is **always in chat mode**. Submit always appends a user message and streams an assistant reply, regardless of whether an editor is open. There is no longer any state-driven mode flip.
 
-**Editor shortcuts** (Translate / ELI5 / Summarize) live on the **composer**, not the editor. Result populates the composer prompt so input + output share a surface. The editor only carries Revert + Rewrite.
+**Editor action row** (inside `FocusEditor`, replaces the old composer-side shortcuts): a single horizontal row that owns every focus-mode action.
+- **Shortcuts** (Translate / ELI5 / Summarize) call `fetchBlockAction(action, buffer, ...)` and mutate the buffer in place via `setShortcutResult` (preserves notes; Revert undoes).
+- **Ask input** (text input on the same row): Enter submits a question about the buffer; the answer auto-appends to notes; the input clears.
+- **Revert** undoes the most recent buffer mutation (shortcut or rewrite). Single-step.
+- **Rewrite** bundles buffer + notes into `fetchRewrite` and replaces the buffer atomically.
+
+Mode is **spatial, not temporal** — the bottom composer never changes meaning under the cursor; focus-mode ask happens inside the editor's input.
 
 **Rewrite**: atomic — `fetchRewrite(buffer, notes)` returns the revised passage; `setRewriteResult` swaps it in and stashes the prior buffer for one-step Revert.
 

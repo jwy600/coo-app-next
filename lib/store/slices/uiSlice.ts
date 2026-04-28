@@ -10,10 +10,12 @@ export interface UISlice {
   mode: AppMode;
   isAwaitingResponse: boolean;
   error: string | null;
+  composerPrompt: string;
 
   setMode: (mode: AppMode) => void;
   setAwaitingResponse: (value: boolean) => void;
   setError: (error: string | null) => void;
+  setComposerPrompt: (value: string) => void;
   reset: () => void;
 }
 
@@ -21,6 +23,7 @@ export const uiSlice: StateCreator<AppState & UISlice, [], [], UISlice> = (set) 
   mode: 'landing',
   isAwaitingResponse: false,
   error: null,
+  composerPrompt: '',
 
   setMode: (mode) => {
     const result = stateFns.setMode(mode);
@@ -29,6 +32,7 @@ export const uiSlice: StateCreator<AppState & UISlice, [], [], UISlice> = (set) 
 
   setAwaitingResponse: (value) => set({ isAwaitingResponse: value }),
   setError: (error) => set({ error }),
+  setComposerPrompt: (value) => set({ composerPrompt: value }),
 
   reset: () => {
     set({
@@ -39,6 +43,7 @@ export const uiSlice: StateCreator<AppState & UISlice, [], [], UISlice> = (set) 
       error: null,
       streamingMessageId: null,
       focus: null,
+      composerPrompt: '',
     } as Partial<AppState & UISlice>);
   },
 });

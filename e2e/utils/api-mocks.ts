@@ -51,6 +51,9 @@ export const MOCK_RESPONSES = {
     rewrite: {
       text: 'This is the rewritten version of the text with improved clarity and emphasis.',
     },
+    summarize: {
+      text: 'A short summary of the original passage.',
+    },
     ask: {
       text: 'Based on the selected text, the answer to your question is: this refers to component-based architecture.',
     },
@@ -348,6 +351,7 @@ const ACTION_MARKERS: Record<BlockAction, (input: string) => boolean> = {
   eli5: (input) => input.includes("Explain the following text like I'm 5"),
   example: (input) => input.includes('Give a concrete example'),
   expand: (input) => input.includes('Expand the following text'),
+  summarize: (input) => input.includes('Summarize the following text'),
   rewrite: (input) => input.includes('Rewrite the following text'),
   ask: (input) => input.includes('Answer the following question'),
   // `translate` has no preamble in the input; it is driven by `instructions`
@@ -356,6 +360,7 @@ const ACTION_MARKERS: Record<BlockAction, (input: string) => boolean> = {
     !input.includes("Explain the following text like I'm 5") &&
     !input.includes('Give a concrete example') &&
     !input.includes('Expand the following text') &&
+    !input.includes('Summarize the following text') &&
     !input.includes('Rewrite the following text') &&
     !input.includes('Answer the following question'),
 };

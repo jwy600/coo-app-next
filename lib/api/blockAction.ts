@@ -19,6 +19,7 @@ const ACTION_PREAMBLES: Record<BlockAction, (prompt?: string) => string> = {
   eli5: () => "Explain the following text like I'm 5:",
   example: () => "Give a concrete example that illustrates the following text:",
   expand: () => "Expand the following text with more detail and context:",
+  summarize: () => "Summarize the following text concisely:",
   rewrite: (prompt) =>
     `Rewrite the following text according to this instruction: ${prompt ?? ""}`,
   ask: (prompt) =>

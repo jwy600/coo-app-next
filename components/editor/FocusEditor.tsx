@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useStore } from '@/lib/store/useStore';
+import { EditorControls } from './EditorControls';
 
 interface FocusEditorProps {
   /**
@@ -96,6 +97,10 @@ export function FocusEditor({ disabled = false }: FocusEditorProps) {
           Rewriting…
         </div>
       )}
+
+      <div className="mt-3 border-t border-border pt-3">
+        <EditorControls />
+      </div>
     </div>
   );
 }

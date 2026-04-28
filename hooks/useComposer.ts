@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useStore } from '@/lib/store/useStore';
 import { generateThreadTitle } from '@/lib/api';
 import { getLastAssistantResponseId, getThreadById } from '@/lib/state';
@@ -25,7 +25,8 @@ export interface UseComposerReturn {
 }
 
 export function useComposer(): UseComposerReturn {
-  const [prompt, setPrompt] = useState('');
+  const prompt = useStore((state) => state.composerPrompt);
+  const setPrompt = useStore((state) => state.setComposerPrompt);
 
   const addUserMessage = useStore((state) => state.addUserMessage);
   const mode = useStore((state) => state.mode);

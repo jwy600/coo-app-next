@@ -24,6 +24,7 @@ export const createInitialState = (
     isAwaitingResponse: false,
     error: null,
     focus: null,
+    composerPrompt: '',
   };
 };
 

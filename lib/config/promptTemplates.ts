@@ -51,3 +51,14 @@ export const BLOCK_ACTION_TRANSLATE_PROMPT = `You translate a given text block.
 - No preamble ("Here's the translation:", "Sure!", etc.) — start directly with the result
 - Preserve the tone and register of the original text
 </rules>`;
+
+export const REWRITE_PROMPT = `You revise a passage of Markdown according to the user's notes.
+
+<language></language>
+
+<rules>
+- Preserve the original Markdown formatting (paragraphs, headings, lists, code fences, math) unless a note explicitly asks you to change it
+- Apply each note as an edit to the relevant span — do not echo the notes back, do not add new ones
+- Output the revised passage only — no preamble, no explanation, no surrounding fences
+- Match the original tone, register, and language
+</rules>`;

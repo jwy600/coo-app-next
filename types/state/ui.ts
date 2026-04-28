@@ -20,4 +20,5 @@ export interface UIState {
   isAwaitingResponse: boolean;
   error: string | null;
   focus: FocusActive | null;
+  composerPrompt: string;
 }

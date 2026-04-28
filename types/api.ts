@@ -16,7 +16,14 @@ export interface ChatResponse {
 }
 
 // Block Action API Types
-export type BlockAction = 'translate' | 'example' | 'expand' | 'eli5' | 'rewrite' | 'ask';
+export type BlockAction =
+  | 'translate'
+  | 'example'
+  | 'expand'
+  | 'eli5'
+  | 'summarize'
+  | 'rewrite'
+  | 'ask';
 
 export interface BlockActionRequest {
   action: BlockAction;

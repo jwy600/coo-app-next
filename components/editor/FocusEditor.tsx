@@ -78,18 +78,6 @@ export function FocusEditor({ disabled = false }: FocusEditorProps) {
         className="w-full bg-transparent outline-none resize-none font-mono text-sm leading-relaxed text-foreground"
       />
 
-      {focus.notes.length > 0 && (
-        <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-          {focus.notes.map((note, i) => (
-            <li key={i}>
-              <blockquote className="border-l-2 border-border pl-3">
-                <strong>Note:</strong> {note}
-              </blockquote>
-            </li>
-          ))}
-        </ul>
-      )}
-
       {disabled && (
         <div
           data-testid="focus-editor-loading"

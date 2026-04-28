@@ -104,15 +104,15 @@ describe('FocusEditor', () => {
     expect(useStore.getState().focus).not.toBeNull();
   });
 
-  it('renders notes as muted blockquotes below the textarea', () => {
+  it('shows ask answers as raw markdown inside the textarea (no separate notes section)', () => {
     seedFocus();
-    useStore.getState().appendNote('first note');
-    useStore.getState().appendNote('second');
+    useStore.getState().appendNoteToBuffer('first note');
+    useStore.getState().appendNoteToBuffer('second');
     const { container } = render(<FocusEditor />);
-    const blockquotes = container.querySelectorAll('blockquote');
-    expect(blockquotes).toHaveLength(2);
-    expect(blockquotes[0].textContent).toContain('first note');
-    expect(blockquotes[1].textContent).toContain('second');
+    const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea.value).toContain('> **Note:** first note');
+    expect(textarea.value).toContain('> **Note:** second');
+    expect(container.querySelectorAll('blockquote')).toHaveLength(0);
   });
 
   it('shows a loading indicator and disables the textarea when disabled', () => {

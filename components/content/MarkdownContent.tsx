@@ -14,6 +14,38 @@ export interface MarkdownContentProps {
   className?: string;
 }
 
+/**
+ * Returns true when the blockquote's first paragraph begins with a
+ * <strong>Note:</strong> marker — i.e. it was written by closeEditor's
+ * note serialization, not by the user as a generic blockquote.
+ */
+function isNoteBlockquote(children: React.ReactNode): boolean {
+  const arr = React.Children.toArray(children);
+  for (const child of arr) {
+    if (typeof child === 'string') {
+      if (child.trim() === '') continue;
+      return false;
+    }
+    if (!React.isValidElement(child)) continue;
+    if (child.type !== 'p') return false;
+    const inner = React.Children.toArray(
+      (child.props as { children?: React.ReactNode }).children,
+    );
+    const first = inner.find(
+      (c) => !(typeof c === 'string' && c.trim() === ''),
+    );
+    if (!React.isValidElement(first) || first.type !== 'strong') return false;
+    const strongText = React.Children.toArray(
+      (first.props as { children?: React.ReactNode }).children,
+    )
+      .filter((c) => typeof c === 'string')
+      .join('')
+      .trim();
+    return strongText === 'Note:';
+  }
+  return false;
+}
+
 const components: Components = {
   p: ({ children, ...props }) => (
     <p className="doc-paragraph" {...props}>
@@ -76,11 +108,16 @@ const components: Components = {
       {children}
     </a>
   ),
-  blockquote: ({ children, ...props }) => (
-    <blockquote className="doc-blockquote" {...props}>
-      {children}
-    </blockquote>
-  ),
+  blockquote: ({ children, ...props }) => {
+    const className = isNoteBlockquote(children)
+      ? 'doc-blockquote doc-blockquote--note'
+      : 'doc-blockquote';
+    return (
+      <blockquote className={className} {...props}>
+        {children}
+      </blockquote>
+    );
+  },
   code: ({ children, ...props }) => (
     <code className="doc-code-inline" {...props}>
       {children}

@@ -1,9 +1,11 @@
 /**
  * Focus slice — wraps pure focus-editor state functions.
  *
- * Holds at most one in-flight `{ messageId, range, buffer, notes[] }`.
- * The buffer auto-saves into the message on `closeEditor` via
- * `replaceMessageRange`. Not persisted (purely UI state).
+ * Holds at most one in-flight `{ messageId, range, buffer, prevBuffer, ... }`.
+ * Notes from ask answers live as raw `> **Note:** ...` markdown inside the
+ * buffer; there is no separate notes state. The buffer auto-saves into the
+ * message on `closeEditor` via `replaceMessageRange`. Not persisted (purely
+ * UI state).
  */
 
 import { StateCreator } from 'zustand';
@@ -17,8 +19,9 @@ export interface FocusSlice {
   openEditor: (messageId: string, range: [number, number]) => void;
   closeEditor: () => void;
   updateBuffer: (text: string) => void;
-  appendNote: (text: string) => void;
+  appendNoteToBuffer: (note: string) => void;
   setRewriteResult: (text: string) => void;
+  setShortcutResult: (text: string) => void;
   revertRewrite: () => void;
   setFocusLastResponseId: (responseId: string) => void;
 }
@@ -46,13 +49,18 @@ export const focusSlice: StateCreator<
     set({ focus: next.focus });
   },
 
-  appendNote: (text) => {
-    const next = stateFns.appendNote(get(), text);
+  appendNoteToBuffer: (note) => {
+    const next = stateFns.appendNoteToBuffer(get(), note);
     set({ focus: next.focus });
   },
 
   setRewriteResult: (text) => {
     const next = stateFns.setRewriteResult(get(), text);
+    set({ focus: next.focus });
+  },
+
+  setShortcutResult: (text) => {
+    const next = stateFns.setShortcutResult(get(), text);
     set({ focus: next.focus });
   },
 

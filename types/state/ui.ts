@@ -10,8 +10,12 @@ export type AppMode = 'landing' | 'thread';
 export interface FocusActive {
   messageId: string;
   range: [number, number];
+  /**
+   * The full editable text, including any trailing `> **Note:** ...` lines
+   * appended from ask answers. Notes have no separate state — they live as
+   * raw markdown in the buffer.
+   */
   buffer: string;
-  notes: string[];
   prevBuffer: string | null;
   /**
    * OpenAI `responseId` to chain off for the next focus-mode call.

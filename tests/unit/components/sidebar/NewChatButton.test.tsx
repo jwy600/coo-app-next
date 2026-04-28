@@ -58,10 +58,9 @@ describe('NewChatButton', () => {
     expect(screen.getByText('New chat')).toBeTruthy();
   });
 
-  it('clears selection and sets mode on click', () => {
+  it('returns to landing mode and navigates to root on click', () => {
     render(<NewChatButton />);
     fireEvent.click(screen.getByText('New chat'));
-    expect(mockState.clearSelection).toHaveBeenCalled();
     expect(mockState.setMode).toHaveBeenCalledWith('landing');
     expect(mockRouter.push).toHaveBeenCalledWith('/');
   });

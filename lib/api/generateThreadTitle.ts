@@ -53,6 +53,7 @@ export async function generateThreadTitle(
       model: TITLE_MODEL,
       input: userPrompt,
       instructions: getThreadTitlePrompt(),
+      label: "thread-title",
     });
 
     return sanitizeTitle(result.text);

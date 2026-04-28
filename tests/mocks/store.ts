@@ -1,38 +1,24 @@
 /**
- * Mock helpers for Zustand store
+ * Mock helpers for the Zustand store.
  *
- * Strategy A: Use real store with useStore.setState() — for simple cases
- * Strategy B: Mock useStore entirely — for components with complex selectors
+ * Strategy A: Use the real store with `useStore.setState()` — for simple cases.
+ * Strategy B: Mock `useStore` entirely — for components with complex selectors.
  */
 
-import { vi } from "vitest";
-import { Block } from "@/types/block";
-import { Card } from "@/types/card";
-import { Thread } from "@/types/thread";
-import { Message } from "@/types/message";
+import { vi } from 'vitest';
+import { Thread } from '@/types/thread';
 
 interface MockStoreState {
-  // Core state
   activeThreadId: string | null;
   threads: Thread[];
-  blocks: Block[];
-  cards: Card[];
-
-  // UI state
   mode: string;
-  selectedBlockId: string | null;
 
-  // Actions
   setMode: ReturnType<typeof vi.fn>;
-  clearSelection: ReturnType<typeof vi.fn>;
   deleteThread: ReturnType<typeof vi.fn>;
   reset: ReturnType<typeof vi.fn>;
   resetStore: ReturnType<typeof vi.fn>;
   setActiveThread: ReturnType<typeof vi.fn>;
-  addCard: ReturnType<typeof vi.fn>;
-  removeCard: ReturnType<typeof vi.fn>;
 
-  // Settings
   settings: {
     apiKey: string;
     model: string;
@@ -60,27 +46,21 @@ export function createMockStoreState(
   return {
     activeThreadId: null,
     threads: [],
-    blocks: [],
-    cards: [],
-    mode: "landing",
-    selectedBlockId: null,
+    mode: 'landing',
     setMode: vi.fn(),
-    clearSelection: vi.fn(),
     deleteThread: vi.fn(),
     reset: vi.fn(),
     resetStore: vi.fn(),
     setActiveThread: vi.fn(),
-    addCard: vi.fn(),
-    removeCard: vi.fn(),
     settings: {
-      apiKey: "",
-      model: "gpt-5.4-mini",
-      reasoningEffort: "medium",
-      responseLanguage: "en",
-      translateLanguage: "Chinese",
+      apiKey: '',
+      model: 'gpt-5.4-mini',
+      reasoningEffort: 'medium',
+      responseLanguage: 'en',
+      translateLanguage: 'Chinese',
       webSearchEnabled: false,
-      exportDestination: "local",
-      obsidianVaultName: "",
+      exportDestination: 'local',
+      obsidianVaultName: '',
     },
     updateApiKey: vi.fn(),
     updateModel: vi.fn(),

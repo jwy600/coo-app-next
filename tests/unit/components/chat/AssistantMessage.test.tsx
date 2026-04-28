@@ -1,89 +1,92 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { AssistantMessage } from "@/components/chat/AssistantMessage";
-import { createMessage, createBlock, createCard } from "@/tests/mocks/fixtures";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
+import { AssistantMessage } from '@/components/chat/AssistantMessage';
+import { createMessage } from '@/tests/mocks/fixtures';
+import { useStore } from '@/lib/store/useStore';
 
-// Stub BlockStack to verify props
-vi.mock("@/components/chat/BlockStack", () => ({
-  BlockStack: ({
-    blocks,
-    selectedBlockId,
-    cards,
-  }: {
-    blocks: { id: string }[];
-    selectedBlockId: string | null;
-    cards: { id: string }[];
-  }) => (
-    <div
-      data-testid="block-stack"
-      data-block-count={blocks.length}
-      data-selected={selectedBlockId}
-      data-card-count={cards.length}
-    >
-      BlockStack
-    </div>
-  ),
-}));
+function resetStore() {
+  useStore.setState({
+    threads: [],
+    activeThreadId: null,
+    mode: 'landing',
+    isAwaitingResponse: false,
+    error: null,
+    streamingMessageId: null,
+    focus: null,
+  });
+}
 
-describe("AssistantMessage", () => {
-  it('renders "Coo" label', () => {
-    const message = createMessage({ id: "msg-1" });
-    render(<AssistantMessage message={message} blocks={[]} />);
-    expect(screen.getByText("Coo")).toBeTruthy();
+describe('AssistantMessage', () => {
+  beforeEach(resetStore);
+
+  it('renders the assistant label and the message text via MarkdownContent', () => {
+    const message = createMessage({ role: 'assistant', text: 'Hello **world**.' });
+    const { container } = render(<AssistantMessage message={message} />);
+    expect(container.querySelector('.assistant-label')!.textContent).toBe('Coo');
+    const strong = container.querySelector('strong');
+    expect(strong!.textContent).toBe('world');
   });
 
-  it("renders with assistant-message class", () => {
-    const message = createMessage({ id: "msg-1" });
-    const { container } = render(
-      <AssistantMessage message={message} blocks={[]} />,
-    );
-    expect(container.querySelector(".assistant-message")).toBeTruthy();
+  it('attaches data-message-id to the message container', () => {
+    const message = createMessage({ id: 'm-42', role: 'assistant', text: 'x' });
+    const { container } = render(<AssistantMessage message={message} />);
+    const root = container.querySelector('.assistant-message') as HTMLElement;
+    expect(root.getAttribute('data-message-id')).toBe('m-42');
   });
 
-  it("passes blocks to BlockStack", () => {
-    const message = createMessage({ id: "msg-1" });
-    const blocks = [
-      createBlock({ id: "b1", messageId: "msg-1" }),
-      createBlock({ id: "b2", messageId: "msg-1" }),
-    ];
-    render(<AssistantMessage message={message} blocks={blocks} />);
-    expect(
-      screen.getByTestId("block-stack").getAttribute("data-block-count"),
-    ).toBe("2");
-  });
+  describe('focus editor split-render', () => {
+    it('renders before-text + FocusEditor + after-text when focus targets this message', () => {
+      const message = createMessage({
+        id: 'msg-1',
+        role: 'assistant',
+        text: 'before middle after',
+      });
+      // Seed the store with a real thread + message and open focus on "middle".
+      useStore.getState().createThread('t1');
+      useStore.setState({
+        threads: [
+          {
+            ...useStore.getState().threads[0],
+            messages: [message],
+          },
+        ],
+      });
+      const start = 'before '.length; // 7
+      const end = 'before middle'.length; // 13
+      useStore.getState().openEditor('msg-1', [start, end]);
 
-  it("filters cards to only those belonging to this message", () => {
-    const message = createMessage({ id: "msg-1" });
-    const blocks = [createBlock({ id: "b1", messageId: "msg-1" })];
-    const cards = [
-      createCard({ id: "c1", messageId: "msg-1" }),
-      createCard({ id: "c2", messageId: "msg-other" }),
-    ];
-    render(
-      <AssistantMessage message={message} blocks={blocks} cards={cards} />,
-    );
-    // Only 1 card should be passed (msg-1), not the one for msg-other
-    expect(
-      screen.getByTestId("block-stack").getAttribute("data-card-count"),
-    ).toBe("1");
-  });
+      const { container } = render(<AssistantMessage message={message} />);
 
-  it("passes selectedBlockId to BlockStack", () => {
-    const message = createMessage({ id: "msg-1" });
-    render(
-      <AssistantMessage message={message} blocks={[]} selectedBlockId="b1" />,
-    );
-    expect(
-      screen.getByTestId("block-stack").getAttribute("data-selected"),
-    ).toBe("b1");
-  });
+      const editor = container.querySelector('[data-testid="focus-editor"]');
+      expect(editor).toBeTruthy();
 
-  it("defaults selectedBlockId to null", () => {
-    const message = createMessage({ id: "msg-1" });
-    render(<AssistantMessage message={message} blocks={[]} />);
-    // null prop means attribute is not set, getAttribute returns null
-    expect(
-      screen.getByTestId("block-stack").getAttribute("data-selected"),
-    ).toBeNull();
+      // Before / after segments rendered as separate paragraphs.
+      const paragraphs = Array.from(container.querySelectorAll('.doc-paragraph'));
+      const texts = paragraphs.map((p) => p.textContent ?? '');
+      expect(texts.join(' | ')).toContain('before');
+      expect(texts.join(' | ')).toContain('after');
+    });
+
+    it('renders only the full message when focus targets a different message', () => {
+      const message = createMessage({
+        id: 'msg-1',
+        role: 'assistant',
+        text: 'Hello world',
+      });
+      // Active focus, but on a *different* message id.
+      useStore.setState({
+        focus: {
+          messageId: 'msg-other',
+          range: [0, 5],
+          buffer: 'Hello',
+          notes: [],
+          prevBuffer: null,
+        },
+      });
+
+      const { container } = render(<AssistantMessage message={message} />);
+      expect(container.querySelector('[data-testid="focus-editor"]')).toBeNull();
+      expect(container.querySelector('p')?.textContent).toBe('Hello world');
+    });
   });
 });

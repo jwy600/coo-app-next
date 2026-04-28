@@ -1,124 +1,154 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   addUserMessage,
   addAssistantMessage,
   addAssistantMessageToThread,
-} from "@/lib/state/message";
-import type { AppState } from "@/types/state";
+  appendMessageText,
+  replaceMessageRange,
+  setMessageResponseId,
+  removeMessage,
+  findMessage,
+} from '@/lib/state/message';
+import type { AppState } from '@/types/state';
 
 const makeState = (overrides: Partial<AppState> = {}): AppState =>
   ({
     threads: [
       {
-        id: "thread-1",
-        title: "Test",
+        id: 'thread-1',
+        title: 'Test',
         createdAt: 1000,
         updatedAt: 1000,
         messages: [],
       },
     ],
-    blocks: [],
-    cards: [],
-    activeThreadId: "thread-1",
-    mode: "thread",
-    selectedBlockId: null,
+    activeThreadId: 'thread-1',
+    mode: 'thread',
     isAwaitingResponse: false,
     error: null,
     ...overrides,
   }) as AppState;
 
 let idCounter = 0;
-const testIdFactory = () => `id-${idCounter++}`;
-const testNowFactory = () => 1700000000000;
+const idFactory = () => `id-${idCounter++}`;
+const nowFactory = () => 1700000000000;
 
-describe("addUserMessage", () => {
-  beforeEach(() => {
-    idCounter = 0;
-  });
+beforeEach(() => {
+  idCounter = 0;
+});
 
-  it("should throw when no active thread", () => {
+describe('addUserMessage', () => {
+  it('throws when no active thread', () => {
     const state = makeState({ activeThreadId: null });
-    expect(() =>
-      addUserMessage(state, "Hello", testIdFactory, testNowFactory),
-    ).toThrow("Cannot add message: no active thread");
+    expect(() => addUserMessage(state, 'hi', idFactory, nowFactory)).toThrow(
+      'Cannot add message: no active thread',
+    );
   });
 
-  it("should add a user message with block", () => {
-    const state = makeState();
-    const result = addUserMessage(
-      state,
-      "Hello world",
-      testIdFactory,
-      testNowFactory,
-    );
-
-    expect(result.message.role).toBe("user");
-    expect(result.message.threadId).toBe("thread-1");
-    expect(result.blocks).toHaveLength(1);
-    expect(result.blocks[0].text).toBe("Hello world");
-    expect(result.blocks[0].type).toBe("paragraph");
-    expect(result.state.blocks).toHaveLength(1);
+  it('appends a user message with text', () => {
+    const result = addUserMessage(makeState(), 'Hello world', idFactory, nowFactory);
+    expect(result.message.role).toBe('user');
+    expect(result.message.text).toBe('Hello world');
+    expect(result.state.threads[0].messages).toHaveLength(1);
+    expect(result.state.threads[0].messages[0].text).toBe('Hello world');
   });
 });
 
-describe("addAssistantMessage", () => {
-  beforeEach(() => {
-    idCounter = 0;
-  });
-
-  it("should throw when no active thread", () => {
+describe('addAssistantMessage', () => {
+  it('throws when no active thread', () => {
     const state = makeState({ activeThreadId: null });
-    expect(() =>
-      addAssistantMessage(
-        state,
-        [{ type: "paragraph", text: "Hi" }],
-        testIdFactory,
-        testNowFactory,
-      ),
-    ).toThrow("Cannot add message: no active thread");
+    expect(() => addAssistantMessage(state, 'hi', idFactory, nowFactory)).toThrow(
+      'Cannot add message: no active thread',
+    );
   });
 
-  it("should add an assistant message with blocks", () => {
-    const state = makeState();
-    const result = addAssistantMessage(
-      state,
-      [
-        { type: "paragraph", text: "First block" },
-        { type: "heading", text: "## Title" },
-      ],
-      testIdFactory,
-      testNowFactory,
-    );
-
-    expect(result.message.role).toBe("assistant");
-    expect(result.blocks).toHaveLength(2);
-    expect(result.blocks[0].text).toBe("First block");
-    expect(result.blocks[1].text).toBe("## Title");
-    expect(result.blocks[1].type).toBe("heading");
-  });
-
-  it("should store responseId in meta", () => {
-    const state = makeState();
-    const result = addAssistantMessage(
-      state,
-      [{ type: "paragraph", text: "Hello" }],
-      testIdFactory,
-      testNowFactory,
-      "resp-123",
-    );
-
-    expect(result.message.meta?.openaiResponseId).toBe("resp-123");
-  });
-
-  it("should have empty meta when no responseId", () => {
-    const state = makeState();
-    const result = addAssistantMessage(
-      state,
-      [{ type: "paragraph", text: "Hello" }],
-      testIdFactory,
-      testNowFactory,
-    );
-
+  it('appends an assistant message with text', () => {
+    const result = addAssistantMessage(makeState(), '## Title\n\nBody.', idFactory, nowFactory);
+    expect(result.message.role).toBe('assistant');
+    expect(result.message.text).toBe('## Title\n\nBody.');
     expect(result.message.meta).toEqual({});
+  });
+
+  it('stores responseId in meta when provided', () => {
+    const result = addAssistantMessage(makeState(), 'Hi', idFactory, nowFactory, 'resp-1');
+    expect(result.message.meta.openaiResponseId).toBe('resp-1');
+  });
+});
+
+describe('addAssistantMessageToThread', () => {
+  it('creates the thread if it does not exist', () => {
+    const result = addAssistantMessageToThread(
+      makeState({ threads: [], activeThreadId: null }),
+      'thread-2',
+      'Body',
+      idFactory,
+      nowFactory,
+    );
+    expect(result.state.threads).toHaveLength(1);
+    expect(result.state.threads[0].id).toBe('thread-2');
+    expect(result.state.threads[0].messages).toHaveLength(1);
+  });
+});
+
+describe('appendMessageText', () => {
+  it('appends to the matching message text', () => {
+    const seeded = addAssistantMessage(makeState(), 'Hello', idFactory, nowFactory);
+    const messageId = seeded.message.id;
+    const next = appendMessageText(seeded.state, messageId, ' world');
+    expect(findMessage(next, messageId)?.text).toBe('Hello world');
+  });
+
+  it('returns the same state object for an empty chunk', () => {
+    const seeded = addAssistantMessage(makeState(), 'Hi', idFactory, nowFactory);
+    const next = appendMessageText(seeded.state, seeded.message.id, '');
+    expect(next).toBe(seeded.state);
+  });
+
+  it('preserves immutability for unrelated threads', () => {
+    const seeded = addAssistantMessage(makeState(), 'Hi', idFactory, nowFactory);
+    const next = appendMessageText(seeded.state, seeded.message.id, '!');
+    expect(next).not.toBe(seeded.state);
+    expect(next.threads[0].messages[0].text).toBe('Hi!');
+  });
+});
+
+describe('replaceMessageRange', () => {
+  it('splices in a replacement at the given range', () => {
+    const seeded = addAssistantMessage(makeState(), 'Hello world', idFactory, nowFactory);
+    const next = replaceMessageRange(seeded.state, seeded.message.id, [6, 11], 'there');
+    expect(findMessage(next, seeded.message.id)?.text).toBe('Hello there');
+  });
+
+  it('clamps out-of-range bounds to the message length', () => {
+    const seeded = addAssistantMessage(makeState(), 'Hi', idFactory, nowFactory);
+    const next = replaceMessageRange(seeded.state, seeded.message.id, [-5, 999], 'X');
+    expect(findMessage(next, seeded.message.id)?.text).toBe('X');
+  });
+
+  it('preserves the original state object reference when no message matches', () => {
+    const state = makeState();
+    const next = replaceMessageRange(state, 'missing', [0, 1], '!');
+    expect(next).toBe(state);
+  });
+});
+
+describe('setMessageResponseId', () => {
+  it('writes the response id into message.meta', () => {
+    const seeded = addAssistantMessage(makeState(), 'Hi', idFactory, nowFactory);
+    const next = setMessageResponseId(seeded.state, seeded.message.id, 'resp-2');
+    expect(findMessage(next, seeded.message.id)?.meta.openaiResponseId).toBe('resp-2');
+  });
+});
+
+describe('removeMessage', () => {
+  it('removes a message by id', () => {
+    const seeded = addAssistantMessage(makeState(), 'Hi', idFactory, nowFactory);
+    const next = removeMessage(seeded.state, seeded.message.id);
+    expect(next.threads[0].messages).toHaveLength(0);
+  });
+
+  it('is a no-op for an unknown id', () => {
+    const state = makeState();
+    expect(removeMessage(state, 'missing')).toBe(state);
   });
 });

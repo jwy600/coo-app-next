@@ -1,42 +1,26 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { UserMessage } from '@/components/chat/UserMessage';
-import { Message } from '@/types/message';
-import { Block } from '@/types/block';
+import { createMessage } from '@/tests/mocks/fixtures';
 
-describe('UserMessage Component', () => {
-  const mockMessage: Message = {
-    id: 'msg-1',
-    threadId: 'thread-1',
-    role: 'user',
-    createdAt: Date.now(),
-    content: [{ blockId: 'block-1' }],
-    meta: {},
-  };
-
-  const mockBlock: Block = {
-    id: 'block-1',
-    messageId: 'msg-1',
-    type: 'paragraph',
-    text: 'Hello, this is a user message',
-    edited: false,
-    selections: [],
-    prevText: null,
-    isRewritten: false,
-  };
-
-  it('should render user label', () => {
-    render(<UserMessage message={mockMessage} block={mockBlock} />);
-    expect(screen.getByText('You')).toBeDefined();
+describe('UserMessage', () => {
+  it('renders the message text in a paragraph', () => {
+    const message = createMessage({ role: 'user', text: 'Hello there' });
+    const { container } = render(<UserMessage message={message} />);
+    const p = container.querySelector('p');
+    expect(p?.textContent).toBe('Hello there');
   });
 
-  it('should render block text', () => {
-    render(<UserMessage message={mockMessage} block={mockBlock} />);
-    expect(screen.getByText('Hello, this is a user message')).toBeDefined();
+  it('renders an empty paragraph when text is empty', () => {
+    const message = createMessage({ role: 'user', text: '' });
+    const { container } = render(<UserMessage message={message} />);
+    expect(container.querySelector('p')?.textContent).toBe('');
   });
 
-  it('should handle missing block gracefully', () => {
-    render(<UserMessage message={mockMessage} />);
-    expect(screen.getByText('You')).toBeDefined();
+  it('attaches data-message-id to the message container', () => {
+    const message = createMessage({ id: 'msg-7', role: 'user', text: 'x' });
+    const { container } = render(<UserMessage message={message} />);
+    const root = container.querySelector('.user-message') as HTMLElement;
+    expect(root.getAttribute('data-message-id')).toBe('msg-7');
   });
 });

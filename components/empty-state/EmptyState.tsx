@@ -30,7 +30,6 @@ export function EmptyState({
 
       <div className="w-full max-w-2xl">
         <Composer
-          selectedBlockId={null}
           prompt={prompt}
           onPromptChange={onPromptChange}
           onSubmit={onSubmit}

@@ -1,61 +1,117 @@
 'use client';
 
-import { FormEvent } from 'react';
+import { FormEvent, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { PromptInput } from './PromptInput';
 import { ComposerHint } from './ComposerHint';
-import { BlockModeToggle } from './BlockModeToggle';
-import { BlockControls, UIBlockAction } from '@/components/chat/BlockControls';
+import { EditorActions, type EditorActionId } from './EditorActions';
 import { Button } from '@/components/ui/button';
-import type { ComposerMode } from '@/types/state/ui';
+import { useStore } from '@/lib/store/useStore';
+import { fetchBlockAction } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
-/**
- * Client Component - Main composer form
- * Needs 'use client' for form submission and state
- */
 interface ComposerProps {
-  selectedBlockId: string | null;
   prompt: string;
   onPromptChange: (value: string) => void;
   onSubmit: (e: FormEvent) => void;
-  onSelectionCapture?: (element: HTMLElement | null) => void;
-  onBlockAction?: (action: UIBlockAction) => void;
-  composerMode?: ComposerMode;
-  onComposerModeChange?: (mode: 'ask' | 'edit') => void;
   disabled?: boolean;
+  /**
+   * Test-only: extra DOM rendered inside the composer, used to simulate
+   * drag-selection of arbitrary text. Production callers don't pass this.
+   */
+  children?: ReactNode;
 }
 
 export function Composer({
-  selectedBlockId,
   prompt,
   onPromptChange,
   onSubmit,
-  onSelectionCapture,
-  onBlockAction,
-  composerMode = 'chat',
-  onComposerModeChange,
   disabled = false,
+  children,
 }: ComposerProps) {
-  // Show block controls when a block is selected and in ask mode
-  const hasBlockSelected = !!selectedBlockId;
-  const isEditMode = composerMode === 'edit';
-  const showBlockControls = hasBlockSelected && composerMode === 'ask';
+  const focus = useStore((s) => s.focus);
+  const setComposerPrompt = useStore((s) => s.setComposerPrompt);
+  const setError = useStore((s) => s.setError);
+  const appendNote = useStore((s) => s.appendNote);
+  const setFocusLastResponseId = useStore((s) => s.setFocusLastResponseId);
+
+  const formRef = useRef<HTMLFormElement>(null);
+  const [busy, setBusy] = useState<EditorActionId | null>(null);
+
+  const handleDraftAction = useCallback(
+    async (action: EditorActionId) => {
+      if (!focus) return;
+      const settings = useStore.getState().settings;
+      const language = action === 'translate' ? settings.translateLanguage : undefined;
+      const previousResponseId = focus.lastResponseId;
+      const referenceQuestion = previousResponseId
+        ? undefined
+        : focus.referenceQuestion;
+      setBusy(action);
+      setError(null);
+      try {
+        const result = await fetchBlockAction(
+          action,
+          focus.buffer,
+          undefined,
+          language,
+          settings,
+          previousResponseId,
+          referenceQuestion,
+        );
+        setComposerPrompt(result.text);
+        if (result.responseId) {
+          setFocusLastResponseId(result.responseId);
+        }
+      } catch (err) {
+        setError(getErrorMessage(err, `${action} failed.`));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [focus, setComposerPrompt, setError, setFocusLastResponseId],
+  );
+
+  // Drag-select inside the composer → append the highlighted text to the
+  // active editor's notes.
+  useEffect(() => {
+    if (!focus) return;
+    const root = formRef.current;
+    if (!root) return;
+
+    const handle = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      if (!root.contains(range.commonAncestorContainer)) return;
+      const text = sel.toString().trim();
+      if (!text) return;
+      appendNote(text);
+      sel.removeAllRanges();
+    };
+
+    root.addEventListener('mouseup', handle);
+    root.addEventListener('touchend', handle);
+    return () => {
+      root.removeEventListener('mouseup', handle);
+      root.removeEventListener('touchend', handle);
+    };
+  }, [focus, appendNote]);
+
+  const showShortcuts = focus !== null;
 
   return (
     <form
+      ref={formRef}
       onSubmit={onSubmit}
       className="composer bg-background rounded-xl border border-border composer-shadow p-4 max-h-[50vh] flex flex-col overflow-hidden w-full"
     >
-      {/* Ask/Edit toggle + Block actions - shown when block is selected */}
-      {hasBlockSelected && onComposerModeChange && (
-        <div className="mb-3 flex-shrink-0 flex items-center gap-3">
-          <BlockModeToggle
-            mode={composerMode === 'edit' ? 'edit' : 'ask'}
-            onModeChange={onComposerModeChange}
+      {showShortcuts && (
+        <div className="mb-3">
+          <EditorActions
+            onAction={handleDraftAction}
+            busy={busy}
             disabled={disabled}
           />
-          {showBlockControls && (
-            <BlockControls onAction={onBlockAction} disabled={disabled} />
-          )}
         </div>
       )}
 
@@ -64,22 +120,25 @@ export function Composer({
           <PromptInput
             value={prompt}
             onChange={onPromptChange}
-            onSelectionCapture={isEditMode ? undefined : onSelectionCapture}
-            onSubmit={() => onSubmit(new Event('submit') as any)}
+            onSubmit={() => onSubmit(new Event('submit') as unknown as FormEvent)}
             disabled={disabled}
-            hasBlockSelected={hasBlockSelected}
-            composerMode={composerMode}
           />
         </div>
-        <Button type="submit" variant="default" disabled={disabled} className="flex-shrink-0 self-end">
-          <span>{isEditMode ? 'Replace' : 'Send'}</span>
+        <Button
+          type="submit"
+          variant="default"
+          disabled={disabled}
+          className="flex-shrink-0 self-end"
+        >
+          <span>Send</span>
           <span aria-hidden="true" className="ml-1">
-            {isEditMode ? '↻' : '→'}
+            →
           </span>
         </Button>
       </div>
 
-      <ComposerHint hidden={hasBlockSelected} />
+      <ComposerHint />
+      {children}
     </form>
   );
 }

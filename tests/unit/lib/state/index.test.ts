@@ -6,579 +6,96 @@ import {
   updateThreadTitle,
   getThreadById,
   createThread,
-  clearSelection,
-  selectBlock,
-  getBlockById,
   addUserMessage,
   addAssistantMessage,
   addAssistantMessageToThread,
-  addSelection,
-  removeSelection,
-  clearSelections,
-  toggleRewrite,
-  splitIntoBlocks,
   getLastAssistantResponseId,
 } from '@/lib/state';
 import { AppState } from '@/types/state';
 
-// Helper factories
-const idFactory = () => 'test-id-' + Math.random().toString(36).substr(2, 9);
+const idFactory = () => 'test-id-' + Math.random().toString(36).slice(2, 11);
 const nowFactory = () => 1000;
 
-describe('State Management - Core Functions', () => {
+describe('createInitialState', () => {
+  it('returns landing state with empty threads', () => {
+    const state = createInitialState(idFactory, nowFactory);
+    expect(state.mode).toBe('landing');
+    expect(state.activeThreadId).toBeNull();
+    expect(state.threads).toHaveLength(0);
+    expect(state.isAwaitingResponse).toBe(false);
+    expect(state.error).toBeNull();
+  });
+});
+
+describe('setMode', () => {
+  it('returns the requested mode', () => {
+    expect(setMode('thread').mode).toBe('thread');
+    expect(setMode('landing').mode).toBe('landing');
+  });
+});
+
+describe('thread + message flow', () => {
   let state: AppState;
 
   beforeEach(() => {
     state = createInitialState(idFactory, nowFactory);
+    state = createThread(state, 'thread-1', nowFactory, 'First').state;
   });
 
-  describe('createInitialState', () => {
-    it('should create initial state with default values', () => {
-      expect(state).toHaveProperty('mode', 'landing');
-      expect(state.selectedBlockId).toBeNull();
-      expect(state.cards).toEqual([]);
-      expect(state.activeThreadId).toBeNull();
-      expect(state.threads).toHaveLength(0);
-      expect(state.blocks).toHaveLength(0);
-    });
+  it('setActiveThread updates the active thread id', () => {
+    const next = setActiveThread(state, 'thread-2');
+    expect(next.activeThreadId).toBe('thread-2');
   });
 
-  describe('setMode', () => {
-    it('should set mode to thread', () => {
-      const result = setMode(state.selectedBlockId, 'thread');
-      expect(result.mode).toBe('thread');
-    });
-
-    it('should set mode to landing and clear selected block', () => {
-      const selectedBlockId = 'some-block-id';
-      const result = setMode(selectedBlockId, 'landing');
-      expect(result.mode).toBe('landing');
-      expect(result.selectedBlockId).toBeNull();
-    });
-
-    it('should maintain immutability', () => {
-      const originalSelectedBlockId = 'block-1';
-      const result = setMode(originalSelectedBlockId, 'thread');
-      expect(result.selectedBlockId).toBe(originalSelectedBlockId); // Same value when not clearing
-      expect(result).not.toBe(state);
-    });
+  it('updateThreadTitle changes only the named thread', () => {
+    const seeded = createThread(state, 'thread-2', nowFactory, 'Second').state;
+    const next = updateThreadTitle(seeded, 'thread-1', 'Renamed', nowFactory);
+    expect(getThreadById(next, 'thread-1')?.title).toBe('Renamed');
+    expect(getThreadById(next, 'thread-2')?.title).toBe('Second');
   });
 
-  describe('setActiveThread', () => {
-    it('should set active thread id', () => {
-      const nextState = setActiveThread(state, 'new-thread-id');
-      expect(nextState.activeThreadId).toBe('new-thread-id');
-    });
+  it('addUserMessage appends a text message to the active thread', () => {
+    const result = addUserMessage(state, 'Hello', idFactory, nowFactory);
+    expect(result.message.text).toBe('Hello');
+    expect(getThreadById(result.state, 'thread-1')?.messages).toHaveLength(1);
   });
 
-  describe('updateThreadTitle', () => {
-    beforeEach(() => {
-      const result = createThread(state, 'thread-1', nowFactory, 'First');
-      state = result.state;
-    });
-
-    it('should update thread title and updatedAt', () => {
-      const threadId = state.activeThreadId!;
-      const nextState = updateThreadTitle(state, threadId, 'New Title', nowFactory);
-      const thread = getThreadById(nextState, threadId);
-      expect(thread?.title).toBe('New Title');
-      expect(thread?.updatedAt).toBe(1000);
-    });
-
-    it('should not modify other threads', () => {
-      const firstThreadId = state.activeThreadId!;
-      const secondThread = createThread(state, 'thread-2', nowFactory, 'Second');
-      state = secondThread.state;
-      // Update the first thread, not the active thread (which is thread-2)
-      const nextState = updateThreadTitle(state, firstThreadId, 'Updated', nowFactory);
-      const otherThread = getThreadById(nextState, 'thread-2');
-      expect(otherThread?.title).toBe('Second');
-    });
+  it('addAssistantMessage stores the response id in meta when provided', () => {
+    const result = addAssistantMessage(state, 'Hi', idFactory, nowFactory, 'resp-1');
+    expect(result.message.meta.openaiResponseId).toBe('resp-1');
   });
 
-  describe('createThread', () => {
-    it('should create a new thread', () => {
-      const result = createThread(state, 'new-thread', nowFactory, 'Test Thread');
-      expect(result.thread.id).toBe('new-thread');
-      expect(result.thread.title).toBe('Test Thread');
-      expect(result.state.threads).toHaveLength(1);
-      expect(result.state.activeThreadId).toBe('new-thread');
-    });
-  });
-
-  describe('clearSelection', () => {
-    it('should clear selected block id', () => {
-      const selectedBlockId = 'block-123';
-      const result = clearSelection(selectedBlockId, state.blocks);
-      expect(result.selectedBlockId).toBeNull();
-    });
-
-    it('should clear session state from selected block', () => {
-      const blocks = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'paragraph' as const,
-          text: 'Test',
-          edited: false,
-          selections: ['some selection'],
-          prevText: 'old text',
-          isRewritten: true,
-        },
-      ];
-      const selectedBlockId = 'block-1';
-      const result = clearSelection(selectedBlockId, blocks);
-      expect(result.blocks[0].selections).toEqual([]);
-      expect(result.blocks[0].prevText).toBeNull();
-      expect(result.blocks[0].isRewritten).toBe(false);
-    });
-
-    it('should return unchanged state when no block selected', () => {
-      const result = clearSelection(null, state.blocks);
-      expect(result.selectedBlockId).toBeNull();
-      expect(result.blocks).toBe(state.blocks);
-    });
-  });
-
-  describe('selectBlock', () => {
-    it('should select a block when none is selected', () => {
-      const result = selectBlock('thread', null, 'block-1');
-      expect(result.selectedBlockId).toBe('block-1');
-    });
-
-    it('should deselect when same block is clicked (toggle)', () => {
-      const result = selectBlock('thread', 'block-1', 'block-1');
-      expect(result.selectedBlockId).toBeNull();
-    });
-
-    it('should select new block when different block is clicked (single-select)', () => {
-      const result = selectBlock('thread', 'block-1', 'block-2');
-      expect(result.selectedBlockId).toBe('block-2');
-    });
-
-    it('should not select block when not in thread mode', () => {
-      const result = selectBlock('landing', null, 'block-1');
-      expect(result.selectedBlockId).toBeNull();
-    });
-  });
-
-  describe('addUserMessage', () => {
-    beforeEach(() => {
-      const result = createThread(state, 'thread-1', nowFactory, 'Test');
-      state = result.state;
-    });
-
-    it('should add a user message to the active thread', () => {
-      const result = addUserMessage(state, 'Hello world', idFactory, nowFactory);
-
-      expect(result.message.role).toBe('user');
-      expect(result.blocks).toHaveLength(1);
-      expect(result.blocks[0].text).toBe('Hello world');
-      expect(result.state.blocks).toHaveLength(1);
-
-      const thread = getThreadById(result.state, state.activeThreadId!);
-      expect(thread?.messages).toHaveLength(1);
-    });
-  });
-
-  describe('addAssistantMessage', () => {
-    beforeEach(() => {
-      const result = createThread(state, 'thread-1', nowFactory, 'Test');
-      state = result.state;
-    });
-
-    it('should add assistant message with multiple blocks', () => {
-      const blocksData = [
-        { text: 'Block 1', type: 'paragraph' as const },
-        { text: 'Block 2', type: 'paragraph' as const },
-      ];
-      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory);
-
-      expect(result.message.role).toBe('assistant');
-      expect(result.blocks).toHaveLength(2);
-      expect(result.state.blocks).toHaveLength(2);
-
-      const thread = getThreadById(result.state, state.activeThreadId!);
-      expect(thread?.messages).toHaveLength(1);
-      expect(thread?.messages[0].content).toHaveLength(2);
-    });
-
-    it('should store responseId in message meta when provided', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_abc123');
-
-      expect(result.message.meta).toEqual({ openaiResponseId: 'resp_abc123' });
-    });
-
-    it('should have empty meta when responseId not provided', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory);
-
-      expect(result.message.meta).toEqual({});
-    });
-  });
-
-  describe('addAssistantMessageToThread', () => {
-    beforeEach(() => {
-      const result = createThread(state, 'thread-1', nowFactory, 'Test');
-      state = result.state;
-    });
-
-    it('should add message to specific thread', () => {
-      const newThread = createThread(state, 'thread-2', nowFactory);
-      state = newThread.state;
-
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-      const result = addAssistantMessageToThread(
-        state,
-        'thread-2',
-        blocksData,
-        idFactory,
-        nowFactory
-      );
-
-      const thread = getThreadById(result.state, 'thread-2');
-      expect(thread?.messages).toHaveLength(1);
-    });
-
-    it('should create thread if it does not exist', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-      const result = addAssistantMessageToThread(
-        state,
-        'non-existent-thread',
-        blocksData,
-        idFactory,
-        nowFactory
-      );
-
-      const thread = getThreadById(result.state, 'non-existent-thread');
-      expect(thread).toBeDefined();
-      expect(thread?.messages).toHaveLength(1);
-    });
-
-    it('should store responseId in message meta when provided', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-      const result = addAssistantMessageToThread(
-        state,
-        state.activeThreadId!,
-        blocksData,
-        idFactory,
-        nowFactory,
-        'resp_xyz789'
-      );
-
-      expect(result.message.meta).toEqual({ openaiResponseId: 'resp_xyz789' });
-    });
-  });
-
-  describe('getLastAssistantResponseId', () => {
-    beforeEach(() => {
-      const result = createThread(state, 'thread-1', nowFactory, 'Test');
-      state = result.state;
-    });
-
-    it('should return undefined when thread has no messages', () => {
-      const responseId = getLastAssistantResponseId(state, state.activeThreadId!);
-      expect(responseId).toBeUndefined();
-    });
-
-    it('should return undefined when thread does not exist', () => {
-      const responseId = getLastAssistantResponseId(state, 'non-existent-thread');
-      expect(responseId).toBeUndefined();
-    });
-
-    it('should return undefined when only user messages exist', () => {
-      const result = addUserMessage(state, 'Hello', idFactory, nowFactory);
-      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId!);
-      expect(responseId).toBeUndefined();
-    });
-
-    it('should return undefined when assistant message has no responseId', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory);
-      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId!);
-      expect(responseId).toBeUndefined();
-    });
-
-    it('should return responseId from last assistant message', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-      const result = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_first');
-      const responseId = getLastAssistantResponseId(result.state, state.activeThreadId!);
-      expect(responseId).toBe('resp_first');
-    });
-
-    it('should return most recent responseId when multiple assistant messages exist', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-
-      // Add first assistant message
-      let currentState = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_first').state;
-
-      // Add user message
-      currentState = addUserMessage(currentState, 'Follow up', idFactory, nowFactory).state;
-
-      // Add second assistant message
-      currentState = addAssistantMessage(currentState, blocksData, idFactory, nowFactory, 'resp_second').state;
-
-      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId!);
-      expect(responseId).toBe('resp_second');
-    });
-
-    it('should skip assistant messages without responseId', () => {
-      const blocksData = [{ text: 'Response', type: 'paragraph' as const }];
-
-      // Add first assistant message with responseId
-      let currentState = addAssistantMessage(state, blocksData, idFactory, nowFactory, 'resp_first').state;
-
-      // Add second assistant message without responseId
-      currentState = addAssistantMessage(currentState, blocksData, idFactory, nowFactory).state;
-
-      // Should still return the first responseId since the latest doesn't have one
-      // Actually, wait - it searches backwards and the latest message doesn't have openaiResponseId
-      // so it will skip it and return resp_first
-      const responseId = getLastAssistantResponseId(currentState, state.activeThreadId!);
-      expect(responseId).toBe('resp_first');
-    });
+  it('addAssistantMessageToThread creates a thread if missing', () => {
+    const result = addAssistantMessageToThread(
+      state,
+      'thread-fresh',
+      'Body',
+      idFactory,
+      nowFactory,
+    );
+    expect(getThreadById(result.state, 'thread-fresh')?.messages).toHaveLength(1);
   });
 });
 
-describe('Block Operations', () => {
+describe('getLastAssistantResponseId', () => {
   let state: AppState;
 
   beforeEach(() => {
     state = createInitialState(idFactory, nowFactory);
-    // Add a block to state for testing
-    state.blocks = [
-      {
-        id: 'block-1',
-        messageId: 'msg-1',
-        type: 'paragraph',
-        text: 'Original text',
-        edited: false,
-        selections: [],
-        prevText: null,
-        isRewritten: false,
-      },
-    ];
+    state = createThread(state, 'thread-1', nowFactory, 'Test').state;
   });
 
-  describe('getBlockById', () => {
-    it('should find block by id', () => {
-      const block = getBlockById(state, 'block-1');
-      expect(block).toBeDefined();
-      expect(block?.text).toBe('Original text');
-    });
-
-    it('should return undefined for non-existent block', () => {
-      const block = getBlockById(state, 'non-existent');
-      expect(block).toBeUndefined();
-    });
+  it('returns undefined when the thread has no assistant messages with response ids', () => {
+    state = addUserMessage(state, 'Hello', idFactory, nowFactory).state;
+    expect(getLastAssistantResponseId(state, 'thread-1')).toBeUndefined();
   });
 
-  describe('addSelection', () => {
-    it('should add selection to block', () => {
-      const result = addSelection(state, 'block-1', 'highlighted phrase');
-      expect(result.block?.selections).toContain('highlighted phrase');
-      expect(result.block?.selections).toHaveLength(1);
-    });
+  it('returns the most recent response id, skipping ones without it', () => {
+    state = addAssistantMessage(state, 'A', idFactory, nowFactory, 'resp-first').state;
+    state = addAssistantMessage(state, 'B', idFactory, nowFactory).state;
+    expect(getLastAssistantResponseId(state, 'thread-1')).toBe('resp-first');
 
-    it('should append to existing selections', () => {
-      state.blocks[0].selections = ['first'];
-      const result = addSelection(state, 'block-1', 'second');
-      expect(result.block?.selections).toEqual(['first', 'second']);
-    });
-
-    it('should maintain immutability', () => {
-      const result = addSelection(state, 'block-1', 'test');
-      expect(state.blocks[0].selections).toHaveLength(0);
-      expect(result.state.blocks[0].selections).toHaveLength(1);
-    });
-  });
-
-  describe('removeSelection', () => {
-    beforeEach(() => {
-      state.blocks[0].selections = ['first', 'second', 'third'];
-    });
-
-    it('should remove selection at index', () => {
-      const result = removeSelection(state, 'block-1', 1);
-      expect(result.block?.selections).toEqual(['first', 'third']);
-    });
-
-    it('should handle removing from empty selections', () => {
-      state.blocks[0].selections = [];
-      const result = removeSelection(state, 'block-1', 0);
-      expect(result.block?.selections).toEqual([]);
-    });
-
-    it('should handle invalid index gracefully', () => {
-      const result = removeSelection(state, 'block-1', 99);
-      expect(result.block?.selections).toHaveLength(3);
-    });
-  });
-
-  describe('clearSelections', () => {
-    it('should clear all selections from block', () => {
-      state.blocks[0].selections = ['first', 'second'];
-      const result = clearSelections(state, 'block-1');
-      expect(result.block?.selections).toEqual([]);
-    });
-  });
-
-  describe('toggleRewrite', () => {
-    it('should rewrite block and store original', () => {
-      const result = toggleRewrite(state, 'block-1', 'Rewritten text');
-      expect(result.block?.text).toBe('Rewritten text');
-      expect(result.block?.prevText).toBe('Original text');
-      expect(result.block?.isRewritten).toBe(true);
-      expect(result.block?.edited).toBe(true);
-    });
-
-    it('should undo rewrite and restore original', () => {
-      state.blocks[0].text = 'Rewritten';
-      state.blocks[0].prevText = 'Original text';
-      state.blocks[0].isRewritten = true;
-
-      const result = toggleRewrite(state, 'block-1', 'New rewrite');
-      expect(result.block?.text).toBe('Original text');
-      expect(result.block?.prevText).toBe(null);
-      expect(result.block?.isRewritten).toBe(false);
-      expect(result.block?.edited).toBe(true);
-    });
-  });
-
-});
-
-describe('splitIntoBlocks', () => {
-  it('should split text into paragraph blocks', () => {
-    const text = 'Para 1\n\nPara 2\n\nPara 3';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    expect(blocks[0].text).toBe('Para 1');
-    expect(blocks[1].text).toBe('Para 2');
-    expect(blocks[2].text).toBe('Para 3');
-  });
-
-  it('should handle empty text', () => {
-    const blocks = splitIntoBlocks('');
-    expect(blocks).toHaveLength(0);
-  });
-
-  it('should detect and preserve code blocks', () => {
-    const text = '```javascript\nconst x = 1\n```';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0].type).toBe('code');
-    expect(blocks[0].text).toContain('const x = 1');
-  });
-
-  it('should split top-level list items into separate blocks', () => {
-    const text = '- Item 1\n- Item 2\n- Item 3';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    expect(blocks[0].type).toBe('list');
-    expect(blocks[0].text).toBe('- Item 1');
-    expect(blocks[1].text).toBe('- Item 2');
-    expect(blocks[2].text).toBe('- Item 3');
-  });
-
-  it('should handle mixed content types', () => {
-    const text = 'Intro paragraph\n\n- List item 1\n- List item 2\n\nConclusion';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(4);
-    expect(blocks[0].type).toBe('paragraph');
-    expect(blocks[1].type).toBe('list');
-    expect(blocks[1].text).toBe('- List item 1');
-    expect(blocks[2].type).toBe('list');
-    expect(blocks[2].text).toBe('- List item 2');
-    expect(blocks[3].type).toBe('paragraph');
-  });
-
-  it('should handle code blocks with language specifier', () => {
-    const text = '```python\ndef hello():\n    print("hi")\n```';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0].type).toBe('code');
-  });
-
-  it('should separate multiple code blocks', () => {
-    const text = '```js\ncode1\n```\n\nSome text\n\n```js\ncode2\n```';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    expect(blocks[0].type).toBe('code');
-    expect(blocks[1].type).toBe('paragraph');
-    expect(blocks[2].type).toBe('code');
-  });
-
-  it('should split numbered list items into separate blocks', () => {
-    const text = '1. First\n2. Second\n3. Third';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    expect(blocks[0].type).toBe('list');
-    expect(blocks[0].text).toBe('1. First');
-  });
-
-  it('should keep nested list items with their parent block', () => {
-    const text = '- Python\n  - Django\n  - Flask\n- JavaScript\n- Rust';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    expect(blocks[0].text).toBe('- Python\n  - Django\n  - Flask');
-    expect(blocks[1].text).toBe('- JavaScript');
-    expect(blocks[2].text).toBe('- Rust');
-  });
-
-  it('should trim whitespace from blocks', () => {
-    const text = '  Para 1  \n\n  Para 2  ';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks[0].text).toBe('Para 1');
-    expect(blocks[1].text).toBe('Para 2');
-  });
-
-  it('should ignore empty paragraphs', () => {
-    const text = 'Para 1\n\n\n\nPara 2';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(2);
-  });
-
-  it('should handle single line of text', () => {
-    const text = 'Single line';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0].text).toBe('Single line');
-    expect(blocks[0].type).toBe('paragraph');
-  });
-
-  it('should detect headings as heading type', () => {
-    const text = '# Main Title\n\nSome paragraph';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(2);
-    expect(blocks[0].type).toBe('heading');
-    expect(blocks[0].text).toBe('# Main Title');
-    expect(blocks[1].type).toBe('paragraph');
-  });
-
-  it('should handle multiple heading levels', () => {
-    const text = '# H1\n\n## H2\n\n### H3';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    blocks.forEach((block) => expect(block.type).toBe('heading'));
-  });
-
-  it('should separate headings from adjacent content', () => {
-    const text = 'Intro\n\n## Section\n\n- Item';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    expect(blocks[0].type).toBe('paragraph');
-    expect(blocks[1].type).toBe('heading');
-    expect(blocks[2].type).toBe('list');
-  });
-
-  it('should handle heading immediately followed by list', () => {
-    const text = '## Features\n- Feature 1\n- Feature 2';
-    const blocks = splitIntoBlocks(text);
-    expect(blocks).toHaveLength(3);
-    expect(blocks[0].type).toBe('heading');
-    expect(blocks[0].text).toBe('## Features');
-    expect(blocks[1].type).toBe('list');
-    expect(blocks[2].type).toBe('list');
+    state = addAssistantMessage(state, 'C', idFactory, nowFactory, 'resp-third').state;
+    expect(getLastAssistantResponseId(state, 'thread-1')).toBe('resp-third');
   });
 });

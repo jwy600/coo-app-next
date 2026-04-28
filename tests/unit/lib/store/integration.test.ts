@@ -1,174 +1,77 @@
 /**
- * Integration tests for Zustand store — full user flows end-to-end
+ * Integration tests for the Zustand store — end-to-end user flows.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '@/lib/store/useStore';
 
-describe('Store Integration Tests', () => {
+describe('Store integration', () => {
   beforeEach(() => {
     useStore.setState({
       threads: [],
-      blocks: [],
-      activeThreadId: '',
+      activeThreadId: null,
       mode: 'landing',
-      selectedBlockId: null,
-      cards: [],
       isAwaitingResponse: false,
+      error: null,
+      streamingMessageId: null,
     });
   });
 
-  describe('User Flow: Create thread and chat', () => {
-    it('should handle complete chat conversation', () => {
+  describe('chat flow', () => {
+    it('captures a full user → assistant exchange', () => {
       const store = useStore.getState();
-
-      expect(store.mode).toBe('landing');
-      expect(store.threads).toHaveLength(0);
 
       store.createThread('thread-1');
       expect(useStore.getState().threads).toHaveLength(1);
       expect(useStore.getState().activeThreadId).toBe('thread-1');
 
       store.setMode('thread');
-      expect(useStore.getState().mode).toBe('thread');
+      const userMessage = store.addUserMessage('What is TypeScript?');
+      expect(userMessage.role).toBe('user');
 
-      const userResult = store.addUserMessage('What is TypeScript?');
-      expect(userResult.message.role).toBe('user');
-      expect(userResult.blocks).toHaveLength(1);
-
-      const assistantResult = store.addAssistantMessage([
-        { text: 'TypeScript is a typed superset of JavaScript.', type: 'paragraph' },
-        { text: 'It adds optional static typing to the language.', type: 'paragraph' },
-        { text: 'const x: number = 5;', type: 'code' },
-      ]);
-
-      expect(assistantResult.message.role).toBe('assistant');
-      expect(assistantResult.blocks).toHaveLength(3);
+      const assistantMessage = store.addAssistantMessage(
+        'TypeScript is a typed superset of JavaScript.\n\nIt adds optional static typing.',
+      );
+      expect(assistantMessage.role).toBe('assistant');
 
       const finalState = useStore.getState();
       expect(finalState.threads[0].messages).toHaveLength(2);
-      expect(finalState.blocks).toHaveLength(4); // 1 user + 3 assistant
+      expect(finalState.threads[0].messages[1].text).toContain('typed superset');
     });
   });
 
-  describe('User Flow: Block selection and transformation', () => {
-    it('should handle block selection and text selection', () => {
+  describe('streaming flow', () => {
+    it('appendMessageText accumulates onto the streaming message', () => {
       const store = useStore.getState();
-
       store.createThread('thread-1');
-      store.setMode('thread');
-      store.addUserMessage('Hello');
-      store.addAssistantMessage([
-        { text: 'This is a paragraph with important text.', type: 'paragraph' },
-      ]);
+      const message = store.addAssistantMessage('');
+      store.startStreaming(message.id);
+      store.appendMessageText(message.id, 'Hello');
+      store.appendMessageText(message.id, ' world');
+      store.clearStream();
 
-      const blockId = useStore.getState().blocks[1].id;
-
-      store.selectBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBe(blockId);
-
-      store.addSelection(blockId, 'important text');
-      const block = useStore.getState().blocks.find((b) => b.id === blockId);
-      expect(block?.selections).toContain('important text');
-
-      store.addSelection(blockId, 'paragraph');
-      const blockWithTwoSelections = useStore.getState().blocks.find((b) => b.id === blockId);
-      expect(blockWithTwoSelections?.selections).toHaveLength(2);
-
-      store.removeSelection(blockId, 0);
-      const blockAfterRemoval = useStore.getState().blocks.find((b) => b.id === blockId);
-      expect(blockAfterRemoval?.selections).toHaveLength(1);
-
-      store.selectBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      expect(useStore.getState().threads[0].messages[0].text).toBe('Hello world');
+      expect(useStore.getState().streamingMessageId).toBeNull();
     });
   });
 
-  describe('User Flow: Block rewrite with undo', () => {
-    it('should handle rewrite and undo cycle', () => {
+  describe('multiple threads', () => {
+    it('keeps each thread\'s messages independent', () => {
       const store = useStore.getState();
 
       store.createThread('thread-1');
-      store.setMode('thread');
-      store.addAssistantMessage([
-        { text: 'Original text here.', type: 'paragraph' },
-      ]);
-
-      const blockId = useStore.getState().blocks[0].id;
-      const originalText = 'Original text here.';
-
-      store.toggleRewrite(blockId, 'Rewritten text here.');
-
-      let block = useStore.getState().blocks.find((b) => b.id === blockId);
-      expect(block?.text).toBe('Rewritten text here.');
-      expect(block?.prevText).toBe(originalText);
-      expect(block?.isRewritten).toBe(true);
-
-      store.toggleRewrite(blockId, '');
-
-      block = useStore.getState().blocks.find((b) => b.id === blockId);
-      expect(block?.text).toBe(originalText);
-      expect(block?.isRewritten).toBe(false);
-    });
-  });
-
-  describe('User Flow: Multiple threads', () => {
-    it('should handle switching between threads', () => {
-      const store = useStore.getState();
-
-      store.createThread('thread-1');
-      store.addUserMessage('Question in thread 1');
+      store.addUserMessage('Question 1');
 
       store.createThread('thread-2');
-      store.addUserMessage('Question in thread 2');
+      store.addUserMessage('Question 2');
 
       store.setActiveThread('thread-1');
       expect(useStore.getState().activeThreadId).toBe('thread-1');
 
-      const state = useStore.getState();
-      expect(state.threads).toHaveLength(2);
-      expect(state.blocks).toHaveLength(2);
-
-      const thread1 = state.threads.find((t) => t.id === 'thread-1');
-      expect(thread1?.messages).toHaveLength(1);
-    });
-  });
-
-  describe('Composer Mode Handling', () => {
-    it('should track block mode correctly', () => {
-      const store = useStore.getState();
-
-      store.createThread('thread-1');
-      store.setMode('thread');
-      store.addAssistantMessage([
-        { text: 'Test paragraph.', type: 'paragraph' },
-      ]);
-
-      const blockId = useStore.getState().blocks[0].id;
-
-      expect(useStore.getState().selectedBlockId).toBeNull();
-
-      store.selectBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBe(blockId);
-
-      store.clearSelection();
-      expect(useStore.getState().selectedBlockId).toBeNull();
-    });
-
-    it('should clear selection when switching to landing mode', () => {
-      const store = useStore.getState();
-
-      store.createThread('thread-1');
-      store.setMode('thread');
-      store.addAssistantMessage([
-        { text: 'Test paragraph.', type: 'paragraph' },
-      ]);
-
-      const blockId = useStore.getState().blocks[0].id;
-      store.selectBlock(blockId);
-
-      store.setMode('landing');
-      expect(useStore.getState().selectedBlockId).toBeNull();
+      const t1 = useStore.getState().threads.find((t) => t.id === 'thread-1');
+      const t2 = useStore.getState().threads.find((t) => t.id === 'thread-2');
+      expect(t1?.messages).toHaveLength(1);
+      expect(t2?.messages).toHaveLength(1);
     });
   });
 });

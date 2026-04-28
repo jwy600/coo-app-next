@@ -1,18 +1,15 @@
-/**
- * Server-compatible ComposerHint component
- * Static hint text below composer (only shown in chat mode)
- * Reference: legacy/index.html lines 69-71
- */
-interface ComposerHintProps {
-  hidden?: boolean;
-}
+'use client';
 
-export function ComposerHint({ hidden = false }: ComposerHintProps) {
-  if (hidden) return null;
+import { useStore } from '@/lib/store/useStore';
+
+export function ComposerHint() {
+  const focusActive = useStore((s) => s.focus !== null);
 
   return (
     <p className="text-xs text-gray-500 mt-2 flex-shrink-0">
-      Tip: click the 4-dot handle to focus a block.
+      {focusActive
+        ? 'Ask about the selected text. Drag-select inside this composer to add a note.'
+        : 'Ask anything. Drag-select assistant text to focus on a passage.'}
     </p>
   );
 }

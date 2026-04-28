@@ -182,6 +182,14 @@
     border-bottom: 1px solid var(--border);
   }
 
+  /* Restore the old block-mode left indent (the 32px that used to come from
+     the gutter-handle column in `.doc-block`) so the assistant body sits
+     where it always did, while the "Coo" label stays flush at the wrapper's
+     padding edge. */
+  .assistant-message .markdown-content {
+    padding-left: 32px;
+  }
+
   .assistant-label {
     font-size: 0.75rem;
     text-transform: none;
@@ -335,6 +343,23 @@
     gap: 8px;
   }
 
+  /*
+   * Wrapping container for MarkdownContent (focus-mode renderer). Mirrors the
+   * old `.block-stack` rhythm so paragraphs / headings / lists / code blocks
+   * have the same vertical breathing room as the previous block-mode UI.
+   */
+  .markdown-content {
+    display: grid;
+    gap: 16px;
+  }
+
+  /* Headings hug the paragraph that follows them — same as `.doc-heading`'s
+   * old margin-bottom: 4px override. */
+  .markdown-content > .doc-heading + .doc-paragraph,
+  .markdown-content > .doc-heading + .doc-list {
+    margin-top: -8px;
+  }
+
   .doc-paragraph {
     margin: 0;
     font-size: 0.9375rem;
@@ -406,8 +431,6 @@
   .doc-list {
     margin: 0;
     padding-left: 20px;
-    display: grid;
-    gap: 4px;
     font-size: 0.9375rem;
     line-height: 1.6;
     color: var(--gray-900);
@@ -418,6 +441,17 @@
     font-size: inherit;
     line-height: inherit;
     color: inherit;
+  }
+
+  /*
+   * react-markdown emits whitespace text nodes between sibling <li> tags. The
+   * old `.doc-list { display: grid; gap: 4px }` worked because each list was
+   * its own single-item <ul>; now lists collapse into one <ul>, where grid
+   * would treat each whitespace node as a phantom row. Adjacent-sibling
+   * margin gives the same 4px rhythm without that pitfall.
+   */
+  .doc-list li + li {
+    margin-top: 4px;
   }
 
   .doc-list li * {
@@ -458,6 +492,30 @@
     font-size: 0.875rem;
     white-space: pre-wrap;
     color: var(--gray-100);
+  }
+
+  /* Inline code only — block code's inner <code> sits inside <pre.doc-code>
+     and inherits the dark slab styling from there. */
+  .markdown-content :not(pre) > code.doc-code-inline {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
+    font-size: 0.875em;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .doc-blockquote {
+    margin: 0;
+    padding: 4px 0 4px 12px;
+    border-left: 3px solid var(--gray-300);
+    color: var(--gray-700);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .doc-blockquote > * {
+    margin: 0;
   }
 
   .doc-block.is-edited .doc-content > .doc-paragraph::after,

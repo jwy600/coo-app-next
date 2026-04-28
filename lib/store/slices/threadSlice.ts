@@ -1,16 +1,17 @@
 /**
- * Thread slice - Wraps pure thread state functions.
- * Persistence is handled centrally by Zustand's persist middleware in useStore.ts.
+ * Thread slice — wraps pure thread/message state functions.
+ *
+ * Persistence is handled centrally by Zustand's persist middleware in
+ * useStore.ts.
  */
 
-import { StateCreator } from "zustand";
-import * as stateFns from "@/lib/state";
-import { idFactory } from "@/lib/utils/idFactory";
-import { nowFactory } from "@/lib/utils/nowFactory";
-import { Thread } from "@/types/thread";
-import { Message } from "@/types/message";
-import { Block, BlockData } from "@/types/block";
-import { AppState } from "@/types/state";
+import { StateCreator } from 'zustand';
+import * as stateFns from '@/lib/state';
+import { idFactory } from '@/lib/utils/idFactory';
+import { nowFactory } from '@/lib/utils/nowFactory';
+import { Thread } from '@/types/thread';
+import { Message } from '@/types/message';
+import { AppState } from '@/types/state';
 
 export interface ThreadSlice {
   threads: Thread[];
@@ -20,11 +21,8 @@ export interface ThreadSlice {
   setActiveThread: (threadId: string) => void;
   updateThreadTitle: (threadId: string, title: string) => void;
   deleteThread: (threadId: string) => string | null;
-  addUserMessage: (text: string) => { message: Message; blocks: Block[] };
-  addAssistantMessage: (
-    blocksData: BlockData[],
-    responseId?: string,
-  ) => { message: Message; blocks: Block[] };
+  addUserMessage: (text: string) => Message;
+  addAssistantMessage: (text: string, responseId?: string) => Message;
 }
 
 const initialState = stateFns.createInitialState(idFactory, nowFactory);
@@ -47,18 +45,13 @@ export const threadSlice: StateCreator<
   },
 
   setActiveThread: (threadId) => {
-    const result = stateFns.setActiveThread(get(), threadId);
-    set({ activeThreadId: result.activeThreadId });
+    const next = stateFns.setActiveThread(get(), threadId);
+    set({ activeThreadId: next.activeThreadId });
   },
 
   updateThreadTitle: (threadId, title) => {
-    const result = stateFns.updateThreadTitle(
-      get(),
-      threadId,
-      title,
-      nowFactory,
-    );
-    set({ threads: result.threads });
+    const next = stateFns.updateThreadTitle(get(), threadId, title, nowFactory);
+    set({ threads: next.threads });
   },
 
   deleteThread: (threadId) => {
@@ -67,17 +60,12 @@ export const threadSlice: StateCreator<
     if (result.nextActiveThreadId === null) {
       set({
         threads: result.state.threads,
-        blocks: result.state.blocks,
-        cards: result.state.cards,
         activeThreadId: result.state.activeThreadId,
-        mode: "landing",
-        selectedBlockId: null,
+        mode: 'landing',
       });
     } else {
       set({
         threads: result.state.threads,
-        blocks: result.state.blocks,
-        cards: result.state.cards,
         activeThreadId: result.state.activeThreadId,
       });
     }
@@ -86,36 +74,25 @@ export const threadSlice: StateCreator<
   },
 
   addUserMessage: (text) => {
-    const result = stateFns.addUserMessage(
-      get(),
-      text,
-      idFactory,
-      nowFactory,
-    );
-    set({
-      threads: result.state.threads,
-      blocks: result.state.blocks,
-    });
-    return { message: result.message, blocks: result.blocks };
+    const result = stateFns.addUserMessage(get(), text, idFactory, nowFactory);
+    set({ threads: result.state.threads });
+    return result.message;
   },
 
-  addAssistantMessage: (blocksData, responseId) => {
-    const currentActiveThreadId = get().activeThreadId;
-    if (!currentActiveThreadId) {
-      throw new Error("Cannot add assistant message: no active thread");
+  addAssistantMessage: (text, responseId) => {
+    const activeThreadId = get().activeThreadId;
+    if (!activeThreadId) {
+      throw new Error('Cannot add assistant message: no active thread');
     }
     const result = stateFns.addAssistantMessageToThread(
       get(),
-      currentActiveThreadId,
-      blocksData,
+      activeThreadId,
+      text,
       idFactory,
       nowFactory,
       responseId,
     );
-    set({
-      threads: result.state.threads,
-      blocks: result.state.blocks,
-    });
-    return { message: result.message, blocks: result.blocks };
+    set({ threads: result.state.threads });
+    return result.message;
   },
 });

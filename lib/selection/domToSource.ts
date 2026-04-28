@@ -6,8 +6,7 @@
  * Returns `null` when:
  *  - the range is not inside a `[data-message-id]` ancestor,
  *  - the start and end live in different messages,
- *  - the range is collapsed or shorter than one word (Latin) / one
- *    character (CJK / non-Latin),
+ *  - the range is collapsed,
  *  - either endpoint cannot be mapped to a source offset.
  */
 
@@ -31,8 +30,6 @@ export function domToSource(range: Range): SourceRange | null {
   const start = Math.min(startOffset, endOffset);
   const end = Math.max(startOffset, endOffset);
   if (end <= start) return null;
-
-  if (!meetsMinimumLength(end - start, range.toString())) return null;
 
   return { messageId: startMessage, start, end };
 }
@@ -60,6 +57,15 @@ function endpointToOffset(node: Node, offset: number, kind: Endpoint): number | 
       const base = readStart(parent);
       if (base === null) return null;
       const clamped = Math.max(0, Math.min(offset, text.data.length));
+      // When a selection starts at offset 0 of a text node, the browser
+      // snaps it past any leading markdown marker rendered as a CSS
+      // pseudo-element (the `- ` of a list item, the `# ` of a heading,
+      // the `**` of bold, etc.). Walk up while we're the leftmost child
+      // and pick the smallest enclosing data-md-start so the buffer
+      // includes the marker syntax.
+      if (kind === 'start' && offset === 0) {
+        return expandLeftward(parent, base);
+      }
       return base + clamped;
     }
 
@@ -74,6 +80,18 @@ function endpointToOffset(node: Node, offset: number, kind: Endpoint): number | 
   }
 
   return null;
+}
+
+function expandLeftward(textSpan: Element, currentStart: number): number {
+  let candidate = currentStart;
+  let el: Element = textSpan;
+  while (el.parentElement && el.parentElement.firstChild === el) {
+    const parent = el.parentElement;
+    const start = readStart(parent);
+    if (start !== null && start < candidate) candidate = start;
+    el = parent;
+  }
+  return candidate;
 }
 
 function closestMd(el: Element | null): Element | null {
@@ -102,12 +120,4 @@ function readEnd(el: Element): number | null {
 
 function boundaryOf(el: Element, kind: Endpoint): number | null {
   return kind === 'start' ? readStart(el) : readEnd(el);
-}
-
-const NON_LATIN_RE = /[^\s\x00-\x7F]/u;
-
-function meetsMinimumLength(snappedSize: number, rawText: string): boolean {
-  if (snappedSize <= 0) return false;
-  if (snappedSize >= 2) return true;
-  return NON_LATIN_RE.test(rawText);
 }

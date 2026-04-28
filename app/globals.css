@@ -182,6 +182,14 @@
     border-bottom: 1px solid var(--border);
   }
 
+  /* Restore the old block-mode left indent (the 32px that used to come from
+     the gutter-handle column in `.doc-block`) so the assistant body sits
+     where it always did, while the "Coo" label stays flush at the wrapper's
+     padding edge. */
+  .assistant-message .markdown-content {
+    padding-left: 32px;
+  }
+
   .assistant-label {
     font-size: 0.75rem;
     text-transform: none;
@@ -484,6 +492,30 @@
     font-size: 0.875rem;
     white-space: pre-wrap;
     color: var(--gray-100);
+  }
+
+  /* Inline code only — block code's inner <code> sits inside <pre.doc-code>
+     and inherits the dark slab styling from there. */
+  .markdown-content :not(pre) > code.doc-code-inline {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
+    font-size: 0.875em;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .doc-blockquote {
+    margin: 0;
+    padding: 4px 0 4px 12px;
+    border-left: 3px solid var(--gray-300);
+    color: var(--gray-700);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .doc-blockquote > * {
+    margin: 0;
   }
 
   .doc-block.is-edited .doc-content > .doc-paragraph::after,

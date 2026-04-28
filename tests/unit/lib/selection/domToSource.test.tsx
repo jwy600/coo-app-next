@@ -144,12 +144,15 @@ describe('domToSource', () => {
     });
   });
 
-  describe('word-boundary minimum', () => {
-    it('returns null for a single-character mid-word selection', () => {
+  describe('short selections', () => {
+    it('accepts a single Latin character', () => {
       const container = renderMessage('Hello world');
       const { node } = findTextNode(container, 'Hello world');
       const range = makeRange(node, 1, node, 2);
-      expect(domToSource(range)).toBeNull();
+      const result = domToSource(range);
+      expect(result).not.toBeNull();
+      expect(result!.start).toBe(1);
+      expect(result!.end).toBe(2);
     });
 
     it('accepts a CJK single-character selection', () => {

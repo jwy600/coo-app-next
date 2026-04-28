@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { remarkSourcePositions } from '@/lib/selection/remarkSourcePositions';
+import { rehypeWrapText } from '@/lib/selection/rehypeWrapText';
 import { sanitizeHref } from '@/lib/utils/safeHref';
 
 export interface MarkdownContentProps {
@@ -14,7 +15,7 @@ export interface MarkdownContentProps {
 }
 
 const remarkPlugins = [remarkGfm, remarkMath, remarkSourcePositions];
-const rehypePlugins = [rehypeKatex];
+const rehypePlugins = [rehypeWrapText, rehypeKatex];
 
 const components: Components = {
   p: ({ children, ...props }) => (

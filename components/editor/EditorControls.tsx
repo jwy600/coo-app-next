@@ -37,6 +37,22 @@ export function EditorControls() {
 
   const anyBusy = shortcutBusy !== null || askBusy || rewriteBusy;
 
+  // Returns true iff the editor session that started this API call is still
+  // the active one. Compares both messageId AND range, since the user can
+  // close + reopen the editor on the *same* message at a *different* range
+  // while a request is in flight.
+  const isSameSession = (
+    started: { messageId: string; range: [number, number] },
+  ): boolean => {
+    const current = useStore.getState().focus;
+    if (!current) return false;
+    if (current.messageId !== started.messageId) return false;
+    return (
+      current.range[0] === started.range[0] &&
+      current.range[1] === started.range[1]
+    );
+  };
+
   const handleShortcut = useCallback(
     async (action: EditorActionId) => {
       if (!focus || anyBusy) return;
@@ -62,7 +78,7 @@ export function EditorControls() {
           previousResponseId,
           referenceQuestion,
         );
-        if (useStore.getState().focus?.messageId !== focus.messageId) return;
+        if (!isSameSession(focus)) return;
         setShortcutResult(result.text);
         if (result.responseId) setFocusLastResponseId(result.responseId);
       } catch (err) {
@@ -104,7 +120,7 @@ export function EditorControls() {
           previousResponseId,
           referenceQuestion,
         );
-        if (useStore.getState().focus?.messageId !== focus.messageId) return;
+        if (!isSameSession(focus)) return;
         appendNoteToBuffer(result.text);
         if (result.responseId) setFocusLastResponseId(result.responseId);
         setAskInput('');
@@ -132,7 +148,7 @@ export function EditorControls() {
     setError(null);
     try {
       const result = await fetchRewrite(passage, notes, settings);
-      if (useStore.getState().focus?.messageId !== focus.messageId) return;
+      if (!isSameSession(focus)) return;
       setRewriteResult(result.text);
     } catch (err) {
       setError(getErrorMessage(err, 'Rewrite failed.'));

@@ -132,6 +132,8 @@ e2e/                 # Playwright tests (currently broken; rewrite in a later ph
 
 **Asymmetry — shortcuts intentionally do NOT split.** Translating a passage and leaving its annotations in the original language is confusing; same for ELI5 / Summarize. Ask is different (prior Q&A would pollute new question context); Rewrite is different (notes are user instructions, not content to revise). Don't unify these without reading why.
 
+**Reserved pattern: `> **Note:** ...` at the trailing position of a buffer.** `splitNotes` treats it as an ask-flow annotation, so Ask sends only the passage portion to the model and Rewrite consumes those lines as guidance (they don't survive the rewrite). If a user-authored passage happens to end with `> **Note:** ...`, Rewrite will treat it as an instruction and the line will be gone after rewrite. We accepted this trade-off in exchange for simpler markdown (no UUID disambiguator polluting the persisted text). It does not affect Ask or Shortcuts: Ask just appends below the existing content; Shortcuts don't split. Notes anywhere other than the trailing run (e.g. mid-passage) are not touched.
+
 `MarkdownContent` flags blockquotes whose first paragraph starts with `<strong>Note:</strong>` and gives them a muted `.doc-blockquote--note` class — visually distinguishing notes from user-authored blockquotes in the rendered (post-close) message.
 
 Mode is **spatial, not temporal** — the bottom composer never changes meaning under the cursor; focus-mode ask happens inside the editor's input.

@@ -144,6 +144,37 @@ describe('EditorControls', () => {
     expect(mockFetchBlockAction).not.toHaveBeenCalled();
   });
 
+  it('asking a question after a shortcut leaves prevBuffer intact and appends the answer to the transformed buffer', async () => {
+    mockFetchBlockAction
+      .mockResolvedValueOnce({ text: 'Hola', responseId: 'r1' })
+      .mockResolvedValueOnce({ text: 'It is a greeting.', responseId: 'r2' });
+
+    render(<EditorControls />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Translate/i }));
+    });
+    await waitFor(() => {
+      expect(useStore.getState().focus?.buffer).toBe('Hola');
+    });
+    expect(useStore.getState().focus?.prevBuffer).toBe('Hello');
+
+    const input = screen.getByRole('textbox', {
+      name: /Ask about this passage/i,
+    }) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'meaning?' } });
+    await act(async () => {
+      fireEvent.submit(input.closest('form')!);
+    });
+
+    await waitFor(() => {
+      expect(useStore.getState().focus?.buffer).toBe(
+        'Hola\n\n> **Note:** It is a greeting.',
+      );
+    });
+    // Ask must NOT touch prevBuffer — Revert should still undo the shortcut.
+    expect(useStore.getState().focus?.prevBuffer).toBe('Hello');
+  });
+
   it('clicking Rewrite splits inline notes from the buffer and sends passage + notes to fetchRewrite', async () => {
     useStore.getState().appendNoteToBuffer('tighten it');
     mockFetchRewrite.mockResolvedValue({ text: 'Howdy', responseId: 'r1' });

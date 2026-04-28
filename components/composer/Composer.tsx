@@ -3,13 +3,11 @@
 import { FormEvent, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { PromptInput } from './PromptInput';
 import { ComposerHint } from './ComposerHint';
+import { EditorActions, type EditorActionId } from './EditorActions';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/lib/store/useStore';
 import { fetchBlockAction } from '@/lib/api';
-import type { BlockAction } from '@/types/api';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
-
-type DraftAction = Extract<BlockAction, 'translate' | 'eli5' | 'summarize'>;
 
 interface ComposerProps {
   prompt: string;
@@ -36,10 +34,10 @@ export function Composer({
   const appendNote = useStore((s) => s.appendNote);
 
   const formRef = useRef<HTMLFormElement>(null);
-  const [busy, setBusy] = useState<DraftAction | null>(null);
+  const [busy, setBusy] = useState<EditorActionId | null>(null);
 
   const handleDraftAction = useCallback(
-    async (action: DraftAction) => {
+    async (action: EditorActionId) => {
       if (!focus) return;
       const settings = useStore.getState().settings;
       const language = action === 'translate' ? settings.translateLanguage : undefined;
@@ -90,7 +88,6 @@ export function Composer({
   }, [focus, appendNote]);
 
   const showShortcuts = focus !== null;
-  const isBusy = busy !== null;
 
   return (
     <form
@@ -99,34 +96,12 @@ export function Composer({
       className="composer bg-background rounded-xl border border-border composer-shadow p-4 max-h-[50vh] flex flex-col overflow-hidden w-full"
     >
       {showShortcuts && (
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDraftAction('translate')}
-            disabled={disabled || isBusy}
-          >
-            {busy === 'translate' ? 'Translating…' : 'Translate'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDraftAction('eli5')}
-            disabled={disabled || isBusy}
-          >
-            {busy === 'eli5' ? 'Simplifying…' : 'ELI5'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDraftAction('summarize')}
-            disabled={disabled || isBusy}
-          >
-            {busy === 'summarize' ? 'Summarizing…' : 'Summarize'}
-          </Button>
+        <div className="mb-3">
+          <EditorActions
+            onAction={handleDraftAction}
+            busy={busy}
+            disabled={disabled}
+          />
         </div>
       )}
 

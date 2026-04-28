@@ -1,33 +1,28 @@
 /**
  * useStreaming Hook
  *
- * Encapsulates streaming chat completion logic:
- * - Manages streaming state (start, append, flush, clear)
- * - Handles SSE callbacks (onToken, onResponseId, onComplete, onError)
- * - Converts streaming content to final message
- *
- * Extracted from useComposer for better separation of concerns.
+ * Streams a chat completion into a freshly-created assistant message.
+ * Tokens are appended directly to `message.text`; the OpenAI response id
+ * is stored in `message.meta.openaiResponseId` once known.
  */
 
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useStore } from '@/lib/store/useStore';
 import { fetchChatCompletionStream } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import type { Settings } from '@/types/settings';
-import type { BlockData } from '@/types/block';
 
 export interface StreamChatParams {
   prompt: string;
   threadId: string;
-  messageId: string;
   previousResponseId?: string;
   settings?: Settings;
 }
 
 export interface StreamingCallbacks {
-  onComplete?: (blocks: BlockData[], responseId?: string) => void;
+  onComplete?: (messageId: string, responseId?: string) => void;
   onError?: (errorMessage: string) => void;
 }
 
@@ -36,91 +31,82 @@ export interface UseStreamingReturn {
 }
 
 export function useStreaming(): UseStreamingReturn {
-  // Streaming state actions
+  const addAssistantMessage = useStore((state) => state.addAssistantMessage);
+  const appendMessageText = useStore((state) => state.appendMessageText);
+  const setMessageResponseId = useStore((state) => state.setMessageResponseId);
+  const removeMessage = useStore((state) => state.removeMessage);
   const startStreaming = useStore((state) => state.startStreaming);
-  const appendStreamToken = useStore((state) => state.appendStreamToken);
-  const flushStreamParse = useStore((state) => state.flushStreamParse);
-  const setStreamResponseId = useStore((state) => state.setStreamResponseId);
   const clearStream = useStore((state) => state.clearStream);
 
-  // Track response ID during streaming
-  const streamResponseIdRef = useRef<string | undefined>(undefined);
-
-  /**
-   * Stream a chat completion from the API
-   *
-   * Handles all streaming state management internally:
-   * 1. Starts streaming state with message ID
-   * 2. Processes tokens as they arrive
-   * 3. On completion, flushes parse and calls onComplete with final blocks
-   * 4. On error, clears stream and calls onError
-   */
   const streamChat = useCallback(
     async (params: StreamChatParams, callbacks?: StreamingCallbacks) => {
-      const { prompt, threadId, messageId, previousResponseId, settings } = params;
+      const { prompt, threadId, previousResponseId, settings } = params;
 
-      // Initialize streaming state
-      startStreaming(messageId, threadId);
-      streamResponseIdRef.current = undefined;
+      const message = addAssistantMessage('');
+      const messageId = message.id;
+      startStreaming(messageId);
+
+      let responseId: string | undefined;
 
       try {
         await fetchChatCompletionStream(
           prompt,
           {
             onToken: (token: string) => {
-              appendStreamToken(token);
+              appendMessageText(messageId, token);
             },
-            onResponseId: (responseId: string) => {
-              streamResponseIdRef.current = responseId;
-              setStreamResponseId(responseId);
+            onResponseId: (id: string) => {
+              responseId = id;
+              setMessageResponseId(messageId, id);
             },
             onComplete: () => {
-              // Flush any pending debounced parse to ensure blocks are up-to-date
-              flushStreamParse();
+              const finalText = useStore
+                .getState()
+                .threads.flatMap((t) => t.messages)
+                .find((m) => m.id === messageId)?.text ?? '';
 
-              // Get final streaming state
-              const finalState = useStore.getState();
-              const streamingMessage = finalState.streamingMessage;
+              clearStream();
 
-              if (streamingMessage && streamingMessage.blocks.length > 0) {
-                // Store blocks locally before clearing streaming state
-                const finalBlocks = [...streamingMessage.blocks];
-                const finalResponseId = streamResponseIdRef.current;
-
-                // Clear streaming state FIRST to prevent double-rendering
-                clearStream();
-
-                // Notify caller with final blocks
-                callbacks?.onComplete?.(finalBlocks, finalResponseId);
-              } else {
-                // No blocks to add, just clear
-                clearStream();
-                callbacks?.onComplete?.([], streamResponseIdRef.current);
+              if (finalText.length === 0) {
+                removeMessage(messageId);
+                callbacks?.onComplete?.(messageId, responseId);
+                return;
               }
+
+              callbacks?.onComplete?.(messageId, responseId);
             },
             onError: (error: Error) => {
               clearStream();
+              removeMessage(messageId);
               const errorMessage = getErrorMessage(
                 error,
-                'We hit a snag getting that response. Try again.'
+                'We hit a snag getting that response. Try again.',
               );
               callbacks?.onError?.(errorMessage);
             },
           },
           threadId,
           previousResponseId,
-          settings
+          settings,
         );
       } catch (err) {
         clearStream();
+        removeMessage(messageId);
         const errorMessage = getErrorMessage(
           err,
-          'We hit a snag getting that response. Try again.'
+          'We hit a snag getting that response. Try again.',
         );
         callbacks?.onError?.(errorMessage);
       }
     },
-    [startStreaming, appendStreamToken, flushStreamParse, setStreamResponseId, clearStream]
+    [
+      addAssistantMessage,
+      appendMessageText,
+      setMessageResponseId,
+      removeMessage,
+      startStreaming,
+      clearStream,
+    ],
   );
 
   return { streamChat };

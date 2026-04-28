@@ -1,14 +1,10 @@
 export type MessageRole = 'user' | 'assistant';
 
-export interface MessageContent {
-  blockId: string;
-}
-
 export interface Message {
   id: string;
   threadId: string;
   role: MessageRole;
+  text: string;
   createdAt: number;
-  content: MessageContent[];
   meta: Record<string, unknown>;
 }

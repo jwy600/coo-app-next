@@ -62,21 +62,19 @@ describe('SidebarLogo', () => {
     expect(screen.queryByText('coo')).toBeNull();
   });
 
-  it('clears selection and sets mode on click when expanded', () => {
+  it('returns to landing mode on click when expanded', () => {
     render(<SidebarLogo />);
     fireEvent.click(screen.getByRole('link'));
-    expect(mockState.clearSelection).toHaveBeenCalled();
     expect(mockState.setMode).toHaveBeenCalledWith('landing');
   });
 
-  it('opens sidebar on click when collapsed (non-mobile)', () => {
+  it('opens the sidebar on click when collapsed (non-mobile)', () => {
     mockSidebar.state = 'collapsed';
     mockSidebar.isMobile = false;
     render(<SidebarLogo />);
     fireEvent.click(screen.getByRole('link'));
     expect(mockSidebar.setOpen).toHaveBeenCalledWith(true);
-    // Should NOT clear selection - it prevents navigation
-    expect(mockState.clearSelection).not.toHaveBeenCalled();
+    expect(mockState.setMode).not.toHaveBeenCalled();
   });
 
   it('closes sidebar on mobile when expanded', () => {

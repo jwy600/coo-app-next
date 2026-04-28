@@ -1,25 +1,19 @@
 /**
  * useComposer Hook
  *
- * Manages composer state, form submission, and API calls based on composer mode (chat vs block).
- *
- * CRITICAL DISTINCTION (Composer Modes):
- * - Chat Mode (no block selected): Creates user/assistant messages
- * - Block Mode (block selected): Result goes to composer (editable draft)
+ * Owns the composer's text state, submission, and the user→assistant
+ * round-trip. Block-level interactions (ask/edit modes, block actions)
+ * are gone with the block model; focus-mode integration arrives in a
+ * later phase.
  */
 
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { useStore, selectSelectedBlock, selectContentForTransform } from '@/lib/store/useStore';
-import { fetchBlockAction, generateThreadTitle } from '@/lib/api';
+import { useState, useCallback } from 'react';
+import { useStore } from '@/lib/store/useStore';
+import { generateThreadTitle } from '@/lib/api';
 import { getLastAssistantResponseId, getThreadById } from '@/lib/state';
-import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { useStreaming } from './useStreaming';
-import type { BlockAction } from '@/types/api';
-import type { ComposerMode } from '@/types/state/ui';
-import { idFactory } from '@/lib/utils/idFactory';
 
 export interface UseComposerReturn {
   prompt: string;
@@ -28,241 +22,46 @@ export interface UseComposerReturn {
   isSubmitting: boolean;
   error: string | null;
   clearPrompt: () => void;
-  handleBlockAction: (action: BlockAction) => Promise<void>;
-  // Edit mode support
-  composerMode: ComposerMode;
-  setComposerMode: (mode: ComposerMode) => void;
-  populateWithBlockText: () => void;
 }
 
 export function useComposer(): UseComposerReturn {
   const [prompt, setPrompt] = useState('');
-  const [composerMode, setComposerMode] = useState<ComposerMode>('chat');
 
-  // Store state
-  const settings = useStore((state) => state.settings);
-  const selectedBlockId = useStore((state) => state.selectedBlockId);
-  const rewriteBlock = useStore((state) => state.rewriteBlock);
-
-  // Track previous selectedBlockId to detect block switches
-  const prevSelectedBlockIdRef = useRef(selectedBlockId);
-
-  // Chain of prior 'ask' responses for the current block selection.
-  // Lets follow-up questions include the last answer as context via OpenAI's
-  // previous_response_id. Tagged with blockId so in-flight responses for a
-  // prior selection can be detected and dropped. Invalidated by any change to
-  // the selected block's grounding (text/selections/rewrite state), because
-  // the stored server-side context would no longer match what the user sees.
-  const askChainRef = useRef<{
-    blockId: string;
-    responseId: string;
-  } | null>(null);
-
-  // Clear prompt when switching FROM one block TO another block
-  // (Not when entering block mode from chat mode, or when exiting)
-  useEffect(() => {
-    const prev = prevSelectedBlockIdRef.current;
-    const curr = selectedBlockId;
-
-    if (prev !== null && curr !== null && prev !== curr) {
-      setPrompt('');
-    }
-
-    if (prev !== curr) {
-      askChainRef.current = null;
-    }
-
-    prevSelectedBlockIdRef.current = curr;
-  }, [selectedBlockId]);
-
-  // Manage composer mode based on block selection
-  useEffect(() => {
-    if (selectedBlockId) {
-      // Default to 'ask' when block is selected
-      setComposerMode('ask');
-    } else {
-      // Return to 'chat' when no block is selected
-      setComposerMode('chat');
-    }
-  }, [selectedBlockId]);
-
-  const selectedBlock = useStore(selectSelectedBlock);
-  const contentForTransform = useStore(useShallow(selectContentForTransform));
-
-  // Invalidate the ask chain whenever the selected block's grounding changes
-  // (edit, strikethrough, rewrite, undo). The chain's server-side context was
-  // built on the prior text, so follow-ups would answer against stale content.
-  const selectedBlockText = selectedBlock?.text;
-  const selectedBlockIsRewritten = selectedBlock?.isRewritten;
-  const selectedBlockSelectionsKey =
-    selectedBlock?.selections?.join(' ') ?? '';
-  useEffect(() => {
-    askChainRef.current = null;
-  }, [selectedBlockText, selectedBlockIsRewritten, selectedBlockSelectionsKey]);
   const addUserMessage = useStore((state) => state.addUserMessage);
-  const addAssistantMessage = useStore((state) => state.addAssistantMessage);
-  const clearSelection = useStore((state) => state.clearSelection);
   const mode = useStore((state) => state.mode);
   const setMode = useStore((state) => state.setMode);
   const createThread = useStore((state) => state.createThread);
-  const activeThreadId = useStore((state) => state.activeThreadId);
   const updateThreadTitle = useStore((state) => state.updateThreadTitle);
   const isSubmitting = useStore((state) => state.isAwaitingResponse);
   const setAwaitingResponse = useStore((state) => state.setAwaitingResponse);
   const error = useStore((state) => state.error);
   const setError = useStore((state) => state.setError);
 
-  // Streaming hook
   const { streamChat } = useStreaming();
 
-  /**
-   * Clear prompt and error
-   */
   const clearPrompt = useCallback(() => {
     setPrompt('');
     setError(null);
   }, [setError]);
 
-  /**
-   * Populate composer with selected block's text (for edit mode)
-   */
-  const populateWithBlockText = useCallback(() => {
-    if (selectedBlock) {
-      setPrompt(selectedBlock.text);
-    }
-  }, [selectedBlock]);
-
-  /**
-   * Handle direct edit submission (replace block text)
-   * No API call - text comes directly from user input
-   * Keeps block selected so user can continue editing or undo
-   */
-  const handleDirectEdit = useCallback(() => {
-    if (!selectedBlockId || !prompt.trim()) return;
-
-    rewriteBlock(selectedBlockId, prompt.trim());
-    // Don't clear selection - keep block selected for further edits or undo
-  }, [selectedBlockId, prompt, rewriteBlock]);
-
-  /**
-   * Handle block action (ELI5, Translate, Expand, Example, Ask)
-   * Result goes to composer (NOT as new message)
-   *
-   * Uses contentForTransform which is the selected block
-   */
-  const handleBlockAction = useCallback(
-    async (action: BlockAction) => {
-      if (contentForTransform.length === 0) {
-        setError('No content selected');
-        return;
-      }
-
-      // For "ask" action, prompt is required
-      if (action === 'ask' && !prompt.trim()) {
-        setError('Please enter a question');
-        return;
-      }
-
-      setError(null);
-      setAwaitingResponse(true);
-
-      try {
-        // Join all content blocks for transformation
-        const contentText = contentForTransform.map((b) => b.text).join('\n\n');
-
-        // Capture the block the request is associated with so we can guard
-        // against the user switching/deselecting before the response returns.
-        const blockIdAtRequestTime = useStore.getState().selectedBlockId;
-
-        // Only 'ask' chains context; other actions are one-shot transforms.
-        // Chain is only valid if it belongs to the current block.
-        const previousResponseId =
-          action === 'ask' &&
-          askChainRef.current?.blockId === blockIdAtRequestTime
-            ? askChainRef.current.responseId
-            : undefined;
-
-        const result = await fetchBlockAction(
-          action,
-          contentText,
-          action === 'ask' ? prompt : undefined,
-          action === 'translate' ? settings.translateLanguage : undefined,
-          settings,
-          previousResponseId
-        );
-
-        // Drop the result if the user switched blocks or deselected during the
-        // request — writing it would leak state into a different session.
-        const stillSameBlock =
-          useStore.getState().selectedBlockId === blockIdAtRequestTime;
-        if (!stillSameBlock) return;
-
-        // CRITICAL: Result goes to composer (editable draft), NOT as message
-        setPrompt(result.text);
-
-        // Extend the ask chain so follow-up questions carry prior context.
-        if (action === 'ask' && blockIdAtRequestTime) {
-          askChainRef.current = {
-            blockId: blockIdAtRequestTime,
-            responseId: result.responseId,
-          };
-        }
-
-        // Clear error on success
-        setError(null);
-      } catch (err) {
-        const errorMessage = getErrorMessage(err, 'Failed to transform block');
-        setError(errorMessage);
-        // Don't clear prompt on error (allow retry)
-      } finally {
-        setAwaitingResponse(false);
-      }
-    },
-    [contentForTransform, prompt, setAwaitingResponse, settings, setError]
-  );
-
-  /**
-   * Handle form submission
-   */
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
-      if (e) {
-        e.preventDefault();
-      }
+      if (e) e.preventDefault();
 
-      const trimmedPrompt = prompt.trim();
+      const trimmed = prompt.trim();
+      if (isSubmitting || !trimmed) return;
 
-      // Early returns
-      if (isSubmitting) return;
-      if (!trimmedPrompt) return;
-
-      // EDIT MODE: Direct block replacement (no API call)
-      if (composerMode === 'edit' && selectedBlockId) {
-        handleDirectEdit();
-        return;
-      }
-
-      // ASK MODE: Result goes to composer when a block is selected
-      if (selectedBlockId && contentForTransform.length > 0) {
-        await handleBlockAction('ask');
-        return;
-      }
-
-      // CHAT MODE (composer): Creates messages
       setAwaitingResponse(true);
       setError(null);
 
-      // Create thread if in landing mode
       const isNewThread = mode === 'landing';
       if (isNewThread) {
         createThread();
         setMode('thread');
       }
 
-      // Add user message
-      addUserMessage(trimmedPrompt);
+      addUserMessage(trimmed);
 
-      // IMPORTANT: Get fresh activeThreadId from store (after potential createThread())
       const currentThreadId = useStore.getState().activeThreadId;
       if (!currentThreadId) {
         setError('No active thread');
@@ -270,53 +69,39 @@ export function useComposer(): UseComposerReturn {
         return;
       }
 
-      // Update thread title ONLY for the first message (when creating new thread)
       if (isNewThread) {
-        const fallbackTitle =
-          trimmedPrompt.length > 50 ? trimmedPrompt.substring(0, 50) + '...' : trimmedPrompt;
-        updateThreadTitle(currentThreadId, fallbackTitle);
+        const fallback =
+          trimmed.length > 50 ? trimmed.substring(0, 50) + '...' : trimmed;
+        updateThreadTitle(currentThreadId, fallback);
 
-        // Fire AI title generation in the background — does not block streaming
         const titleSettings = useStore.getState().settings;
         const titleThreadId = currentThreadId;
-        void generateThreadTitle(trimmedPrompt, titleSettings).then((generatedTitle) => {
-          if (!generatedTitle) return;
-          // Guard: only apply if thread still exists and title hasn't been changed
-          const currentThread = getThreadById(useStore.getState(), titleThreadId);
-          if (!currentThread) return;
-          if (currentThread.title !== fallbackTitle) return;
-          updateThreadTitle(titleThreadId, generatedTitle);
+        void generateThreadTitle(trimmed, titleSettings).then((generated) => {
+          if (!generated) return;
+          const thread = getThreadById(useStore.getState(), titleThreadId);
+          if (!thread || thread.title !== fallback) return;
+          updateThreadTitle(titleThreadId, generated);
         });
       }
 
-      // Get previous response ID for contextual chat (chains conversation)
-      const currentState = useStore.getState();
-      const previousResponseId = getLastAssistantResponseId(currentState, currentThreadId);
+      const previousResponseId = getLastAssistantResponseId(
+        useStore.getState(),
+        currentThreadId,
+      );
 
-      // Clear prompt immediately (optimistic)
       setPrompt('');
 
-      // Generate message ID for streaming
-      const streamingMessageId = idFactory();
+      const settings = useStore.getState().settings;
 
-      // Get settings from store
-      const currentSettings = useStore.getState().settings;
-
-      // Stream the chat completion
       await streamChat(
         {
-          prompt: trimmedPrompt,
+          prompt: trimmed,
           threadId: currentThreadId,
-          messageId: streamingMessageId,
           previousResponseId,
-          settings: currentSettings,
+          settings,
         },
         {
-          onComplete: (blocks, responseId) => {
-            if (blocks.length > 0) {
-              addAssistantMessage(blocks, responseId);
-            }
-            clearSelection();
+          onComplete: () => {
             setError(null);
             setAwaitingResponse(false);
           },
@@ -324,28 +109,21 @@ export function useComposer(): UseComposerReturn {
             setError(errorMessage);
             setAwaitingResponse(false);
           },
-        }
+        },
       );
     },
     [
       prompt,
       isSubmitting,
-      selectedBlockId,
-      contentForTransform,
       mode,
-      composerMode,
-      handleBlockAction,
-      handleDirectEdit,
+      addUserMessage,
       createThread,
       setMode,
-      addUserMessage,
-      addAssistantMessage,
-      clearSelection,
       updateThreadTitle,
       setAwaitingResponse,
-      streamChat,
       setError,
-    ]
+      streamChat,
+    ],
   );
 
   return {
@@ -355,10 +133,5 @@ export function useComposer(): UseComposerReturn {
     isSubmitting,
     error,
     clearPrompt,
-    handleBlockAction,
-    // Edit mode support
-    composerMode,
-    setComposerMode,
-    populateWithBlockText,
   };
 }

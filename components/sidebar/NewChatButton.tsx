@@ -8,11 +8,9 @@ import { useStore } from "@/lib/store/useStore";
 export function NewChatButton() {
   const router = useRouter();
   const setMode = useStore((state) => state.setMode);
-  const clearSelection = useStore((state) => state.clearSelection);
   const { setOpen, isMobile } = useSidebar();
 
   const handleNewChat = () => {
-    clearSelection();
     setMode("landing");
     router.push("/");
     if (isMobile) setOpen(false);

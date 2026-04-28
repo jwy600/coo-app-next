@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { calculateCost } from '@/lib/config/openai';
-import { splitIntoBlocks } from '@/lib/state/parser';
 
 export interface ApiCallMetrics {
   testName: string;
@@ -142,16 +141,7 @@ export function analyzeResponseQuality(text: string): {
   parseErrors: number;
 } {
   const hasMarkdown = /[#*`\-\[\]]/.test(text);
-
-  let blockCount = 0;
-  let parseErrors = 0;
-
-  try {
-    const blocks = splitIntoBlocks(text);
-    blockCount = blocks.length;
-  } catch (error) {
-    parseErrors = 1;
-  }
-
-  return { hasMarkdown, blockCount, parseErrors };
+  // Approximate "blocks" by paragraph breaks for reporting purposes only.
+  const blockCount = text.trim() ? text.trim().split(/\n{2,}/).length : 0;
+  return { hasMarkdown, blockCount, parseErrors: 0 };
 }

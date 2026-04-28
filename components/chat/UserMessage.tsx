@@ -1,23 +1,14 @@
 import { Message } from '@/types/message';
-import { Block } from '@/types/block';
 
-/**
- * Server-compatible UserMessage component
- * Simple text display for user messages
- * Reference: legacy/app.js lines 660-676
- */
 interface UserMessageProps {
   message: Message;
-  block?: Block;
 }
 
-export function UserMessage({ message, block }: UserMessageProps) {
-  const text = block?.text || '';
-
+export function UserMessage({ message }: UserMessageProps) {
   return (
-    <div className="user-message">
+    <div className="user-message" data-message-id={message.id}>
       <span className="user-label">You</span>
-      <p>{text}</p>
+      <p>{message.text}</p>
     </div>
   );
 }

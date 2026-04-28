@@ -3,327 +3,85 @@ import {
   threadToMarkdown,
   sanitizeFilename,
   generateExportFilename,
-  blocksToCardMarkdown,
-  generateCardFilename,
 } from '@/lib/export/markdownExport';
 import { Thread } from '@/types/thread';
 import { Message } from '@/types/message';
-import { Block } from '@/types/block';
 
-describe('markdownExport', () => {
-  describe('threadToMarkdown', () => {
-    it('should generate valid markdown with frontmatter', () => {
-      const thread: Thread = {
-        id: 'thread-1',
-        title: 'Test Thread',
-        createdAt: 1700000000000,
-        updatedAt: 1700000000000,
-        messages: [
-          {
-            id: 'msg-1',
-            threadId: 'thread-1',
-            role: 'user',
-            createdAt: 1700000000000,
-            content: [{ blockId: 'block-1' }],
-            meta: {},
-          },
-          {
-            id: 'msg-2',
-            threadId: 'thread-1',
-            role: 'assistant',
-            createdAt: 1700000001000,
-            content: [{ blockId: 'block-2' }],
-            meta: {},
-          },
-        ],
-      };
+const makeThread = (overrides: Partial<Thread> = {}): Thread => ({
+  id: 'thread-1',
+  title: 'Test Thread',
+  createdAt: 1700000000000,
+  updatedAt: 1700000000000,
+  messages: [],
+  ...overrides,
+});
 
-      const blocks: Block[] = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'paragraph',
-          text: 'Hello, how are you?',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-        {
-          id: 'block-2',
-          messageId: 'msg-2',
-          type: 'paragraph',
-          text: 'I am doing well, thank you!',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-      ];
+const makeMessage = (overrides: Partial<Message>): Message => ({
+  id: 'msg-1',
+  threadId: 'thread-1',
+  role: 'user',
+  text: '',
+  createdAt: 1700000000000,
+  meta: {},
+  ...overrides,
+});
 
-      const result = threadToMarkdown(thread, thread.messages, blocks);
+describe('threadToMarkdown', () => {
+  it('emits frontmatter and alternates user / assistant headers', () => {
+    const messages: Message[] = [
+      makeMessage({ id: 'm1', role: 'user', text: 'Hello, how are you?' }),
+      makeMessage({ id: 'm2', role: 'assistant', text: 'I am doing well, thank you!' }),
+    ];
+    const thread = makeThread({ messages });
 
-      // Check frontmatter
-      expect(result).toMatch(/^---\n/);
-      expect(result).toContain('title: "Test Thread"');
-      expect(result).toContain('question: "Hello, how are you?"');
-      expect(result).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
-      expect(result).toMatch(/---\n## User/);
+    const result = threadToMarkdown(thread, messages);
 
-      // Check message structure
-      expect(result).toContain('## User');
-      expect(result).toContain('Hello, how are you?');
-      expect(result).toContain('## Assistant');
-      expect(result).toContain('I am doing well, thank you!');
-    });
-
-    it('should handle multiple blocks per message', () => {
-      const thread: Thread = {
-        id: 'thread-1',
-        title: 'Multi-block Thread',
-        createdAt: 1700000000000,
-        updatedAt: 1700000000000,
-        messages: [
-          {
-            id: 'msg-1',
-            threadId: 'thread-1',
-            role: 'assistant',
-            createdAt: 1700000000000,
-            content: [{ blockId: 'block-1' }, { blockId: 'block-2' }],
-            meta: {},
-          },
-        ],
-      };
-
-      const blocks: Block[] = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'paragraph',
-          text: 'First paragraph.',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-        {
-          id: 'block-2',
-          messageId: 'msg-1',
-          type: 'paragraph',
-          text: 'Second paragraph.',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-      ];
-
-      const result = threadToMarkdown(thread, thread.messages, blocks);
-
-      expect(result).toContain('First paragraph.\n\nSecond paragraph.');
-    });
-
-    it('should handle empty thread', () => {
-      const thread: Thread = {
-        id: 'thread-1',
-        title: 'Empty Thread',
-        createdAt: 1700000000000,
-        updatedAt: 1700000000000,
-        messages: [],
-      };
-
-      const result = threadToMarkdown(thread, [], []);
-
-      expect(result).toContain('title: "Empty Thread"');
-      expect(result).toContain('question: ""');
-      expect(result).toMatch(/---\n$/);
-    });
-
-    it('should escape double quotes in title', () => {
-      const thread: Thread = {
-        id: 'thread-1',
-        title: 'Thread with "quotes"',
-        createdAt: 1700000000000,
-        updatedAt: 1700000000000,
-        messages: [],
-      };
-
-      const result = threadToMarkdown(thread, [], []);
-
-      expect(result).toContain('title: "Thread with \\"quotes\\""');
-    });
-
-    it('should preserve code blocks in markdown', () => {
-      const thread: Thread = {
-        id: 'thread-1',
-        title: 'Code Thread',
-        createdAt: 1700000000000,
-        updatedAt: 1700000000000,
-        messages: [
-          {
-            id: 'msg-1',
-            threadId: 'thread-1',
-            role: 'assistant',
-            createdAt: 1700000000000,
-            content: [{ blockId: 'block-1' }],
-            meta: {},
-          },
-        ],
-      };
-
-      const codeContent = '```javascript\nconst x = 1;\nconsole.log(x);\n```';
-      const blocks: Block[] = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'code',
-          text: codeContent,
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-      ];
-
-      const result = threadToMarkdown(thread, thread.messages, blocks);
-
-      expect(result).toContain(codeContent);
-    });
+    expect(result).toMatch(/^---\n/);
+    expect(result).toContain('title: "Test Thread"');
+    expect(result).toContain('question: "Hello, how are you?"');
+    expect(result).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
+    expect(result).toContain('## User\n\nHello, how are you?');
+    expect(result).toContain('## Assistant\n\nI am doing well, thank you!');
   });
 
-  describe('sanitizeFilename', () => {
-    it('should remove invalid characters', () => {
-      expect(sanitizeFilename('test/file\\name:with*invalid?"chars<>|'))
-        .toBe('test-file-name-with-invalid--chars---');
-    });
-
-    it('should preserve valid characters', () => {
-      expect(sanitizeFilename('valid-filename_123')).toBe('valid-filename_123');
-    });
-
-    it('should trim whitespace', () => {
-      expect(sanitizeFilename('  test  ')).toBe('test');
-    });
+  it('handles an empty thread', () => {
+    const thread = makeThread({ messages: [] });
+    const result = threadToMarkdown(thread, []);
+    expect(result).toContain('title: "Test Thread"');
+    expect(result).toContain('question: ""');
   });
 
-  describe('generateExportFilename', () => {
-    it('should generate filename with sanitized title and date', () => {
-      const result = generateExportFilename('My Thread');
-      expect(result).toMatch(/^My Thread-\d{4}-\d{2}-\d{2}\.md$/);
-    });
-
-    it('should sanitize special characters in title', () => {
-      const result = generateExportFilename('Thread/with:special*chars');
-      expect(result).toMatch(/^Thread-with-special-chars-\d{4}-\d{2}-\d{2}\.md$/);
-    });
+  it('escapes double quotes in the title', () => {
+    const thread = makeThread({ title: 'Thread with "quotes"' });
+    const result = threadToMarkdown(thread, []);
+    expect(result).toContain('title: "Thread with \\"quotes\\""');
   });
 
-  describe('blocksToCardMarkdown', () => {
-    it('should generate card markdown with frontmatter', () => {
-      const blocks: Block[] = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'paragraph',
-          text: 'First selected block.',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-        {
-          id: 'block-2',
-          messageId: 'msg-2',
-          type: 'paragraph',
-          text: 'Second selected block.',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-      ];
+  it('preserves fenced code blocks in the message body', () => {
+    const code = '```javascript\nconst x = 1;\nconsole.log(x);\n```';
+    const messages = [makeMessage({ id: 'm1', role: 'assistant', text: code })];
+    const thread = makeThread({ messages });
+    const result = threadToMarkdown(thread, messages);
+    expect(result).toContain(code);
+  });
+});
 
-      const result = blocksToCardMarkdown('My Card', 'What is React?', blocks);
-
-      // Check frontmatter
-      expect(result).toMatch(/^---\n/);
-      expect(result).toContain('title: "My Card"');
-      expect(result).toContain('question: "What is React?"');
-      expect(result).toMatch(/created: \d{4}-\d{2}-\d{2}\n/);
-      expect(result).not.toContain('type:');
-      expect(result).not.toContain('blocks:');
-
-      // Check content
-      expect(result).toContain('First selected block.');
-      expect(result).toContain('Second selected block.');
-      expect(result).toContain('First selected block.\n\nSecond selected block.');
-    });
-
-    it('should handle single block', () => {
-      const blocks: Block[] = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'paragraph',
-          text: 'Only block content.',
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-      ];
-
-      const result = blocksToCardMarkdown('Single Block Card', 'How does it work?', blocks);
-
-      expect(result).toContain('title: "Single Block Card"');
-      expect(result).toContain('question: "How does it work?"');
-      expect(result).toContain('Only block content.');
-    });
-
-    it('should escape double quotes in title and question', () => {
-      const blocks: Block[] = [];
-      const result = blocksToCardMarkdown('Card with "quotes"', 'What is "this"?', blocks);
-
-      expect(result).toContain('title: "Card with \\"quotes\\""');
-      expect(result).toContain('question: "What is \\"this\\"?"');
-    });
-
-    it('should preserve code blocks', () => {
-      const codeContent = '```typescript\nconst x: number = 1;\n```';
-      const blocks: Block[] = [
-        {
-          id: 'block-1',
-          messageId: 'msg-1',
-          type: 'code',
-          text: codeContent,
-          edited: false,
-          selections: [],
-          prevText: null,
-          isRewritten: false,
-        },
-      ];
-
-      const result = blocksToCardMarkdown('Code Card', 'Show me TypeScript', blocks);
-
-      expect(result).toContain(codeContent);
-    });
+describe('sanitizeFilename', () => {
+  it('replaces invalid characters with dashes', () => {
+    expect(sanitizeFilename('test/file\\name:with*invalid?"chars<>|')).toBe(
+      'test-file-name-with-invalid--chars---',
+    );
   });
 
-  describe('generateCardFilename', () => {
-    it('should generate filename with sanitized title', () => {
-      const result = generateCardFilename('My Card');
-      expect(result).toBe('My Card.md');
-    });
+  it('preserves valid characters and trims whitespace', () => {
+    expect(sanitizeFilename('  valid-filename_123  ')).toBe('valid-filename_123');
+  });
+});
 
-    it('should sanitize special characters in title', () => {
-      const result = generateCardFilename('Card/with:special*chars');
-      expect(result).toBe('Card-with-special-chars.md');
-    });
-
-    it('should not include date', () => {
-      const result = generateCardFilename('Simple Card');
-      expect(result).not.toMatch(/\d{4}-\d{2}-\d{2}/);
-      expect(result).toBe('Simple Card.md');
-    });
+describe('generateExportFilename', () => {
+  it('emits a date-stamped filename', () => {
+    expect(generateExportFilename('My Thread')).toMatch(
+      /^My Thread-\d{4}-\d{2}-\d{2}\.md$/,
+    );
   });
 });

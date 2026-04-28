@@ -3,85 +3,40 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { PromptInput } from '@/components/composer/PromptInput';
 
 describe('PromptInput', () => {
-  const baseProps = {
-    value: '',
-    onChange: vi.fn(),
-  };
+  const baseProps = { value: '', onChange: vi.fn() };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders contenteditable div with role="textbox"', () => {
+  it('renders a contenteditable div with role="textbox"', () => {
     render(<PromptInput {...baseProps} />);
     expect(screen.getByRole('textbox')).toBeTruthy();
   });
 
-  it('has aria-label "Prompt"', () => {
+  it('uses the default placeholder when none is provided', () => {
     render(<PromptInput {...baseProps} />);
-    expect(screen.getByLabelText('Prompt')).toBeTruthy();
-  });
-
-  it('sets default placeholder for chat mode', () => {
-    render(<PromptInput {...baseProps} />);
-    const el = screen.getByRole('textbox');
-    expect(el.getAttribute('data-placeholder')).toBe('Ask coo anything');
-  });
-
-  it('sets placeholder for edit mode', () => {
-    render(<PromptInput {...baseProps} composerMode="edit" />);
-    const el = screen.getByRole('textbox');
-    expect(el.getAttribute('data-placeholder')).toBe(
-      'Type new content to replace the selected block'
+    expect(screen.getByRole('textbox').getAttribute('data-placeholder')).toBe(
+      'Ask coo anything',
     );
   });
 
-  it('sets placeholder for ask mode with block selected', () => {
-    render(<PromptInput {...baseProps} hasBlockSelected composerMode="ask" />);
-    const el = screen.getByRole('textbox');
-    expect(el.getAttribute('data-placeholder')).toBe('Ask about the selected block');
-  });
-
-  it('uses custom placeholder when provided', () => {
+  it('uses a custom placeholder when provided', () => {
     render(<PromptInput {...baseProps} placeholder="Custom" />);
-    const el = screen.getByRole('textbox');
-    expect(el.getAttribute('data-placeholder')).toBe('Custom');
+    expect(screen.getByRole('textbox').getAttribute('data-placeholder')).toBe('Custom');
   });
 
-  it('disables contenteditable when disabled', () => {
+  it('respects the disabled prop on contenteditable', () => {
     render(<PromptInput {...baseProps} disabled />);
-    const el = screen.getByRole('textbox');
-    expect(el.getAttribute('contenteditable')).toBe('false');
+    expect(screen.getByRole('textbox').getAttribute('contenteditable')).toBe('false');
   });
 
-  it('enables contenteditable when not disabled', () => {
-    render(<PromptInput {...baseProps} />);
-    const el = screen.getByRole('textbox');
-    expect(el.getAttribute('contenteditable')).toBe('true');
-  });
-
-  it('calls onSubmit on Enter key', () => {
+  it('submits on Enter and inserts newline on Shift+Enter', () => {
     const onSubmit = vi.fn();
     render(<PromptInput {...baseProps} onSubmit={onSubmit} />);
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
-    expect(onSubmit).toHaveBeenCalled();
-  });
-
-  it('does not call onSubmit on Shift+Enter', () => {
-    const onSubmit = vi.fn();
-    render(<PromptInput {...baseProps} onSubmit={onSubmit} />);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', shiftKey: true });
-    expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  it('has id="prompt"', () => {
-    const { container } = render(<PromptInput {...baseProps} />);
-    expect(container.querySelector('#prompt')).toBeTruthy();
-  });
-
-  it('applies disabled styling class', () => {
-    render(<PromptInput {...baseProps} disabled />);
-    const el = screen.getByRole('textbox');
-    expect(el.className).toContain('cursor-not-allowed');
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });

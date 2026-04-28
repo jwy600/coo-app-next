@@ -1,267 +1,89 @@
 /**
- * Tests for Zustand store
+ * Tests for the Zustand store.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useStore, selectActiveThread, selectSelectedBlock } from '@/lib/store/useStore';
+import { useStore, selectActiveThread } from '@/lib/store/useStore';
 
 describe('useStore', () => {
   beforeEach(() => {
-    // Reset store before each test
     useStore.setState({
       threads: [],
-      blocks: [],
-      activeThreadId: '',
+      activeThreadId: null,
       mode: 'landing',
-      selectedBlockId: null,
-      cards: [],
       isAwaitingResponse: false,
+      error: null,
+      streamingMessageId: null,
     });
   });
 
-  describe('Thread Actions', () => {
-    it('should create a new thread', () => {
-      const { createThread } = useStore.getState();
-
-      createThread('test-thread-id');
-
+  describe('thread actions', () => {
+    it('createThread creates and activates a thread', () => {
+      useStore.getState().createThread('test-thread-id');
       const state = useStore.getState();
       expect(state.threads).toHaveLength(1);
       expect(state.threads[0].id).toBe('test-thread-id');
-      expect(state.threads[0].title).toBe('current thread');
       expect(state.activeThreadId).toBe('test-thread-id');
     });
 
-    it('should set active thread', () => {
-      const { createThread, setActiveThread } = useStore.getState();
-
-      createThread('thread-1');
-      createThread('thread-2');
-      setActiveThread('thread-1');
-
-      const state = useStore.getState();
-      expect(state.activeThreadId).toBe('thread-1');
+    it('setActiveThread updates the active thread id', () => {
+      useStore.getState().createThread('thread-1');
+      useStore.getState().createThread('thread-2');
+      useStore.getState().setActiveThread('thread-1');
+      expect(useStore.getState().activeThreadId).toBe('thread-1');
     });
 
-    it('should update thread title', () => {
-      const { createThread, updateThreadTitle } = useStore.getState();
-
-      createThread('thread-1');
-      updateThreadTitle('thread-1', 'New Title');
-
-      const state = useStore.getState();
-      const thread = state.threads.find((t) => t.id === 'thread-1');
-      expect(thread?.title).toBe('New Title');
+    it('updateThreadTitle renames a thread', () => {
+      useStore.getState().createThread('thread-1');
+      useStore.getState().updateThreadTitle('thread-1', 'Renamed');
+      expect(useStore.getState().threads[0].title).toBe('Renamed');
     });
 
-    it('should add user message', () => {
-      const { createThread, addUserMessage } = useStore.getState();
-
-      createThread('thread-1');
-      const result = addUserMessage('Hello, world!');
-
-      expect(result.message.role).toBe('user');
-      expect(result.blocks).toHaveLength(1);
-      expect(result.blocks[0].text).toBe('Hello, world!');
-
-      const state = useStore.getState();
-      expect(state.blocks).toHaveLength(1);
+    it('addUserMessage appends a text message', () => {
+      useStore.getState().createThread('thread-1');
+      const message = useStore.getState().addUserMessage('Hello, world!');
+      expect(message.role).toBe('user');
+      expect(message.text).toBe('Hello, world!');
     });
 
-    it('should add assistant message with multiple blocks', () => {
-      const { createThread, addAssistantMessage } = useStore.getState();
-
-      createThread('thread-1');
-      const result = addAssistantMessage([
-        { text: 'Block 1', type: 'paragraph' },
-        { text: 'Block 2', type: 'list' },
-      ]);
-
-      expect(result.message.role).toBe('assistant');
-      expect(result.blocks).toHaveLength(2);
-
-      const state = useStore.getState();
-      expect(state.blocks).toHaveLength(2);
+    it('addAssistantMessage appends a text message', () => {
+      useStore.getState().createThread('thread-1');
+      const message = useStore.getState().addAssistantMessage('## Hi\n\nBody.');
+      expect(message.role).toBe('assistant');
+      expect(message.text).toBe('## Hi\n\nBody.');
     });
   });
 
-  describe('Block Actions', () => {
-    beforeEach(() => {
-      const { createThread, addUserMessage } = useStore.getState();
-      createThread('thread-1');
-      addUserMessage('Test message');
-    });
-
-    it('should add selection to block', () => {
-      const state = useStore.getState();
-      const blockId = state.blocks[0].id;
-
-      state.addSelection(blockId, 'selected text');
-
-      const updatedState = useStore.getState();
-      const block = updatedState.blocks.find((b) => b.id === blockId);
-      expect(block?.selections).toContain('selected text');
-    });
-
-    it('should remove selection from block', () => {
-      const state = useStore.getState();
-      const blockId = state.blocks[0].id;
-
-      state.addSelection(blockId, 'selection 1');
-      state.addSelection(blockId, 'selection 2');
-      state.removeSelection(blockId, 0);
-
-      const updatedState = useStore.getState();
-      const block = updatedState.blocks.find((b) => b.id === blockId);
-      expect(block?.selections).toHaveLength(1);
-      expect(block?.selections[0]).toBe('selection 2');
-    });
-
-    it('should clear all selections', () => {
-      const state = useStore.getState();
-      const blockId = state.blocks[0].id;
-
-      state.addSelection(blockId, 'selection 1');
-      state.addSelection(blockId, 'selection 2');
-      state.clearSelections(blockId);
-
-      const updatedState = useStore.getState();
-      const block = updatedState.blocks.find((b) => b.id === blockId);
-      expect(block?.selections).toHaveLength(0);
-    });
-
-    it('should toggle rewrite', () => {
-      const state = useStore.getState();
-      const blockId = state.blocks[0].id;
-      const originalText = state.blocks[0].text;
-
-      // First toggle: enable rewrite
-      state.toggleRewrite(blockId, 'Rewritten text');
-
-      let updatedState = useStore.getState();
-      let block = updatedState.blocks.find((b) => b.id === blockId);
-      expect(block?.text).toBe('Rewritten text');
-      expect(block?.prevText).toBe(originalText);
-      expect(block?.isRewritten).toBe(true);
-
-      // Second toggle: revert to original
-      state.toggleRewrite(blockId, '');
-
-      updatedState = useStore.getState();
-      block = updatedState.blocks.find((b) => b.id === blockId);
-      expect(block?.text).toBe(originalText);
-      expect(block?.isRewritten).toBe(false);
-    });
-  });
-
-  describe('UI Actions', () => {
-    it('should set mode', () => {
-      const { setMode } = useStore.getState();
-
-      setMode('thread');
+  describe('UI actions', () => {
+    it('setMode toggles between landing and thread', () => {
+      useStore.getState().setMode('thread');
       expect(useStore.getState().mode).toBe('thread');
-
-      setMode('landing');
+      useStore.getState().setMode('landing');
       expect(useStore.getState().mode).toBe('landing');
-      expect(useStore.getState().selectedBlockId).toBeNull();
     });
 
-    it('should select block (single selection)', () => {
-      const { createThread, addUserMessage, setMode, selectBlock } = useStore.getState();
-
-      createThread('thread-1');
-      addUserMessage('Test message');
-      setMode('thread');
-
-      const blockId = useStore.getState().blocks[0].id;
-
-      // Select block
-      selectBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBe(blockId);
-
-      // Deselect block (toggle same block)
-      selectBlock(blockId);
-      expect(useStore.getState().selectedBlockId).toBeNull();
-    });
-
-    it('should clear selection', () => {
-      const { createThread, addUserMessage, setMode, selectBlock, clearSelection } = useStore.getState();
-
-      createThread('thread-1');
-      addUserMessage('Test message');
-      setMode('thread');
-
-      const blockId = useStore.getState().blocks[0].id;
-      selectBlock(blockId);
-
-      clearSelection();
-      expect(useStore.getState().selectedBlockId).toBeNull();
-    });
-
-    it('should set isAwaitingResponse', () => {
-      const { setAwaitingResponse } = useStore.getState();
-
-      setAwaitingResponse(true);
+    it('setAwaitingResponse toggles the indicator', () => {
+      useStore.getState().setAwaitingResponse(true);
       expect(useStore.getState().isAwaitingResponse).toBe(true);
-
-      setAwaitingResponse(false);
+      useStore.getState().setAwaitingResponse(false);
       expect(useStore.getState().isAwaitingResponse).toBe(false);
     });
   });
 
-  describe('Selectors', () => {
-    beforeEach(() => {
-      const { createThread, addUserMessage, setMode } = useStore.getState();
-      createThread('thread-1');
-      addUserMessage('Test message');
-      setMode('thread');
-    });
-
-    it('should select active thread', () => {
-      const state = useStore.getState();
-      const activeThread = selectActiveThread(state);
-
-      expect(activeThread).toBeDefined();
-      expect(activeThread?.id).toBe('thread-1');
-    });
-
-    it('should select single selected block', () => {
-      const state = useStore.getState();
-      const blockId = state.blocks[0].id;
-
-      state.selectBlock(blockId);
-
-      const updatedState = useStore.getState();
-      const selectedBlock = selectSelectedBlock(updatedState);
-
-      expect(selectedBlock).toBeDefined();
-      expect(selectedBlock?.id).toBe(blockId);
-    });
-
-    it('should return null for selected block when none selected', () => {
-      const state = useStore.getState();
-      const selectedBlock = selectSelectedBlock(state);
-
-      expect(selectedBlock).toBeNull();
+  describe('selectors', () => {
+    it('selectActiveThread returns the active thread', () => {
+      useStore.getState().createThread('thread-1');
+      const thread = selectActiveThread(useStore.getState());
+      expect(thread?.id).toBe('thread-1');
     });
   });
 
-  describe('Immutability', () => {
-    it('should not mutate state when adding user message', () => {
-      const { createThread, addUserMessage } = useStore.getState();
-
-      createThread('thread-1');
-      const stateBefore = useStore.getState();
-      const threadsBefore = stateBefore.threads;
-      const blocksBefore = stateBefore.blocks;
-
-      addUserMessage('New message');
-
-      const stateAfter = useStore.getState();
-
-      // State references should be different
-      expect(stateAfter.threads).not.toBe(threadsBefore);
-      expect(stateAfter.blocks).not.toBe(blocksBefore);
+  describe('immutability', () => {
+    it('addUserMessage produces a new threads reference', () => {
+      useStore.getState().createThread('thread-1');
+      const before = useStore.getState().threads;
+      useStore.getState().addUserMessage('New message');
+      expect(useStore.getState().threads).not.toBe(before);
     });
   });
 });

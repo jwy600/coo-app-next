@@ -31,6 +31,7 @@ const makeBaseState = (): AppState =>
     isAwaitingResponse: false,
     error: null,
     focus: null,
+    composerPrompt: '',
   }) as AppState;
 
 beforeEach(() => {

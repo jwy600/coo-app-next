@@ -17,6 +17,7 @@ export function LandingContent() {
   // Avoid SSR/client hydration mismatch: treat apiKey as unknown until mounted.
   const [hasMounted, setHasMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- canonical SSR-safe mount flag
     setHasMounted(true);
   }, []);
 

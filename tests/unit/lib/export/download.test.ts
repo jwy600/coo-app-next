@@ -13,8 +13,10 @@ describe("downloadMarkdown", () => {
     revokeObjectURLMock = vi.fn();
     clickSpy = vi.fn();
 
-    globalThis.URL.createObjectURL = createObjectURLMock;
-    globalThis.URL.revokeObjectURL = revokeObjectURLMock;
+    globalThis.URL.createObjectURL =
+      createObjectURLMock as unknown as typeof URL.createObjectURL;
+    globalThis.URL.revokeObjectURL =
+      revokeObjectURLMock as unknown as typeof URL.revokeObjectURL;
 
     appendChildSpy = vi.spyOn(document.body, "appendChild").mockImplementation(
       (node) => node,

@@ -178,7 +178,9 @@ describe("fetchBlockAction", () => {
       await fetchBlockAction(
         action,
         "passage body",
-        action === "ask" || action === "rewrite" ? "prompt" : undefined,
+        // None of the iterated actions take a prompt; ask/rewrite are
+        // covered by their own dedicated tests.
+        undefined,
         action === "translate" ? "Spanish" : undefined,
         baseSettings,
       );

@@ -57,6 +57,7 @@ describe("Settings State Functions", () => {
 
     it("should preserve other settings", () => {
       const settings: Settings = {
+        ...DEFAULT_SETTINGS,
         model: "gpt-5.4-mini",
         reasoningEffort: "high",
         webSearchEnabled: true,
@@ -108,6 +109,7 @@ describe("Settings State Functions", () => {
 
     it("should preserve other settings", () => {
       const settings: Settings = {
+        ...DEFAULT_SETTINGS,
         model: "gpt-5.4",
         reasoningEffort: "none",
         webSearchEnabled: true,
@@ -147,6 +149,7 @@ describe("Settings State Functions", () => {
 
     it("should preserve other settings", () => {
       const settings: Settings = {
+        ...DEFAULT_SETTINGS,
         model: "gpt-5.4",
         reasoningEffort: "high",
         webSearchEnabled: false,

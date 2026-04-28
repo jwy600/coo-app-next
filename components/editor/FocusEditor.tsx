@@ -43,9 +43,12 @@ export function FocusEditor({ disabled = false }: FocusEditorProps) {
     const handler = (event: MouseEvent) => {
       const root = containerRef.current;
       if (!root) return;
-      if (!root.contains(event.target as Node)) {
-        closeEditor();
-      }
+      const target = event.target as Element | null;
+      if (root.contains(target)) return;
+      // The composer is a working surface for the active editor (notes,
+      // ask context). Clicking it must not auto-save & close.
+      if (target?.closest('.composer')) return;
+      closeEditor();
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);

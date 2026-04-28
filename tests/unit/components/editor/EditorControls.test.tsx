@@ -90,7 +90,7 @@ describe('EditorControls', () => {
     expect(useStore.getState().focus?.prevBuffer).toBe('Hello');
   });
 
-  it('clicking ELI5 calls fetchBlockAction and writes the result to the composer prompt', async () => {
+  it('clicking ELI5 appends the result to the editor notes (NOT the composer)', async () => {
     mockFetchBlockAction.mockResolvedValue({
       text: 'simpler version',
       responseId: 'r2',
@@ -102,7 +102,7 @@ describe('EditorControls', () => {
     });
 
     await waitFor(() => {
-      expect(useStore.getState().composerPrompt).toBe('simpler version');
+      expect(useStore.getState().focus?.notes).toContain('simpler version');
     });
     expect(mockFetchBlockAction).toHaveBeenCalledWith(
       'eli5',
@@ -111,11 +111,13 @@ describe('EditorControls', () => {
       undefined,
       expect.any(Object),
     );
+    // Composer prompt must NOT be touched.
+    expect(useStore.getState().composerPrompt).toBe('');
     // Editor buffer must NOT change.
     expect(useStore.getState().focus?.buffer).toBe('Hello');
   });
 
-  it('clicking Translate routes through the translate language and writes to composer', async () => {
+  it('clicking Translate routes through the translate language and appends to notes', async () => {
     mockFetchBlockAction.mockResolvedValue({
       text: 'hola mundo',
       responseId: 'r3',
@@ -127,7 +129,7 @@ describe('EditorControls', () => {
     });
 
     await waitFor(() => {
-      expect(useStore.getState().composerPrompt).toBe('hola mundo');
+      expect(useStore.getState().focus?.notes).toContain('hola mundo');
     });
     const settings = useStore.getState().settings;
     expect(mockFetchBlockAction).toHaveBeenCalledWith(
@@ -137,9 +139,10 @@ describe('EditorControls', () => {
       settings.translateLanguage,
       expect.any(Object),
     );
+    expect(useStore.getState().composerPrompt).toBe('');
   });
 
-  it('clicking Summarize calls fetchBlockAction with the summarize action', async () => {
+  it('clicking Summarize appends the summary to notes', async () => {
     mockFetchBlockAction.mockResolvedValue({
       text: 'short version',
       responseId: 'r4',
@@ -151,7 +154,7 @@ describe('EditorControls', () => {
     });
 
     await waitFor(() => {
-      expect(useStore.getState().composerPrompt).toBe('short version');
+      expect(useStore.getState().focus?.notes).toContain('short version');
     });
     expect(mockFetchBlockAction).toHaveBeenCalledWith(
       'summarize',
@@ -160,5 +163,6 @@ describe('EditorControls', () => {
       undefined,
       expect.any(Object),
     );
+    expect(useStore.getState().composerPrompt).toBe('');
   });
 });

@@ -85,6 +85,25 @@ describe('FocusEditor', () => {
     expect(useStore.getState().focus).not.toBeNull();
   });
 
+  it('clicking inside the composer does NOT close the editor', () => {
+    seedFocus();
+    render(
+      <div>
+        <form className="composer">
+          <input data-testid="composer-input" />
+        </form>
+        <FocusEditor />
+      </div>,
+    );
+    const composerInput = document.querySelector(
+      '[data-testid="composer-input"]',
+    ) as HTMLElement;
+    act(() => {
+      fireEvent.mouseDown(composerInput);
+    });
+    expect(useStore.getState().focus).not.toBeNull();
+  });
+
   it('renders notes as muted blockquotes below the textarea', () => {
     seedFocus();
     useStore.getState().appendNote('first note');

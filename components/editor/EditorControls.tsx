@@ -21,7 +21,7 @@ export function EditorControls() {
   const focus = useStore((s) => s.focus);
   const setRewriteResult = useStore((s) => s.setRewriteResult);
   const revertRewrite = useStore((s) => s.revertRewrite);
-  const setComposerPrompt = useStore((s) => s.setComposerPrompt);
+  const appendNote = useStore((s) => s.appendNote);
   const setError = useStore((s) => s.setError);
 
   const [busy, setBusy] = useState<'rewrite' | DraftAction | null>(null);
@@ -58,14 +58,16 @@ export function EditorControls() {
           language,
           settings,
         );
-        setComposerPrompt(result.text);
+        // Drop the result if the user has closed or moved the editor mid-flight.
+        if (useStore.getState().focus?.messageId !== focus.messageId) return;
+        appendNote(result.text);
       } catch (err) {
         setError(getErrorMessage(err, `${action} failed.`));
       } finally {
         setBusy(null);
       }
     },
-    [focus, setComposerPrompt, setError],
+    [focus, appendNote, setError],
   );
 
   if (!focus) return null;

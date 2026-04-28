@@ -2,14 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { useStore } from '@/lib/store/useStore';
 
-const { mockFetchRewrite, mockFetchBlockAction } = vi.hoisted(() => ({
+const { mockFetchRewrite } = vi.hoisted(() => ({
   mockFetchRewrite: vi.fn(),
-  mockFetchBlockAction: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
   fetchRewrite: mockFetchRewrite,
-  fetchBlockAction: mockFetchBlockAction,
 }));
 
 import { EditorControls } from '@/components/editor/EditorControls';
@@ -36,13 +34,13 @@ describe('EditorControls', () => {
     resetStore();
   });
 
-  it('renders Revert, Rewrite, Translate, ELI5, Summarize buttons', () => {
+  it('renders only Revert and Rewrite (shortcut actions live on the composer)', () => {
     render(<EditorControls />);
     expect(screen.getByRole('button', { name: /Revert/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Rewrite/i })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Translate/i })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /ELI5/i })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Summarize/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Translate/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /ELI5/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Summarize/i })).toBeNull();
   });
 
   it('disables Revert when no rewrite is pending', () => {
@@ -90,75 +88,4 @@ describe('EditorControls', () => {
     expect(useStore.getState().focus?.prevBuffer).toBe('Hello');
   });
 
-  it('clicking ELI5 calls fetchBlockAction and writes the result to the composer prompt', async () => {
-    mockFetchBlockAction.mockResolvedValue({
-      text: 'simpler version',
-      responseId: 'r2',
-    });
-
-    render(<EditorControls />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /ELI5/i }));
-    });
-
-    await waitFor(() => {
-      expect(useStore.getState().composerPrompt).toBe('simpler version');
-    });
-    expect(mockFetchBlockAction).toHaveBeenCalledWith(
-      'eli5',
-      'Hello',
-      undefined,
-      undefined,
-      expect.any(Object),
-    );
-    // Editor buffer must NOT change.
-    expect(useStore.getState().focus?.buffer).toBe('Hello');
-  });
-
-  it('clicking Translate routes through the translate language and writes to composer', async () => {
-    mockFetchBlockAction.mockResolvedValue({
-      text: 'hola mundo',
-      responseId: 'r3',
-    });
-
-    render(<EditorControls />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Translate/i }));
-    });
-
-    await waitFor(() => {
-      expect(useStore.getState().composerPrompt).toBe('hola mundo');
-    });
-    const settings = useStore.getState().settings;
-    expect(mockFetchBlockAction).toHaveBeenCalledWith(
-      'translate',
-      'Hello',
-      undefined,
-      settings.translateLanguage,
-      expect.any(Object),
-    );
-  });
-
-  it('clicking Summarize calls fetchBlockAction with the summarize action', async () => {
-    mockFetchBlockAction.mockResolvedValue({
-      text: 'short version',
-      responseId: 'r4',
-    });
-
-    render(<EditorControls />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Summarize/i }));
-    });
-
-    await waitFor(() => {
-      expect(useStore.getState().composerPrompt).toBe('short version');
-    });
-    expect(mockFetchBlockAction).toHaveBeenCalledWith(
-      'summarize',
-      'Hello',
-      undefined,
-      undefined,
-      expect.any(Object),
-    );
-  });
 });

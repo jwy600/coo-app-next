@@ -11,19 +11,21 @@ export interface FocusActive {
 
 /**
  * Opens the focus editor on a slice of `message.text`. Initializes the
- * buffer to the slice and clears notes / Rewrite undo state. No-op if the
- * message can't be found.
+ * buffer to the slice and clears notes / Rewrite undo state. If another
+ * editor is already active, it is auto-saved (closeEditor) first so its
+ * edits aren't lost. No-op if the target message can't be found.
  */
 export const openEditor = (
   state: AppState,
   messageId: string,
   range: [number, number],
 ): AppState => {
-  const message = findMessage(state, messageId);
-  if (!message) return state;
+  const baseState = state.focus ? closeEditor(state) : state;
+  const message = findMessage(baseState, messageId);
+  if (!message) return baseState;
   const buffer = message.text.slice(range[0], range[1]);
   return {
-    ...state,
+    ...baseState,
     focus: { messageId, range, buffer, notes: [], prevBuffer: null },
   };
 };

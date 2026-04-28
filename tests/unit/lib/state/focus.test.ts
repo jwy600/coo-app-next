@@ -67,6 +67,17 @@ describe('openEditor', () => {
     expect(second.focus?.buffer).toBe('world');
     expect(second.focus?.range).toEqual([6, 11]);
   });
+
+  it('auto-saves a previously active editor before opening the new one', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const first = openEditor(state, messageId, [0, 5]);
+    const edited = updateBuffer(first, 'Howdy');
+    const second = openEditor(edited, messageId, [6, 11]);
+    // First editor's edit was saved before the second opened.
+    expect(second.threads[0].messages[0].text).toBe('Howdy world');
+    // Second editor reads its slice from the *post-save* text.
+    expect(second.focus?.buffer).toBe('world');
+  });
 });
 
 describe('updateBuffer', () => {

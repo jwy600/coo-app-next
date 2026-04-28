@@ -4,7 +4,7 @@ Coo brings locality to AI. It’s a chatbot that lets you edit, transform, and r
 
 [Watch demo video](https://wenyi.blog/files/coo_ask.mp4)
 
-Instead of treating AI output as immutable chat bubbles, Coo breaks once-indivisible response into semantic blocks you can work with directly: expand, translate, simplify (ELI5), rewrite, and export as cards.
+Instead of treating AI output as immutable chat bubbles, Coo lets you drag-select any passage in an assistant reply and open an in-place editor — right inside the conversation. From there you can rewrite the passage, ask follow-up questions about it, translate or simplify it, and the edits save back into the message itself.
 
 ![Books are scattered around Shuji Terayama](https://blog.yitianshijie.net/wp-content/uploads/2017/07/fullsizeoutput_33bf.jpeg?w=550&h=862)
 
@@ -22,19 +22,20 @@ If you want a longer write-up, check out my blog post: [ChatGPT, the Slot Machin
 
 ## Features
 
-- **Block-based output**: LLM responses are parsed into semantic blocks
-- **In-context actions** on any block:
-  - ELI5 (Explain Like I’m 5)
-  - Translate (English, Chinese, Spanish, French)
-  - Expand
-  - Generate examples
-  - Ask custom questions about the selected content
-- **Direct block editing**: toggle between Ask and Edit modes — Ask sends to AI, Edit lets you rewrite text directly
-- **Text selection → focused rewriting**: highlight parts of follow-ups and request rewrites with that emphasis
-- **Cards**: collect blocks into cards as visual anchors, then export to your PKM system
-- **Obsidian export**: save exports directly to an Obsidian vault folder on disk (or use browser download)
-- **Response language**: set preferred response language (English or Chinese) for AI outputs
-- **Browser-only**: no server, no database, no account — your API key and data stay in your browser (localStorage)
+- **Drag-select to edit**: highlight any passage in an assistant message and an in-place editor opens, seeded with that slice of raw markdown. Click outside to auto-save it back into the message.
+- **In-editor action row** with the AI tools you actually want at the point of friction:
+  - **Translate** (English, Chinese, Spanish, French, Japanese, …)
+  - **ELI5** — explain the passage like you're five
+  - **Summarize** — condense the passage in place
+  - **Ask** — type a question about the passage; the answer appends as a `> **Note:**` blockquote inside the editor
+  - **Rewrite** — bundle the passage + your accumulated notes for an atomic AI rewrite
+  - **Revert** — single-step undo for the most recent shortcut or rewrite
+- **Notes are just markdown**: ask answers and other annotations live as `> **Note:** ...` blockquotes inside the buffer. They survive close, reopen, and export — no hidden state.
+- **Single markdown source of truth**: every message is one editable markdown string. Drag, edit, save; the thread is always exportable as a clean document.
+- **Context-aware AI**: every focus-mode call chains off the assistant message's prior turns via OpenAI's `previousResponseId`, so follow-up questions inside a passage understand what came before.
+- **Whole-thread Markdown export**: alternating User / Assistant sections with YAML frontmatter. Save locally or write directly into an Obsidian vault.
+- **Configurable language + reasoning**: response language, translate target, reasoning effort, and web-search toggle are all in Settings.
+- **Browser-only**: no server, no database, no account. Your OpenAI API key and all data stay in your browser's `localStorage`.
 
 ## Try Coo
 
@@ -106,52 +107,59 @@ Access settings via the gear icon in the sidebar:
 
 ### Basic chat
 
-1. Open `http://localhost:3000`
-2. Type in the composer and send
-3. The response streams in and is parsed into blocks
+1. Open `http://localhost:3000` and add your OpenAI key in **Settings** (gear icon).
+2. Type in the composer at the bottom and press **Send** (or `↵`).
+3. The assistant reply streams into the thread.
 
-### Block mode
+The bottom composer is always in chat mode. Whatever else is happening on screen, submitting it adds a user message and streams an assistant reply.
 
-When nothing is selected, the composer behaves like a normal chat input: each new prompt appends a new response at the bottom.
+### Focus mode — drag-select to edit any passage
 
-To work in context, enter **block mode** by single-clicking the gutter to the left of a block. 
+This is the core interaction.
 
-When a block is selected, use the **Ask/Edit toggle** above the composer:
+1. **Drag-select** any passage inside an assistant message. The selection can span words, sentences, or multiple paragraphs.
+2. An in-place **editor** opens right where the passage was, seeded with the raw markdown of your selection. The text is pre-selected, so you can immediately copy, delete, or replace it.
+3. Edit the markdown directly, or use the action row at the foot of the editor.
+4. **Click anywhere outside** the editor to auto-save your changes back into the message at the original character range. The editor closes; the rendered message reflects whatever you typed.
 
-In Ask mode (default):
-- your questions are scoped to the selected block
-- the answer appears in the same textarea (input + output share the space)
-- you can use shortcuts for **Expand / ELI5 / Translate / Examples**
+Reopening the same passage later restores the buffer exactly — including any `> **Note:** ...` blockquotes that ask answers added during a previous session.
 
-Because the block-mode textarea is used for both input and output, its content is intentionally ephemeral. When you find something worth keeping, you can select text in the textarea and save it as a piece of **Note** attached to the selected block. Hover a chip to preview the full text.
+### The editor action row
 
-In Edit mode:
-- the composer fills with the block's text, and you can edit it directly.
-- press **Replace** to update the block without an API call.
-- an **Undo** button appears after replacement.
-- pressing select-all + backspace wraps the text in ~~strikethrough~~ instead of deleting it.
+Inside the focus editor, the action row has two parts: an **ask input** on top with a `↵` glyph indicating Enter submits, and a chip strip below it.
 
-### AI Rewrite
+| Chip / input | What it does |
+|---|---|
+| **Translate** | Translates the whole buffer (passage + any inline notes) into your configured Translate language. Notes are translated alongside the passage so they stay aligned. |
+| **ELI5** | Explains the buffer like you're five. Whole-buffer transform. |
+| **Summarize** | Replaces the buffer with a concise summary. Whole-buffer transform. |
+| **Ask input** | Type a question about the passage and press Enter. The answer appends to the editor as `> **Note:** <answer>` and the input clears. The buffer's passage portion (everything before the trailing notes) is what's used as context, so prior Q&A doesn't pollute the new question. |
+| **Revert** | Single-step undo for the most recent buffer-replacing action (any shortcut or Rewrite). Survives interleaved asks — asking a question doesn't consume your undo. |
+| **Rewrite** | Bundles the passage *and* the inline notes into a single AI rewrite. The result replaces the buffer atomically; the notes are consumed (treated as the user's guidance, not content). Use this when you've accumulated notes via ask answers and want a clean, revised paragraph. |
 
-Once a block has **Notes**, you can ask the LLM to rewrite the block *with emphasis on those notes*. If the Note language differs from the original block, Coo tries to align it to the corresponding content automatically.
+Only one action runs at a time; whichever is in flight disables the others.
 
-Notes are ephemeral: they disappear when you exit block mode.
+### Notes — just markdown in the buffer
 
-### Cards
+Coo doesn't track notes as separate state. They're just `> **Note:** ...` blockquotes appended to your editor buffer, which means:
 
-Create a card by double-clicking the gutter:
-- Double-click a **heading** → card includes that heading + all blocks until the next same-level heading
-- Double-click a **non-heading block** → card contains just that block
+- You can edit them like any other text — fix a typo, delete one you don't want.
+- They survive closing and reopening the editor.
+- They render as muted italic blockquotes in the rendered message after you close the editor (distinct from regular blockquotes).
+- They're included in markdown export verbatim.
 
-A block can belong to only one card (mutual exclusivity). A message can contain multiple cards.
+### Context chaining for follow-up questions
 
-Each card has its own **export** and **clear** actions.
+Each focus-mode call (Translate / ELI5 / Summarize / Ask) sends OpenAI's `previousResponseId` so the model inherits the conversation that produced the assistant message. The first call chains off the message itself; subsequent calls in the same editing session chain off the previous focus call. Closing the editor discards the chain head — reopening starts fresh.
+
+This is what makes asks like "and why?" or "give me an example" work without re-supplying context every time.
 
 ### Export
 
-- If there are **no cards**, export defaults to the whole thread (all messages between user and LLM).
-- If there **are cards**, export defaults to merging all cards into a single `.md`.
-- **Export destination**: choose between browser download (Local) or saving directly to an Obsidian vault. When Obsidian is selected, files are written to a `Coo/` subfolder inside your vault path.
+Coo exports the **whole thread** as a single Markdown document with YAML frontmatter (title, derived first-question, date) followed by alternating `## User` / `## Assistant` sections. Any inline `> **Note:** ...` blockquotes are preserved in the export.
+
+- **Local** — browser download.
+- **Obsidian** — writes the file directly into a `Coo/` subfolder of the vault path you configure in Settings.
 
 ## Project Structure
 

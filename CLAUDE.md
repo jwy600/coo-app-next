@@ -119,11 +119,20 @@ e2e/                 # Playwright tests (currently broken; rewrite in a later ph
 
 **Composer behavior**: the bottom composer is **always in chat mode**. Submit always appends a user message and streams an assistant reply, regardless of whether an editor is open. There is no longer any state-driven mode flip.
 
-**Editor action row** (inside `FocusEditor`, replaces the old composer-side shortcuts): a single horizontal row that owns every focus-mode action.
-- **Shortcuts** (Translate / ELI5 / Summarize) call `fetchBlockAction(action, buffer, ...)` and mutate the buffer in place via `setShortcutResult` (preserves notes; Revert undoes).
-- **Ask input** (text input on the same row): Enter submits a question about the buffer; the answer auto-appends to notes; the input clears.
-- **Revert** undoes the most recent buffer mutation (shortcut or rewrite). Single-step.
-- **Rewrite** bundles buffer + notes into `fetchRewrite` and replaces the buffer atomically.
+**Editor action row** (inside `FocusEditor`, replaces the old composer-side shortcuts): ask input on top with a `↵` submit indicator, chip strip below it.
+
+**Notes live as raw markdown in the buffer** — there is no separate `focus.notes` state. Ask answers append directly to `focus.buffer` as `\n\n> **Note:** <answer>`. `closeEditor` writes the buffer back as-is; `openEditor` slices it back as-is. A `splitNotes(buffer)` parser in `lib/state/focus.ts` is the only place that knows the note pattern.
+
+| Action | API input | Buffer after |
+|---|---|---|
+| Shortcuts (Translate / ELI5 / Summarize) | whole buffer (notes included) | `result` |
+| Ask input | `splitNotes(buffer).passage` only | unchanged + appended `> **Note:** answer` |
+| Rewrite | `splitNotes(buffer)` → `(passage, notes[])` envelope | `result` (notes consumed) |
+| Revert | — | `prevBuffer` (single-step undo) |
+
+**Asymmetry — shortcuts intentionally do NOT split.** Translating a passage and leaving its annotations in the original language is confusing; same for ELI5 / Summarize. Ask is different (prior Q&A would pollute new question context); Rewrite is different (notes are user instructions, not content to revise). Don't unify these without reading why.
+
+`MarkdownContent` flags blockquotes whose first paragraph starts with `<strong>Note:</strong>` and gives them a muted `.doc-blockquote--note` class — visually distinguishing notes from user-authored blockquotes in the rendered (post-close) message.
 
 Mode is **spatial, not temporal** — the bottom composer never changes meaning under the cursor; focus-mode ask happens inside the editor's input.
 

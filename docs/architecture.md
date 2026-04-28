@@ -160,18 +160,33 @@ Always: `addUserMessage(prompt)` → `streamChat(...)`, which creates an empty a
 
 ## Editor action row (`EditorControls`)
 
-A single horizontal row at the foot of `FocusEditor` that owns every focus-mode action:
+The action row at the foot of `FocusEditor` owns every focus-mode action. Layout (top to bottom): ask input on its own line with a `↵` glyph indicating Enter submits, then a chip strip beneath it.
 
 ```
-[Translate] [ELI5] [Summarize]   [ask input ........]   [Revert] [Rewrite]
+[ ask input ............................................. ↵ ]
+[Translate] [ELI5] [Summarize]  [Revert]  [Rewrite]
 ```
 
-| Action | Behavior |
-|---|---|
-| Shortcuts (`EditorActions`) | `fetchBlockAction(action, focus.buffer, ...)` → `setShortcutResult(text)` mutates the buffer; notes are preserved. Revert undoes. |
-| Ask input | Enter submits `fetchBlockAction('ask', focus.buffer, prompt)` → `appendNote(answer)`; input clears. Buffer unchanged. |
-| Revert | Restores `prevBuffer` from the last shortcut or rewrite. Single-step. |
-| Rewrite | `fetchRewrite(buffer, notes)` → `setRewriteResult(text)` (clears notes). |
+### Notes live as raw markdown in the buffer
+
+There is **no separate notes state**. Ask answers are appended directly to `focus.buffer` as `\n\n> **Note:** <answer>`. Closing the editor splices the buffer into `message.text` unchanged; reopening slices it back out. The single source of truth is `focus.buffer`.
+
+`MarkdownContent` detects `> **Note:**` blockquotes (when re-rendered post-close) via the first-child-`<strong>` check in `isNoteBlockquote()` and gives them a muted `.doc-blockquote--note` class so they render visually distinct from user-authored blockquotes.
+
+A `splitNotes(buffer)` parser in `lib/state/focus.ts` separates trailing `> **Note:** ...` lines from the passage they annotate. It is the **only** place in the codebase that knows the note pattern.
+
+### Action contracts
+
+| Action | API input | Buffer after |
+|---|---|---|
+| Shortcuts (Translate / ELI5 / Summarize) | **whole buffer** (notes included) | `result` (notes are transformed alongside the passage) |
+| Ask input | `splitNotes(buffer).passage` only — prior Q&A doesn't pollute new question context | unchanged passage; answer appended as `> **Note:** ...` |
+| Rewrite | `splitNotes(buffer)` → `(passage, notes[])` envelope; notes are guidance, not content | `result` (notes consumed — they were folded into the prompt) |
+| Revert | — | `prevBuffer` (single-step undo of shortcut or rewrite) |
+
+**Why shortcuts skip the split:** translating a passage and leaving its annotations in the original language is just confusing. Same for ELI5 and Summarize — the user expects "transform what's in the editor," whole-cloth. Ask and Rewrite are different: ask context shouldn't include prior Q&A noise (skews answers), and rewrite explicitly treats notes as instructions, not content to revise. This asymmetry is intentional.
+
+Only one action runs at a time; whichever is in flight disables the rest. Errors surface via `setError`. Each focus-mode call sends `previousResponseId` (the focus chain head — see "Context chaining for focus calls" above) and updates it on success.
 
 Only one action runs at a time; whichever is in flight disables the rest. Errors surface via `setError`. Each focus-mode call sends `previousResponseId` (the focus chain head — see "Context chaining for focus calls" above) and updates it on success.
 

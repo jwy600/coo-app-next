@@ -12,6 +12,7 @@ import { threadSlice, ThreadSlice } from './slices/threadSlice';
 import { messageSlice, MessageSlice } from './slices/messageSlice';
 import { uiSlice, UISlice } from './slices/uiSlice';
 import { streamingSlice, StreamingSlice } from './slices/streamingSlice';
+import { focusSlice, FocusSlice } from './slices/focusSlice';
 import { settingsSlice, SettingsSlice } from './slices/settingsSlice';
 import { migratePersistedState } from './migration';
 import { AppState } from '@/types/state';
@@ -24,6 +25,7 @@ export type StoreState = AppState &
   MessageSlice &
   UISlice &
   StreamingSlice &
+  FocusSlice &
   SettingsSlice;
 
 const STORAGE_NAME = isTestMode() ? 'coo-test-storage' : 'coo-storage';
@@ -36,6 +38,7 @@ export const useStore = create<StoreState>()(
         ...messageSlice(...args),
         ...uiSlice(...args),
         ...streamingSlice(...args),
+        ...focusSlice(...args),
         ...settingsSlice(...args),
       }),
       {

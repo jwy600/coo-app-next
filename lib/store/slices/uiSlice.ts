@@ -38,6 +38,7 @@ export const uiSlice: StateCreator<AppState & UISlice, [], [], UISlice> = (set) 
       isAwaitingResponse: false,
       error: null,
       streamingMessageId: null,
+      focus: null,
     } as Partial<AppState & UISlice>);
   },
 });

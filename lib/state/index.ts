@@ -10,6 +10,7 @@ import { AppState, AppMode } from '@/types/state';
 
 export * from './thread';
 export * from './message';
+export * from './focus';
 export * from './settings';
 
 export const createInitialState = (
@@ -22,6 +23,7 @@ export const createInitialState = (
     threads: [],
     isAwaitingResponse: false,
     error: null,
+    focus: null,
   };
 };
 

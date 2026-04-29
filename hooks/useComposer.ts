@@ -42,7 +42,7 @@ export function useComposer(): UseComposerReturn {
   const clearPrompt = useCallback(() => {
     setPrompt('');
     setError(null);
-  }, [setError]);
+  }, [setPrompt, setError]);
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {

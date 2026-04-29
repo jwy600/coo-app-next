@@ -91,7 +91,14 @@ export class FocusEditorPO {
    * Close the editor by clicking outside of it.
    */
   async closeByClickingOutside(): Promise<void> {
-    await this.page.mouse.click(20, 20);
+    // Dispatch mousedown on document.body so the editor's click-outside
+    // listener fires without triggering app navigation (a coordinate click
+    // at top-left lands on SidebarLogo's <Link href="/">).
+    await this.page.evaluate(() => {
+      document.body.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true }),
+      );
+    });
     await this.page
       .locator('[data-testid="focus-editor"]')
       .waitFor({ state: 'hidden' });

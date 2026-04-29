@@ -30,7 +30,6 @@ describe('ComposerHint', () => {
         messageId: 'm1',
         range: [0, 5],
         buffer: 'Hello',
-        notes: [],
         prevBuffer: null,
       },
     });

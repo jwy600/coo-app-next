@@ -71,3 +71,91 @@ export async function dragSelectRange(
   // Give the selection handler time to open the editor
   await page.waitForTimeout(100);
 }
+
+/**
+ * Drag-select reversed (right-to-left). The focus hook reads
+ * window.getSelection() on mouseup, which is direction-agnostic, so this
+ * just normalizes offsets and calls dragSelectRange.
+ */
+export async function selectBackwards(
+  page: Page,
+  messageId: string,
+  startOffset: number,
+  endOffset: number,
+): Promise<void> {
+  await dragSelectRange(
+    page,
+    messageId,
+    Math.min(startOffset, endOffset),
+    Math.max(startOffset, endOffset),
+  );
+}
+
+/**
+ * Drag-select that crosses two messages. Does NOT wait for the editor —
+ * cross-message selections should not open one.
+ */
+export async function dragSelectAcrossMessages(
+  page: Page,
+  inputs: {
+    fromMessageId: string;
+    fromOffset: number;
+    toMessageId: string;
+    toOffset: number;
+  },
+): Promise<void> {
+  await page.evaluate(
+    ({ fromMessageId, fromOffset, toMessageId, toOffset }) => {
+      const fromContainer = document.querySelector(
+        `[data-message-id="${fromMessageId}"]`,
+      );
+      const toContainer = document.querySelector(
+        `[data-message-id="${toMessageId}"]`,
+      );
+      if (!fromContainer || !toContainer) {
+        throw new Error('Cross-message: container missing');
+      }
+      const fromSpans = Array.from(
+        fromContainer.querySelectorAll('[data-md-start]'),
+      );
+      const toSpans = Array.from(
+        toContainer.querySelectorAll('[data-md-start]'),
+      );
+      let startSpan: Element | null = null;
+      let endSpan: Element | null = null;
+      let startInner = 0;
+      let endInner = 0;
+      for (const span of fromSpans) {
+        const s = Number(span.getAttribute('data-md-start'));
+        const e = Number(span.getAttribute('data-md-end'));
+        if (s <= fromOffset && fromOffset < e) {
+          startSpan = span;
+          startInner = fromOffset - s;
+          break;
+        }
+      }
+      for (const span of toSpans) {
+        const s = Number(span.getAttribute('data-md-start'));
+        const e = Number(span.getAttribute('data-md-end'));
+        if (s < toOffset && toOffset <= e) {
+          endSpan = span;
+          endInner = toOffset - s;
+          break;
+        }
+      }
+      if (!startSpan || !endSpan) {
+        throw new Error('Cross-message: span not found');
+      }
+      const range = document.createRange();
+      range.setStart(startSpan.firstChild || startSpan, startInner);
+      range.setEnd(endSpan.firstChild || endSpan, endInner);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      toContainer.dispatchEvent(
+        new MouseEvent('mouseup', { bubbles: true, cancelable: true }),
+      );
+    },
+    inputs,
+  );
+}

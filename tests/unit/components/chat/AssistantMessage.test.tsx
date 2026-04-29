@@ -79,7 +79,6 @@ describe('AssistantMessage', () => {
           messageId: 'msg-other',
           range: [0, 5],
           buffer: 'Hello',
-          notes: [],
           prevBuffer: null,
         },
       });

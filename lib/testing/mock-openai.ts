@@ -23,6 +23,7 @@ export interface MockCall {
   passage: string;
   notes?: string[];
   previousResponseId?: string;
+  instructions?: string;
 }
 
 interface MockResponse {
@@ -142,6 +143,7 @@ export function getMockedResponse(
   passage: string,
   notes?: string[],
   previousResponseId?: string,
+  instructions?: string,
 ): MockResponse {
   const state = getBrowserMockState();
 
@@ -150,6 +152,7 @@ export function getMockedResponse(
     passage,
     notes,
     previousResponseId,
+    instructions,
   });
 
   if (state.failures.has(action)) {

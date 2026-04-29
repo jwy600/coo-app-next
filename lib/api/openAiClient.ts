@@ -121,7 +121,7 @@ export const createResponse = async (
   if (isTestMode) {
     const { getMockedResponse } = await import("../../lib/testing/mock-openai");
     const action = inferActionFromLabel(params.label);
-    const result = getMockedResponse(action, params.input, undefined, params.previousResponseId);
+    const result = getMockedResponse(action, params.input, undefined, params.previousResponseId, params.instructions);
 
     // Check for custom delay (e.g., for testing race conditions)
     if (typeof window !== "undefined") {
@@ -166,7 +166,7 @@ export const createResponseStream = async (
   if (isTestMode) {
     const { getMockedResponse } = await import("../../lib/testing/mock-openai");
     const action = inferActionFromLabel(params.label);
-    const result = getMockedResponse(action, params.input, undefined, params.previousResponseId);
+    const result = getMockedResponse(action, params.input, undefined, params.previousResponseId, params.instructions);
 
     handler.onResponseId(result.responseId);
 

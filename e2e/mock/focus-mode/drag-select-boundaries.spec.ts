@@ -76,14 +76,9 @@ async function seedMessage(page: Page, markdown: string) {
   return { threadId, messageId };
 }
 
-test.fixme('Heading → paragraph: drag from H2 start through paragraph, includes ## and newlines', async ({
+test('Heading → paragraph: drag from H2 start through paragraph, includes ## and newlines', async ({
   page,
 }) => {
-  // Known gap: dragSelectRange uses select.ts which requires a SINGLE span covering
-  // both start and end offsets. When spanning multiple elements (heading and paragraph),
-  // select.ts fails to find such a span and cannot establish a DOM range.
-  // The fix would be to enhance select.ts to walk multiple spans in sequence.
-  // See lib/selection/select.ts lines 26-44 and docs/focus-mode-todo.md.
   await resetAllMocks(page);
 
   const markdown = `## Heading
@@ -121,7 +116,7 @@ test('Paragraph → heading: drag from paragraph start through heading', async (
   expect(buffer).toContain('Heading');
 });
 
-test.fixme('Inside a blockquote: drag across blockquote lines, preserves > on every line', async ({
+test('Inside a blockquote: drag across blockquote lines, preserves > on every line', async ({
   page,
 }) => {
   // Known gap: dragSelectRange requires a single span covering the full range.
@@ -169,7 +164,7 @@ test('Across blockquote boundary: paragraph → blockquote includes > for blockq
   expect(buffer).toContain('Quoted');
 });
 
-test.fixme('Multi-line blockquote: drag across two lines, both retain > marker', async ({ page }) => {
+test('Multi-line blockquote: drag across two lines, both retain > marker', async ({ page }) => {
   // Known gap: blockquote lines are separate elements; selection spans multiple elements.
   // See lib/selection/select.ts and docs/focus-mode-todo.md.
   await resetAllMocks(page);
@@ -245,7 +240,7 @@ test('List item: workaround – select from previous paragraph through list item
   expect(buffer).toContain('First');
 });
 
-test.fixme('Across list items: drag from item 1 through item 3, includes all - markers', async ({
+test('Across list items: drag from item 1 through item 3, includes all - markers', async ({
   page,
 }) => {
   // Known gap: list items are separate DOM elements; selection spans multiple elements.
@@ -258,10 +253,7 @@ test.fixme('Across list items: drag from item 1 through item 3, includes all - m
 
   const { messageId } = await seedMessage(page, markdown);
 
-  // Drag from start to nearly the end. The - markers are markdown syntax stripped from
-  // the DOM, so selecting to markdown.length can overflow the DOM range. Workaround:
-  // select to markdown.length - 1 or use selective-paragraph boundaries.
-  await dragSelectRange(page, messageId, 0, markdown.length - 1);
+  await dragSelectRange(page, messageId, 0, markdown.length);
 
   const editor = new FocusEditorPO(page);
   const buffer = await editor.buffer();
@@ -296,7 +288,7 @@ test('Nested list: drag from top-level through nested item, indentation preserve
   expect(buffer).toMatch(/\s+-\s+Nested/);
 });
 
-test.fixme('Ordered → unordered: drag from numbered list through unordered, numbering preserved', async ({
+test('Ordered → unordered: drag from numbered list through unordered, numbering preserved', async ({
   page,
 }) => {
   // Known gap: list items and mixed list types are separate DOM elements.
@@ -322,7 +314,7 @@ test.fixme('Ordered → unordered: drag from numbered list through unordered, nu
   expect(buffer).toContain('-');
 });
 
-test.fixme('Inside fenced code block: drag from start through body, includes opening fence', async ({
+test('Inside fenced code block: drag from start through body, includes opening fence', async ({
   page,
 }) => {
   // Known gap: code blocks with fences are special; the fence markers are syntax stripped.

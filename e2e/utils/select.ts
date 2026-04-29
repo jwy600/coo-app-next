@@ -50,9 +50,28 @@ export async function dragSelectRange(
         );
       }
 
+      // Descend to the leftmost / rightmost text node so domToSource takes
+      // the TEXT_NODE branch and runs expandLeftward — picking up markdown
+      // syntax (## , > , - , …) attached to the enclosing block element.
+      const leftmostText = (el: Node): Text => {
+        let cur: Node | null = el;
+        while (cur && cur.nodeType !== Node.TEXT_NODE) {
+          cur = cur.firstChild;
+        }
+        return (cur as Text) ?? (el as Text);
+      };
+      const rightmostText = (el: Node): Text => {
+        let cur: Node | null = el;
+        while (cur && cur.nodeType !== Node.TEXT_NODE) {
+          cur = cur.lastChild;
+        }
+        return (cur as Text) ?? (el as Text);
+      };
+      const startText = leftmostText(startNode);
+      const endText = rightmostText(endNode);
       const range = document.createRange();
-      range.setStart(startNode.firstChild || startNode, startOffset_);
-      range.setEnd(endNode.firstChild || endNode, endOffset_);
+      range.setStart(startText, Math.min(startOffset_, startText.data?.length ?? 0));
+      range.setEnd(endText, Math.min(endOffset_, endText.data?.length ?? 0));
 
       const selection = window.getSelection();
       if (selection) {

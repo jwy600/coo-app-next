@@ -18,30 +18,25 @@ import { AssistantMessagePO } from '../page-objects/AssistantMessagePO';
 import { dragSelectRange } from '../utils/select';
 import { getMockCalls, resetAllMocks, setMockResponse } from '../utils/mock-bridge';
 
-test.skip('end-to-end: send message, select reply, edit, save', async ({
+test('end-to-end: send message, select reply, edit, save', async ({
   page,
 }) => {
-  // Skipped for now: after the recovery, the composer Send button stays
-  // disabled in this test even though apiKey is seeded. Suspected cause: the
-  // contenteditable input's onInput → setPrompt cycle isn't propagating in
-  // the headless Playwright run. The focus-mode specs in e2e/mock/focus-mode/
-  // exercise the same flows at finer granularity, so this single integration
-  // test is non-blocking. Leaving as a known issue to revisit once the
-  // post-recovery stabilization is done.
-  // Reset mock state before the test
   await resetAllMocks(page);
 
-  // Navigate to app and wait for the composer to mount
   await page.goto('/');
   const composerInput = page.locator('[aria-label="Prompt"]');
   await composerInput.waitFor({ state: 'visible', timeout: 5000 });
 
-  // The prompt input is a contenteditable div, so use focus + type.
+  // Set the contenteditable's textContent and dispatch a real input event
+  // so React's onInput handler fires and setPrompt updates the store.
   await composerInput.focus();
-  await page.keyboard.type('What is React?', { delay: 10 });
-  // Wait for the Send button to enable, then submit by pressing Enter.
-  await page.locator('button:has-text("Send")').waitFor({ state: 'attached' });
-  await page.keyboard.press('Enter');
+  await page.evaluate(() => {
+    const el = document.querySelector('[aria-label="Prompt"]') as HTMLElement;
+    el.textContent = 'What is React?';
+    el.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true }));
+  });
+  await page.locator('button:has-text("Send"):not([disabled])').waitFor({ timeout: 5000 });
+  await page.locator('button:has-text("Send")').click();
 
   // Wait for assistant message to appear (streamed response)
   const assistantMsg = await page.waitForSelector('[data-testid="assistant-message"]', {

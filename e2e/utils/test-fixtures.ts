@@ -44,17 +44,10 @@ export const test = base.extend({
         window.localStorage.setItem(
           storageKey,
           JSON.stringify({
-            state: {
-              threads: [],
-              activeThreadId: null,
-              settings,
-              mode: 'chat',
-              isAwaitingResponse: false,
-              error: null,
-              focus: null,
-              composerPrompt: '',
-              streamingMessageId: null,
-            },
+            // Only persisted fields go in here (per partialize in
+            // lib/store/useStore.ts). UI state defaults from createInitialState
+            // — seeding extras like `mode` would override valid defaults.
+            state: { threads: [], activeThreadId: null, settings },
             version: 3,
           }),
         );

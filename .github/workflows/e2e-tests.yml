@@ -1,9 +1,10 @@
 name: E2E Tests
 
-# Disabled on push / PR while the Playwright suite is being rewritten for the
-# focus-mode refactor (see docs/focus-mode-todo.md §4). Trigger manually via
-# the Actions tab once the suite is functional again.
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:

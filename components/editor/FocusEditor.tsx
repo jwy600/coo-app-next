@@ -71,6 +71,7 @@ export function FocusEditor({ disabled = false }: FocusEditorProps) {
     >
       <textarea
         ref={textareaRef}
+        data-testid="focus-editor-textarea"
         value={focus.buffer}
         onChange={(e) => updateBuffer(e.target.value)}
         disabled={disabled}

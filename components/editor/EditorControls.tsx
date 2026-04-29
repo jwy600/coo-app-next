@@ -168,6 +168,7 @@ export function EditorControls() {
       <form onSubmit={handleAskSubmit} className="relative flex items-center">
         <input
           type="text"
+          data-testid="focus-ask-input"
           value={askInput}
           onChange={(e) => setAskInput(e.target.value)}
           placeholder={askBusy ? 'Asking…' : 'Ask about this passage…'}
@@ -192,6 +193,7 @@ export function EditorControls() {
 
         <Badge
           role="button"
+          data-testid="focus-action-revert"
           aria-disabled={revertInactive}
           onClick={(e) => {
             e.preventDefault();
@@ -208,6 +210,7 @@ export function EditorControls() {
 
         <Badge
           role="button"
+          data-testid="focus-action-rewrite"
           aria-disabled={rewriteInactive || rewriteBusy}
           onClick={(e) => {
             e.preventDefault();

@@ -46,6 +46,7 @@ export const AssistantMessage = memo(function AssistantMessage({
     <div
       ref={containerRef}
       className="assistant-message"
+      data-testid="assistant-message"
       data-message-id={message.id}
     >
       <span className="assistant-label">Coo</span>

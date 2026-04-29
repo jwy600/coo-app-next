@@ -75,7 +75,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   /* CI uses `npm start` (production server) since the app is pre-built; local uses `npm run dev` */
   webServer: {
-    command: process.env.CI ? 'npm start' : 'npm run dev',
+    command: process.env.CI ? 'npm start' : 'NEXT_PUBLIC_TEST_MODE=true npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

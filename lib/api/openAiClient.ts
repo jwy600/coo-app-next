@@ -12,6 +12,7 @@ import OpenAI from "openai";
 import type { ReasoningEffort } from "@/types/settings";
 
 const isDev = process.env.NODE_ENV === "development";
+const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === "true";
 
 export class MissingApiKeyError extends Error {
   constructor() {
@@ -85,6 +86,18 @@ const logError = (label: string | undefined, error: Error) => {
   console.error(tag(label, "Error"), error.message);
 };
 
+const inferActionFromLabel = (label: string | undefined): any => {
+  if (!label) return "chat";
+  if (label === "chat:send") return "chat";
+  if (label === "thread-title") return "thread-title";
+  if (label === "rewrite") return "rewrite";
+  if (label.startsWith("focus:")) {
+    const action = label.slice(6);
+    return action as "translate" | "eli5" | "summarize" | "ask" | "rewrite";
+  }
+  return "chat";
+};
+
 const buildRequestBody = (params: CreateResponseParams) => ({
   model: params.model,
   input: params.input,
@@ -105,6 +118,26 @@ const buildRequestBody = (params: CreateResponseParams) => ({
 export const createResponse = async (
   params: CreateResponseParams,
 ): Promise<ResponseResult> => {
+  if (isTestMode) {
+    const { getMockedResponse } = await import("../../lib/testing/mock-openai");
+    const action = inferActionFromLabel(params.label);
+    const result = getMockedResponse(action, params.input);
+
+    // Check for custom delay (e.g., for testing race conditions)
+    if (typeof window !== "undefined") {
+      const state = (window as any).__cooMock__;
+      if (state?.delays?.has?.(action)) {
+        const delay = state.delays.get(action) || 0;
+        if (delay > 0) {
+          await new Promise((r) => setTimeout(r, delay));
+        }
+      }
+    }
+
+    logResponse(params.label, result.responseId, result.text, false);
+    return result;
+  }
+
   const client = getOpenAiClient(params.apiKey);
   logRequest(params, false);
 
@@ -130,6 +163,37 @@ export const createResponseStream = async (
   params: CreateResponseParams,
   handler: StreamEventHandler,
 ): Promise<void> => {
+  if (isTestMode) {
+    const { getMockedResponse } = await import("../../lib/testing/mock-openai");
+    const action = inferActionFromLabel(params.label);
+    const result = getMockedResponse(action, params.input);
+
+    handler.onResponseId(result.responseId);
+
+    // Check for custom delay (e.g., for testing race conditions)
+    let configuredDelay = 0;
+    if (typeof window !== "undefined") {
+      const state = (window as any).__cooMock__;
+      if (state?.delays?.has?.(action)) {
+        configuredDelay = state.delays.get(action) || 0;
+      }
+    }
+
+    // Emit tokens in small chunks to simulate streaming
+    const chunkSize = 10;
+    const delayPerChunk = configuredDelay > 0 ? configuredDelay : 5;
+    for (let i = 0; i < result.text.length; i += chunkSize) {
+      const chunk = result.text.slice(i, i + chunkSize);
+      handler.onToken(chunk);
+      // Delay to simulate async streaming (configurable via setMockDelay)
+      await new Promise((r) => setTimeout(r, delayPerChunk));
+    }
+
+    logResponse(params.label, result.responseId, result.text, true);
+    handler.onComplete();
+    return;
+  }
+
   const client = getOpenAiClient(params.apiKey);
   logRequest(params, true);
 

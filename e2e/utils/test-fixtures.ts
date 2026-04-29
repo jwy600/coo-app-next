@@ -46,12 +46,16 @@ export const test = base.extend({
           JSON.stringify({
             state: {
               threads: [],
-              blocks: [],
-              cards: [],
               activeThreadId: null,
               settings,
+              mode: 'chat',
+              isAwaitingResponse: false,
+              error: null,
+              focus: null,
+              composerPrompt: '',
+              streamingMessageId: null,
             },
-            version: 2,
+            version: 3,
           }),
         );
       },

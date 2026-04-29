@@ -42,6 +42,7 @@ export function EditorActions({
           <Badge
             key={id}
             role="button"
+            data-testid={`focus-action-${id}`}
             aria-disabled={isInactive || isBusy}
             onClick={(e) => handleClick(e, id)}
             className={

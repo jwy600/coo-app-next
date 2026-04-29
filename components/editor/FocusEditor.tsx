@@ -1,8 +1,18 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useStore } from '@/lib/store/useStore';
 import { EditorControls } from './EditorControls';
+
+const findScrollableAncestor = (el: HTMLElement): HTMLElement | null => {
+  let node: HTMLElement | null = el.parentElement;
+  while (node) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll') return node;
+    node = node.parentElement;
+  }
+  return null;
+};
 
 interface FocusEditorProps {
   /**
@@ -54,11 +64,22 @@ export function FocusEditor({ disabled = false }: FocusEditorProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, [active, closeEditor]);
 
-  useEffect(() => {
+  // Auto-resize the textarea to fit its content. Setting height='auto'
+  // briefly collapses the element so we can read the natural scrollHeight,
+  // but that intermediate reflow lets CSS scroll anchoring re-anchor the
+  // page (landing on the message top after a Rewrite shortens the buffer).
+  // Snapshot the scroll container's scrollTop and restore it after, and
+  // run pre-paint so the user never sees a stale-height frame.
+  useLayoutEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
+    const scroller = findScrollableAncestor(el);
+    const scrollTop = scroller?.scrollTop ?? 0;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
+    if (scroller && scroller.scrollTop !== scrollTop) {
+      scroller.scrollTop = scrollTop;
+    }
   }, [focus?.buffer]);
 
   if (!focus) return null;

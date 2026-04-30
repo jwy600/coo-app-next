@@ -122,8 +122,9 @@ interface FocusActive {
   messageId: string;
   range: [number, number];     // character offsets into message.text
   buffer: string;              // editable markdown — initialized from message.text.slice(...)
-  notes: string[];             // accumulated via appendNote
-  prevBuffer: string | null;   // single-step Rewrite undo
+                               // ask answers append to this as `> **Note:** ...` lines;
+                               // there is no separate notes state
+  prevBuffer: string | null;   // single-step Rewrite / shortcut undo
   lastResponseId?: string;     // OpenAI chain head for the next focus call
   referenceQuestion?: string;  // fallback context (only when lastResponseId is missing)
 }
@@ -291,5 +292,5 @@ Users can set their preferred response language in Settings. Language is injecte
 
 ## Related Docs
 - [docs/testing.md](./testing.md) — Test structure and patterns
-- [docs/focus-mode-spec.md](./focus-mode-spec.md) — Original focus-mode spec
-- [docs/focus-mode-plan.md](./focus-mode-plan.md) — Phase-by-phase implementation plan
+- [docs/focus-mode-spec.md](./focus-mode-spec.md) — Original focus-mode spec (historical)
+- [docs/focus-mode-unified-editor-plan.md](./focus-mode-unified-editor-plan.md) — Unified-editor implementation plan (historical)

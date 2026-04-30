@@ -9,9 +9,8 @@ A focus-mode chat wiki: drag-select any passage in an assistant message and an i
 | Architecture overview | `docs/architecture.md` |
 | Test patterns | `docs/testing.md` |
 | Focus-mode original spec (historical) | `docs/focus-mode-spec.md` |
-| Focus-mode original plan (historical) | `docs/focus-mode-plan.md` |
 | Unified-editor design rationale | `docs/ideas/focus-mode-unified-editor.md` |
-| Unified-editor implementation plan | `docs/focus-mode-unified-editor-plan.md` |
+| Unified-editor implementation plan (historical) | `docs/focus-mode-unified-editor-plan.md` |
 | TypeScript types | `types/` |
 
 ## Tech Stack

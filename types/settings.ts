@@ -1,4 +1,4 @@
-export type ModelType = "gpt-5.4" | "gpt-5.4-mini";
+export type ModelType = "gpt-5.5" | "gpt-5.4" | "gpt-5.4-mini";
 export type ReasoningEffort = "none" | "low" | "medium" | "high";
 export type ResponseLanguage = "en" | "es" | "fr" | "zh" | "ja";
 export type TranslateLanguage =

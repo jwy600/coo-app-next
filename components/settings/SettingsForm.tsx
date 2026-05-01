@@ -31,6 +31,7 @@ const MODEL_OPTIONS: {
     description: "Fast and efficient",
   },
   { value: "gpt-5.4", label: "GPT-5.4", description: "Most capable" },
+  { value: "gpt-5.5", label: "GPT-5.5", description: "Latest flagship" },
 ];
 
 const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [

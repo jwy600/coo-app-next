@@ -35,7 +35,7 @@ export function SidebarLogo() {
       <Link href="/" onClick={handleClick} className="flex items-center gap-2">
         <Feather className="h-5 w-5" style={{ color: '#67DE42' }} />
         {!isCollapsed && (
-          <span className="font-semibold text-base text-foreground">coo</span>
+          <span className="font-semibold text-base text-foreground">what was that?</span>
         )}
       </Link>
     </SidebarMenuButton>

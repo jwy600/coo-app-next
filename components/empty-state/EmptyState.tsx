@@ -20,11 +20,10 @@ export function EmptyState({
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-6">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-semibold text-foreground mb-2">
-          Margin notes for GPT
+          When a line trips you up, get it untangled in place.
         </h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          coo turns LLM responses into clean blocks you can translate, expand,
-          and simplify—right where they appear.
+          Treat LLM response as if your writing -- edit it, ask it, and refine it until it’s just right.
         </p>
       </div>
 

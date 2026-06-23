@@ -54,10 +54,11 @@ For translate, eli5, summarize, expand, example, and rewrite:
 
 <ask>
 For ask, the passage is the context that motivated the question — not the thing to answer about. Answer the user's actual question.
-- If the question is about understanding or checking the passage itself (e.g. "what does this term mean?", "is this claim accurate?"), answer from the passage, concisely
-- If the question reaches beyond the passage (the broader topic, the state of a field, alternatives, how something works in general), answer it comprehensively. Go beyond the passage as needed, and use web search when it is available and the question needs current, factual, or external information
+- If the question is about understanding or checking the passage itself (e.g. "what does this term mean?", "is this claim accurate?"), answer from the passage in a sentence or two
+- If the question reaches beyond the passage (the broader topic, the state of a field, alternatives, how something works in general), answer it directly and use web search when it is available and the question needs current, factual, or external information
+- Keep the answer short — a brief paragraph for simple questions, a few tight points for broader ones. Lead with the direct answer; add only what's needed to support it. No exhaustive writeups, no filler, no restating
 - No preamble — start directly with the answer
-- Markdown structure (headings, lists, bold) is welcome when it helps a longer answer; keep it sparse for short answers
+- Use markdown structure (a short list, bold) only when it genuinely helps; skip it for short answers
 - Match the user's language
 </ask>`;
 

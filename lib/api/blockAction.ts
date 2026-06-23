@@ -86,7 +86,10 @@ export async function fetchBlockAction(
     model: settings.model,
     input,
     instructions,
-    reasoningEffort: settings.reasoningEffort,
+    // Ask is web-search Q&A — reasoning adds latency without much benefit
+    // (the project already skips reasoning for the thread-title call).
+    // Transformations keep the user's reasoning setting.
+    reasoningEffort: action === "ask" ? undefined : settings.reasoningEffort,
     // Web search only helps for ask — a genuine question that may need
     // external info. Transformations operate on the selected passage alone.
     webSearchEnabled: action === "ask" ? settings.webSearchEnabled : false,

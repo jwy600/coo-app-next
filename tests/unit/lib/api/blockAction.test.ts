@@ -305,4 +305,26 @@ describe("fetchBlockAction", () => {
       expect(params.webSearchEnabled).toBe(false);
     }
   });
+
+  it("skips reasoning for ask but keeps it for transformations", async () => {
+    mockCreateResponse.mockResolvedValue({ text: "ok", responseId: "r" });
+
+    // ask -> no reasoning, even when the setting is high
+    mockCreateResponse.mockClear();
+    await fetchBlockAction("ask", "block text", "question?", undefined, {
+      ...baseSettings,
+      reasoningEffort: "high",
+    });
+    expect(
+      mockCreateResponse.mock.calls[0][0].reasoningEffort,
+    ).toBeUndefined();
+
+    // a transformation -> keeps the user's reasoning setting
+    mockCreateResponse.mockClear();
+    await fetchBlockAction("summarize", "block text", undefined, undefined, {
+      ...baseSettings,
+      reasoningEffort: "high",
+    });
+    expect(mockCreateResponse.mock.calls[0][0].reasoningEffort).toBe("high");
+  });
 });

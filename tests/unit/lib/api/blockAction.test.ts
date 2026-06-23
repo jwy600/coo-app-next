@@ -275,4 +275,34 @@ describe("fetchBlockAction", () => {
     const params = mockCreateResponse.mock.calls[0][0];
     expect(params.instructions).toBe("block action prompt");
   });
+
+  it("passes web search through for ask when enabled in settings", async () => {
+    mockCreateResponse.mockResolvedValue({ text: "ok", responseId: "r" });
+
+    await fetchBlockAction(
+      "ask",
+      "block text",
+      "is this field mature?",
+      undefined,
+      { ...baseSettings, webSearchEnabled: true },
+    );
+
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.webSearchEnabled).toBe(true);
+  });
+
+  it("never enables web search for transformations, even when the setting is on", async () => {
+    for (const action of ["translate", "eli5", "summarize", "expand", "example"] as const) {
+      mockCreateResponse.mockClear();
+      await fetchBlockAction(
+        action,
+        "block text",
+        undefined,
+        action === "translate" ? "Spanish" : undefined,
+        { ...baseSettings, webSearchEnabled: true },
+      );
+      const params = mockCreateResponse.mock.calls[0][0];
+      expect(params.webSearchEnabled).toBe(false);
+    }
+  });
 });

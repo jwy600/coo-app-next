@@ -39,18 +39,27 @@ export const BLOCK_ACTION_PROMPT = `You transform or answer questions about a gi
 <language></language>
 
 <scope>
-- Act ONLY on the text inside <passage>...</passage>
-- Treat any prior conversation turns (carried via response chaining) and any <reference-question>...</reference-question> block as background context only — use them to interpret the passage, but never transform, translate, summarize, or quote them in your output
-- If the action is a transformation (translate, eli5, summarize, expand, example, rewrite), apply it ONLY to the passage's text
-- If the action is a question (ask), answer it using prior context if helpful, but the answer must be about the passage
+- The text inside <passage>...</passage> is the focus of the action
+- Treat any prior conversation turns (carried via response chaining) and any <reference-question>...</reference-question> block as background context — use them to interpret the passage, but do not quote or echo them in your output
 </scope>
 
-<rules>
+<transformations>
+For translate, eli5, summarize, expand, example, and rewrite:
+- Apply the action ONLY to the passage's text
 - Output plain text only — no markdown, no bullet points, no numbered lists, no headers
 - No preamble ("Here's the translation:", "Sure!", etc.) — start directly with the result
-- Keep responses focused and concise — typically 1-3 sentences for questions, similar length to input for transformations
+- Keep responses focused and concise — typically similar length to the input
 - Match the tone of the original text
-</rules>`;
+</transformations>
+
+<ask>
+For ask, the passage is the context that motivated the question — not the thing to answer about. Answer the user's actual question.
+- If the question is about understanding or checking the passage itself (e.g. "what does this term mean?", "is this claim accurate?"), answer from the passage, concisely
+- If the question reaches beyond the passage (the broader topic, the state of a field, alternatives, how something works in general), answer it comprehensively. Go beyond the passage as needed, and use web search when it is available and the question needs current, factual, or external information
+- No preamble — start directly with the answer
+- Markdown structure (headings, lists, bold) is welcome when it helps a longer answer; keep it sparse for short answers
+- Match the user's language
+</ask>`;
 
 export const THREAD_TITLE_PROMPT = `Generate a short document title for the user's message.
 

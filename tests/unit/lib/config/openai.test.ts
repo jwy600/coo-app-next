@@ -68,7 +68,8 @@ describe("getBlockActionPrompt", () => {
   it("returns English prompt by default", () => {
     const prompt = getBlockActionPrompt();
     expect(prompt).toContain("transform or answer questions");
-    expect(prompt).toContain("<rules>");
+    expect(prompt).toContain("<transformations>");
+    expect(prompt).toContain("<ask>");
     expect(prompt).not.toContain("Simplified Chinese");
   });
 

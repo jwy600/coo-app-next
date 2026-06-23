@@ -67,4 +67,10 @@ describe('fetchRewrite', () => {
     expect(input).toContain('tighten it');
     expect(input).toContain('add a CTA');
   });
+
+  it('does not enable web search even when the setting is on', async () => {
+    await fetchRewrite('passage', [], { ...baseSettings, webSearchEnabled: true });
+    const params = mockCreateResponse.mock.calls[0][0];
+    expect(params.webSearchEnabled).toBeUndefined();
+  });
 });

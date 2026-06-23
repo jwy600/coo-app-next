@@ -87,7 +87,9 @@ export async function fetchBlockAction(
     input,
     instructions,
     reasoningEffort: settings.reasoningEffort,
-    webSearchEnabled: settings.webSearchEnabled,
+    // Web search only helps for ask — a genuine question that may need
+    // external info. Transformations operate on the selected passage alone.
+    webSearchEnabled: action === "ask" ? settings.webSearchEnabled : false,
     previousResponseId,
     label: `focus:${action}`,
   });

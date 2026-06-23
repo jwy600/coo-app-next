@@ -19,7 +19,7 @@ export function PromptInput({
   value,
   onChange,
   onSubmit,
-  placeholder = 'Ask coo anything',
+  placeholder = 'Ask anything',
   disabled = false,
 }: PromptInputProps) {
   const inputRef = useRef<HTMLDivElement>(null);

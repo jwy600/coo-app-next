@@ -81,18 +81,35 @@ describe("SettingsForm", () => {
 });
 
 describe("SettingsFooter", () => {
+  const onSave = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mockState.settings.apiKey = "";
   });
 
   it("renders Reset to Defaults button", () => {
-    render(<SettingsFooter />);
+    render(<SettingsFooter onSave={onSave} />);
     expect(screen.getByText("Reset to Defaults")).toBeTruthy();
   });
 
   it("calls resetSettings on Reset click", () => {
-    render(<SettingsFooter />);
+    render(<SettingsFooter onSave={onSave} />);
     fireEvent.click(screen.getByText("Reset to Defaults"));
     expect(mockState.resetSettings).toHaveBeenCalled();
+  });
+
+  it("disables Save while the API key is empty", () => {
+    render(<SettingsFooter onSave={onSave} />);
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+
+  it("enables Save and calls onSave once the API key is filled", () => {
+    mockState.settings.apiKey = "sk-test-123";
+    render(<SettingsFooter onSave={onSave} />);
+    const saveButton = screen.getByRole("button", { name: "Save" });
+    expect(saveButton).not.toBeDisabled();
+    fireEvent.click(saveButton);
+    expect(onSave).toHaveBeenCalledTimes(1);
   });
 });

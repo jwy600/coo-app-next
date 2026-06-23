@@ -23,7 +23,7 @@ export function EmptyState({
           When a line trips you up, get it untangled in place.
         </h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Treat LLM response as if your writing -- edit it, ask it, and refine it until it’s just right.
+          Treat LLM response like your own writing -- edit it, summarize it, ask about it, and delete it if you still don't like it.
         </p>
       </div>
 

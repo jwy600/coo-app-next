@@ -66,6 +66,15 @@ function endpointToOffset(node: Node, offset: number, kind: Endpoint): number | 
       if (kind === 'start' && offset === 0) {
         return expandLeftward(parent, base);
       }
+      // Mirror case: when a selection ends at the last offset of a text
+      // node, the browser snaps it before any trailing markdown marker
+      // (the closing `**`, `_`, `` ` `` of emphasis/code). Without this,
+      // the trailing marker is left outside the editor's buffer (e.g. a
+      // dangling `**`). Walk up while we're the rightmost child and pick
+      // the largest enclosing data-md-end so the buffer includes it.
+      if (kind === 'end' && offset === text.data.length) {
+        return expandRightward(parent, base + clamped);
+      }
       return base + clamped;
     }
 
@@ -89,6 +98,18 @@ function expandLeftward(textSpan: Element, currentStart: number): number {
     const parent = el.parentElement;
     const start = readStart(parent);
     if (start !== null && start < candidate) candidate = start;
+    el = parent;
+  }
+  return candidate;
+}
+
+function expandRightward(textSpan: Element, currentEnd: number): number {
+  let candidate = currentEnd;
+  let el: Element = textSpan;
+  while (el.parentElement && el.parentElement.lastChild === el) {
+    const parent = el.parentElement;
+    const end = readEnd(parent);
+    if (end !== null && end > candidate) candidate = end;
     el = parent;
   }
   return candidate;

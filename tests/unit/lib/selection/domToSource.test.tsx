@@ -165,4 +165,43 @@ describe('domToSource', () => {
       expect(result!.end).toBe(1);
     });
   });
+
+  describe('inline formatting markers at selection boundaries', () => {
+    it('includes the closing ** when a selection ends at the end of a bold run at the paragraph end', () => {
+      const source = 'Some text **bold end**';
+      const container = renderMessage(source);
+      const { node } = findTextNode(container, 'bold end');
+      // select the whole bold run, ending at the run's last offset
+      const range = makeRange(node, 0, node, node.data.length);
+      const result = domToSource(range);
+      expect(result).not.toBeNull();
+      const markerStart = source.indexOf('**bold end**');
+      expect(result!.start).toBe(markerStart); // opening ** included
+      expect(result!.end).toBe(markerStart + '**bold end**'.length); // closing ** included
+    });
+
+    it('includes the closing ** when the bold run is followed by more text', () => {
+      const source = 'Prefix **bold** suffix';
+      const container = renderMessage(source);
+      const { node } = findTextNode(container, 'bold');
+      const range = makeRange(node, 0, node, node.data.length);
+      const result = domToSource(range);
+      expect(result).not.toBeNull();
+      const markerStart = source.indexOf('**bold**');
+      expect(result!.start).toBe(markerStart);
+      expect(result!.end).toBe(markerStart + '**bold**'.length);
+    });
+
+    it('does not include a trailing marker when the selection stops mid-run', () => {
+      const source = 'Prefix **bold** suffix';
+      const container = renderMessage(source);
+      const { node } = findTextNode(container, 'bold');
+      // select only the first two chars of "bold" — ends before the run end,
+      // so no expansion should happen on the end side.
+      const range = makeRange(node, 0, node, 2);
+      const result = domToSource(range);
+      expect(result).not.toBeNull();
+      expect(result!.end).toBe(source.indexOf('bold') + 2);
+    });
+  });
 });

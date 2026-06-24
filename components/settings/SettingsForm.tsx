@@ -241,13 +241,19 @@ export function SettingsForm() {
   );
 }
 
-export function SettingsFooter() {
+export function SettingsFooter({ onSave }: { onSave: () => void }) {
   const resetSettings = useStore((state) => state.resetSettings);
+  // The API key is the only required field; everything else has a default.
+  const apiKey = useStore((state) => state.settings.apiKey);
+  const canSave = apiKey.trim().length > 0;
 
   return (
     <div className="space-y-3 pt-3">
       <Separator />
       <div className="flex flex-col gap-2 px-1">
+        <Button onClick={onSave} disabled={!canSave} className="w-full">
+          Save
+        </Button>
         <Button variant="outline" onClick={resetSettings} className="w-full">
           Reset to Defaults
         </Button>

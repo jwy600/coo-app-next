@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Settings } from "lucide-react";
 import {
   Sheet,
@@ -22,8 +23,11 @@ export function SettingsSheet({
 }: {
   defaultOpen?: boolean;
 }) {
+  // Controlled open state so the Save button can close the panel.
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
-    <Sheet defaultOpen={defaultOpen}>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SidebarMenu>
         <SidebarMenuItem>
           <SheetTrigger asChild>
@@ -50,7 +54,7 @@ export function SettingsSheet({
             <SettingsForm />
           </div>
         </ScrollArea>
-        <SettingsFooter />
+        <SettingsFooter onSave={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
   );

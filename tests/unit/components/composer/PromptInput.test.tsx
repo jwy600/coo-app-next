@@ -17,7 +17,7 @@ describe('PromptInput', () => {
   it('uses the default placeholder when none is provided', () => {
     render(<PromptInput {...baseProps} />);
     expect(screen.getByRole('textbox').getAttribute('data-placeholder')).toBe(
-      'Ask coo anything',
+      'Ask anything',
     );
   });
 

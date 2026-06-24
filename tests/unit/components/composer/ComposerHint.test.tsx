@@ -19,9 +19,11 @@ function resetStore() {
 describe('ComposerHint', () => {
   beforeEach(resetStore);
 
-  it('shows "Ask anything" copy when no editor is active', () => {
+  it('shows the drag-select hint copy when no editor is active', () => {
     render(<ComposerHint />);
-    expect(screen.getByText(/Ask anything/i)).toBeTruthy();
+    expect(
+      screen.getByText(/Drag-select assistant text to focus on a passage/i),
+    ).toBeTruthy();
   });
 
   it('switches to "Ask about the selected text" when an editor is active', () => {

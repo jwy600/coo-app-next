@@ -51,15 +51,15 @@ describe('SidebarLogo', () => {
     mockSidebar.isMobile = false;
   });
 
-  it('renders "coo" text when expanded', () => {
+  it('renders the product name text when expanded', () => {
     render(<SidebarLogo />);
-    expect(screen.getByText('coo')).toBeTruthy();
+    expect(screen.getByText('what was that?')).toBeTruthy();
   });
 
-  it('does not show "coo" text when collapsed', () => {
+  it('does not show the product name text when collapsed', () => {
     mockSidebar.state = 'collapsed';
     render(<SidebarLogo />);
-    expect(screen.queryByText('coo')).toBeNull();
+    expect(screen.queryByText('what was that?')).toBeNull();
   });
 
   it('returns to landing mode on click when expanded', () => {

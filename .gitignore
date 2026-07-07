@@ -50,6 +50,7 @@ assets/
 .mcp.json
 CLAUDE.md
 .claude
+.agents
 
 # IDE
 .vscode/

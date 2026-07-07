@@ -49,6 +49,7 @@ assets/
 # Claude
 .mcp.json
 CLAUDE.md
+.claude
 
 # IDE
 .vscode/

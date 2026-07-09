@@ -103,7 +103,7 @@ lib/export/          # Whole-thread markdown export
 lib/config/          # OpenAI settings + prompt loader (incl. REWRITE_PROMPT)
 types/state/         # CoreState, UIState (incl. FocusActive)
 tests/               # Vitest unit tests
-e2e/                 # Playwright tests (currently broken; rewrite in a later phase)
+e2e/                 # Playwright e2e tests (mock bridge; run via `npm run test:e2e`)
 ```
 
 ## Key Patterns
@@ -147,7 +147,7 @@ npm run dev          # Start dev server (localhost:3000)
 npm run build        # Production build
 npm run lint         # ESLint
 npm run test         # Vitest
-npm run test:e2e     # Playwright (broken; will be rewritten)
+npm run test:e2e     # Playwright e2e (mock mode by default; TEST_MODE=live for real API)
 ```
 
 ## Environment

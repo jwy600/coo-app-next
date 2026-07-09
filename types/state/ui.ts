@@ -32,10 +32,27 @@ export interface FocusActive {
   referenceQuestion?: string;
 }
 
+export interface ComposerAttachment {
+  fileName: string;
+  text: string;
+}
+
+export type LandingComposerMode = 'chat' | 'read';
+
 export interface UIState {
   mode: AppMode;
   isAwaitingResponse: boolean;
   error: string | null;
   focus: FocusActive | null;
   composerPrompt: string;
+  /**
+   * Staged markdown file awaiting the upload-Send (landing Read mode only).
+   * Not persisted — cleared on mode switch and after send.
+   */
+  composerAttachment: ComposerAttachment | null;
+  /**
+   * Landing composer sub-layout: `'chat'` (prompt + Send) vs `'read'`
+   * (attach + Send). Landing-only; the in-thread composer is always chat.
+   */
+  landingComposerMode: LandingComposerMode;
 }

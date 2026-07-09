@@ -7,6 +7,9 @@
 
 import { StateCreator } from 'zustand';
 import * as stateFns from '@/lib/state';
+import { idFactory } from '@/lib/utils/idFactory';
+import { nowFactory } from '@/lib/utils/nowFactory';
+import { Message, RegisterState } from '@/types/message';
 import { AppState } from '@/types/state';
 
 export interface MessageSlice {
@@ -18,6 +21,8 @@ export interface MessageSlice {
   ) => void;
   setMessageResponseId: (messageId: string, responseId: string) => void;
   removeMessage: (messageId: string) => void;
+  addImportedMessage: (threadId: string, fileName: string, text: string) => Message;
+  setRegisterState: (messageId: string, registerState: RegisterState) => void;
 }
 
 export const messageSlice: StateCreator<
@@ -43,6 +48,24 @@ export const messageSlice: StateCreator<
 
   removeMessage: (messageId) => {
     const next = stateFns.removeMessage(get(), messageId);
+    set({ threads: next.threads });
+  },
+
+  addImportedMessage: (threadId, fileName, text) => {
+    const result = stateFns.addImportedMessage(
+      get(),
+      threadId,
+      fileName,
+      text,
+      idFactory,
+      nowFactory,
+    );
+    set({ threads: result.state.threads });
+    return result.message;
+  },
+
+  setRegisterState: (messageId, registerState) => {
+    const next = stateFns.setRegisterState(get(), messageId, registerState, nowFactory);
     set({ threads: next.threads });
   },
 });

@@ -88,7 +88,7 @@ async function seedAndNavigate(page: Page) {
   return { threadId, messageId };
 }
 
-test('Multi-line answer → buffer contains both lines with continuation (no > on line2)', async ({
+test('Multi-line (soft break) answer → every line quoted so the whole answer stays in one blockquote', async ({
   page,
 }) => {
   await resetAllMocks(page);
@@ -108,8 +108,11 @@ test('Multi-line answer → buffer contains both lines with continuation (no > o
 
   const buffer = await editor.buffer();
 
-  // Blockquote continuation in markdown: only first line has > **, rest flow naturally
-  expect(buffer).toBe(`${PASSAGE}\n\n> **Note:** line1\nline2`);
+  // Every line of the answer is prefixed with `>` so the whole answer stays
+  // inside the blockquote. Relying on markdown lazy continuation (a bare
+  // `line2`) works for a soft break but breaks the moment a blank line appears
+  // — see the two-paragraph test below.
+  expect(buffer).toBe(`${PASSAGE}\n\n> **Note:** line1\n> line2`);
 
   // Verify rendered DOM shows both lines in one blockquote
   await editor.closeByClickingOutside();
@@ -123,6 +126,46 @@ test('Multi-line answer → buffer contains both lines with continuation (no > o
   const blockquoteText = await blockquote.textContent();
   expect(blockquoteText).toContain('line1');
   expect(blockquoteText).toContain('line2');
+});
+
+test('Two-paragraph answer → both paragraphs quoted so both keep the blockquote border', async ({
+  page,
+}) => {
+  await resetAllMocks(page);
+  const { messageId } = await seedAndNavigate(page);
+
+  await dragSelectRange(page, messageId, 0, PASSAGE.length);
+  const editor = new FocusEditorPO(page);
+  await editor.waitForOpen();
+
+  const answer = 'Para one.\n\nPara two.';
+  const question = 'explain this';
+  const mockInput = buildMockInput(PASSAGE, question);
+  await setMockResponse(page, 'ask', mockInput, answer);
+
+  await editor.ask(question);
+  await page.waitForTimeout(500);
+
+  const buffer = await editor.buffer();
+
+  // Every line — including the blank separator — is prefixed with `>` so the
+  // second paragraph stays inside the blockquote. Without the `>` on the
+  // continuation, the blank line ends the blockquote and Para two. breaks out,
+  // losing its left border (the bug this pins).
+  expect(buffer).toBe(`${PASSAGE}\n\n> **Note:** Para one.\n>\n> Para two.`);
+
+  await editor.closeByClickingOutside();
+
+  // The whole answer renders as a single blockquote with two <p> children.
+  // (Before the fix, the blockquote held one <p> and Para two. was a sibling
+  // paragraph outside it.)
+  const blockquote = page.locator(`[data-message-id="${messageId}"] blockquote`);
+  await expect(blockquote).toBeVisible();
+  await expect(blockquote.locator('p')).toHaveCount(2);
+
+  const blockquoteText = await blockquote.textContent();
+  expect(blockquoteText).toContain('Para one.');
+  expect(blockquoteText).toContain('Para two.');
 });
 
 test('Answer with special chars (backticks, bold, math, blockquote) → characters preserved verbatim', async ({

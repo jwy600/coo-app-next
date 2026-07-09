@@ -97,17 +97,30 @@ const components: Components = {
       {children}
     </pre>
   ),
-  a: ({ href, children, ...props }) => (
-    <a
-      href={sanitizeHref(href)}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-blue-600 hover:underline dark:text-blue-400"
-      {...props}
-    >
-      {children}
-    </a>
-  ),
+  a: ({ href, children, ...props }) => {
+    // Footnote reference, e.g. [2](#fn:disclosure): render as a non-clickable
+    // superscript marker. There is no in-page footnote target to jump to, so a
+    // plain <a target="_blank"> would just open a new tab on the same URL with
+    // a dangling hash. The marker reads as a footnote ref instead of body text.
+    if (typeof href === 'string' && href.startsWith('#fn:')) {
+      return (
+        <sup className="doc-footnote-ref" {...props}>
+          {children}
+        </sup>
+      );
+    }
+    return (
+      <a
+        href={sanitizeHref(href)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:underline dark:text-blue-400"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  },
   blockquote: ({ children, ...props }) => {
     const className = isNoteBlockquote(children)
       ? 'doc-blockquote doc-blockquote--note'

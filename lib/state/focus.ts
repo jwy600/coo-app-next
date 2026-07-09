@@ -73,9 +73,24 @@ export const updateBuffer = (state: AppState, buffer: string): AppState => {
 };
 
 /**
+ * Serializes a note into a single blockquote: the first line is prefixed with
+ * `> **Note:** ` and every subsequent line is prefixed with `>`. Quoting every
+ * line matters when the answer spans multiple paragraphs — without a `>` on
+ * each continuation line the later paragraphs fall out of the blockquote and
+ * lose their left-border styling.
+ */
+const quoteNote = (note: string): string =>
+  note
+    .split('\n')
+    .map((line, i) =>
+      i === 0 ? `> **Note:** ${line}` : line === '' ? '>' : `> ${line}`,
+    )
+    .join('\n');
+
+/**
  * Appends an ask answer to the buffer as a `> **Note:** <answer>` blockquote
- * line (separated from the prior content by a blank line). The note becomes
- * raw markdown inside the buffer — there is no separate notes state.
+ * (separated from the prior content by a blank line). The note becomes raw
+ * markdown inside the buffer — there is no separate notes state.
  */
 export const appendNoteToBuffer = (
   state: AppState,
@@ -88,7 +103,7 @@ export const appendNoteToBuffer = (
   const sep = buffer.length === 0 ? '' : '\n\n';
   return {
     ...state,
-    focus: { ...state.focus, buffer: `${buffer}${sep}> **Note:** ${trimmed}` },
+    focus: { ...state.focus, buffer: `${buffer}${sep}${quoteNote(trimmed)}` },
   };
 };
 
@@ -160,12 +175,31 @@ export const revertRewrite = (state: AppState): AppState => {
 };
 
 /**
+ * If `block` is a contiguous note blockquote — every line begins with `>` and
+ * the first line begins with `> **Note:** ` — returns the note text with the
+ * quote prefixes stripped (blank `>` separators become paragraph breaks).
+ * Returns null otherwise. A note may span multiple paragraphs.
+ */
+const matchNoteBlock = (block: string): string | null => {
+  const lines = block.split('\n');
+  if (lines.length === 0) return null;
+  if (!lines.every((line) => line === '>' || line.startsWith('> '))) return null;
+  const firstMatch = /^> \*\*Note:\*\* (.*)$/.exec(lines[0]);
+  if (!firstMatch) return null;
+  const body = [
+    firstMatch[1],
+    ...lines.slice(1).map((line) => line.replace(/^> ?/, '')),
+  ];
+  return body.join('\n').trim();
+};
+
+/**
  * Splits a buffer into its passage portion and any trailing
- * `> **Note:** ...` lines. The note pattern is single-line by contract:
- * ask answers are constrained to 2–3 sentences in one paragraph, so
- * notes never span multiple paragraphs.
+ * `> **Note:** ...` blockquotes. Each trailing note may span multiple
+ * paragraphs (continuation lines carry their own `>` prefix, so a multi-
+ * paragraph note is still one `\n\n`-delimited block).
  *
- * Used by API-call sites (rewrite, shortcuts) so the LLM operates on the
+ * Used by API-call sites (rewrite, ask, shortcuts) so the LLM operates on the
  * passage rather than a passage-with-embedded-instructions.
  */
 export const splitNotes = (
@@ -173,15 +207,15 @@ export const splitNotes = (
 ): { passage: string; notes: string[] } => {
   const notes: string[] = [];
   let cursor = buffer.length;
-  // Walk backwards block-by-block, peeling off `> **Note:** ...` lines.
+  // Walk backwards block-by-block, peeling off `> **Note:** ...` blocks.
   while (true) {
     // Find the previous `\n\n` boundary (or start of string).
     const sepIndex = buffer.lastIndexOf('\n\n', cursor - 1);
     const blockStart = sepIndex === -1 ? 0 : sepIndex + 2;
     const block = buffer.slice(blockStart, cursor);
-    const match = /^> \*\*Note:\*\* (.*)$/.exec(block);
-    if (!match) break;
-    notes.unshift(match[1].trim());
+    const note = matchNoteBlock(block);
+    if (note === null) break;
+    notes.unshift(note);
     cursor = sepIndex === -1 ? 0 : sepIndex;
     if (cursor === 0) break;
   }

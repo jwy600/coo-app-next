@@ -26,6 +26,8 @@ function resetStore() {
     streamingMessageId: null,
     focus: null,
     composerPrompt: '',
+    composerAttachment: null,
+    landingComposerMode: 'chat',
   });
   useStore.getState().createThread('t1');
 }
@@ -130,5 +132,56 @@ describe('useComposer', () => {
       expect(messages.some((m) => m.role === 'user' && m.text === 'follow-up question')).toBe(true);
     });
 
+  });
+
+  describe('handleSubmit (upload / Read mode)', () => {
+    it('creates a fresh thread with the doc as its first message, titled by file name', async () => {
+      mockStreamChat.mockResolvedValue(undefined);
+      useStore.setState({
+        threads: [],
+        activeThreadId: null,
+        mode: 'landing',
+        landingComposerMode: 'read',
+        composerAttachment: { fileName: 'notes.md', text: '# Notes' },
+      });
+      const { result } = renderHook(() => useComposer());
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      const state = useStore.getState();
+      expect(state.mode).toBe('thread');
+      expect(state.threads).toHaveLength(1);
+      const msg = state.threads[0].messages[0];
+      expect(msg.role).toBe('assistant');
+      expect(msg.text).toBe('# Notes');
+      expect(msg.meta).toMatchObject({
+        source: 'import',
+        fileName: 'notes.md',
+        registerState: 'registering',
+      });
+      expect(state.threads[0].title).toBe('notes.md');
+      expect(state.composerAttachment).toBeNull();
+      expect(mockStreamChat).not.toHaveBeenCalled();
+    });
+
+    it('does nothing in Read mode when no file is staged', async () => {
+      useStore.setState({
+        threads: [],
+        activeThreadId: null,
+        mode: 'landing',
+        landingComposerMode: 'read',
+        composerAttachment: null,
+      });
+      const { result } = renderHook(() => useComposer());
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(useStore.getState().threads).toHaveLength(0);
+      expect(mockStreamChat).not.toHaveBeenCalled();
+    });
   });
 });

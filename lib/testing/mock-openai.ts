@@ -16,7 +16,8 @@ export type MockAction =
   | 'summarize'
   | 'ask'
   | 'rewrite'
-  | 'thread-title';
+  | 'thread-title'
+  | 'register-doc';
 
 export interface MockCall {
   action: MockAction;
@@ -114,6 +115,9 @@ function defaultResponse(action: MockAction, passage: string): string {
   }
   if (action === 'thread-title') {
     return passage.slice(0, 40).trim();
+  }
+  if (action === 'register-doc') {
+    return 'Document received.';
   }
   return 'Mock response';
 }

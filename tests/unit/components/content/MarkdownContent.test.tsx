@@ -181,4 +181,28 @@ describe('MarkdownContent', () => {
       expect(bq!.textContent).toContain('a quote');
     });
   });
+
+  describe('footnote references', () => {
+    it('renders [n](#fn:...) as a non-clickable superscript marker, not an <a>', () => {
+      const { container } = render(
+        <MarkdownContent text={'See disclosure [2](#fn:disclosure) here'} />,
+      );
+      expect(container.querySelector('a')).toBeNull();
+      const sup = container.querySelector('sup');
+      expect(sup).toBeTruthy();
+      expect(sup!.textContent).toBe('2');
+      expect(sup!.className).toContain('doc-footnote-ref');
+    });
+
+    it('still opens normal links in a new tab alongside a footnote ref', () => {
+      const { container } = render(
+        <MarkdownContent text={'[2](#fn:disclosure) and [Google](https://google.com)'} />,
+      );
+      const links = container.querySelectorAll('a');
+      expect(links).toHaveLength(1);
+      expect(links[0].getAttribute('href')).toBe('https://google.com');
+      expect(links[0].getAttribute('target')).toBe('_blank');
+      expect(container.querySelector('sup')!.textContent).toBe('2');
+    });
+  });
 });

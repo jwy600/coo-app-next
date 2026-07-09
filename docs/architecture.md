@@ -48,7 +48,7 @@ e2e/                            # Playwright tests
 
 ### State Categories (`types/state/`)
 - **CoreState** (`core.ts`) — Persistent data (`threads`, `activeThreadId`)
-- **UIState** (`ui.ts`) — Ephemeral UI (`mode`, `isAwaitingResponse`, `error`, `focus`, `composerPrompt`)
+- **UIState** (`ui.ts`) — Ephemeral UI (`mode`, `isAwaitingResponse`, `error`, `focus`, `composerPrompt`, `composerAttachment`, `landingComposerMode`)
 - **StreamingState** — `streamingMessageId: string | null`
 - **SettingsState** — Persisted user preferences
 
@@ -97,11 +97,13 @@ interface Message {
   role: 'user' | 'assistant';
   text: string;
   createdAt: number;
-  meta: Record<string, unknown>;  // e.g. { openaiResponseId }
+  meta: Record<string, unknown>;  // e.g. { openaiResponseId }; imports: { source: 'import', fileName, registerState }
 }
 ```
 
 There is **no block model**. Markdown is rendered straight into HTML by `MarkdownContent`. Streaming appends tokens directly to `message.text` via `appendMessageText`; the live message renders through the same pipeline as completed ones.
+
+Imported documents (uploaded `.md` files) are stored as assistant-role messages tagged with `meta: { source: 'import', fileName, registerState }`. They are registered with the API once to obtain a `responseId`, after which chat and ask chain from them exactly like a streamed reply. See [Document import](./document-import.md).
 
 ## Focus mode (the core UX)
 
@@ -170,11 +172,11 @@ The action row at the foot of `FocusEditor` owns every focus-mode action. Layout
 
 ### Notes live as raw markdown in the buffer
 
-There is **no separate notes state**. Ask answers are appended directly to `focus.buffer` as `\n\n> **Note:** <answer>`. Closing the editor splices the buffer into `message.text` unchanged; reopening slices it back out. The single source of truth is `focus.buffer`.
+There is **no separate notes state**. Ask answers are appended directly to `focus.buffer` as `\n\n> **Note:** <answer>`. A multi-paragraph answer is quoted line-by-line (the first line gets `> **Note:** `, every continuation line gets its own `>`) so the whole answer stays inside one blockquote — otherwise the later paragraphs fall out and lose the left-border styling. Closing the editor splices the buffer into `message.text` unchanged; reopening slices it back out. The single source of truth is `focus.buffer`.
 
 `MarkdownContent` detects `> **Note:**` blockquotes (when re-rendered post-close) via the first-child-`<strong>` check in `isNoteBlockquote()` and gives them a muted `.doc-blockquote--note` class so they render visually distinct from user-authored blockquotes.
 
-A `splitNotes(buffer)` parser in `lib/state/focus.ts` separates trailing `> **Note:** ...` lines from the passage they annotate. It is the **only** place in the codebase that knows the note pattern.
+A `splitNotes(buffer)` parser in `lib/state/focus.ts` separates trailing `> **Note:** ...` blocks (each of which may span multiple paragraphs) from the passage they annotate. It is the **only** place in the codebase that knows the note pattern.
 
 ### Action contracts
 
@@ -238,10 +240,11 @@ Notes:
 | `lib/api/blockAction.ts` | `fetchBlockAction(action, blockText, prompt?, translateLanguage?, settings, previousResponseId?, referenceQuestion?)` — one-shot transforms (`translate`, `eli5`, `summarize`, `ask`, plus legacy `expand` / `example`). Wraps `blockText` in `<passage>...</passage>`. Injects `<reference-question>...</reference-question>` only when `previousResponseId` is absent. |
 | `lib/api/rewrite.ts` | `fetchRewrite(buffer, notes, settings)` — atomic Markdown rewrite for the focus editor; uses `REWRITE_PROMPT` |
 | `lib/api/generateThreadTitle.ts` | One-off title generation for new threads |
+| `lib/api/registerDocument.ts` | `registerDocument(docText, settings)` — one-shot call that "registers" an uploaded `.md` with the API (`store: true`) and returns a `responseId`, so an imported doc becomes a chat/ask chain root. See [Document import](./document-import.md). |
 
 ### Prompts (`lib/config/`)
-- `promptTemplates.ts` — Inline string templates: `CHATGPT_PROMPT`, `BLOCK_ACTION_PROMPT`, `BLOCK_ACTION_TRANSLATE_PROMPT`, `THREAD_TITLE_PROMPT`, `REWRITE_PROMPT`.
-- `prompts.ts` — `getChatPrompt`, `getBlockActionPrompt`, `getTranslatePrompt`, `getRewritePrompt` — apply language-tag substitution at runtime.
+- `promptTemplates.ts` — Inline string templates: `CHATGPT_PROMPT`, `BLOCK_ACTION_PROMPT`, `BLOCK_ACTION_TRANSLATE_PROMPT`, `THREAD_TITLE_PROMPT`, `REWRITE_PROMPT`, `REGISTER_DOC_PROMPT`.
+- `prompts.ts` — `getChatPrompt`, `getBlockActionPrompt`, `getTranslatePrompt`, `getRewritePrompt`, `getRegisterDocumentPrompt` — apply language-tag substitution at runtime.
 
 ## Export
 

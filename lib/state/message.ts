@@ -1,5 +1,5 @@
 import { AppState } from '@/types/state';
-import { Message } from '@/types/message';
+import { Message, RegisterState } from '@/types/message';
 import { updateThreadMessages, ensureThreadExists } from './thread';
 
 interface AddMessageResult {
@@ -81,6 +81,37 @@ export const addAssistantMessageToThread = (
   return { state: nextState, message };
 };
 
+export const addImportedMessage = (
+  state: AppState,
+  threadId: string,
+  fileName: string,
+  text: string,
+  idFactory: () => string,
+  nowFactory: () => number,
+): AddMessageResult => {
+  const baseState = ensureThreadExists(state, threadId, nowFactory);
+  const message: Message = {
+    id: idFactory(),
+    threadId,
+    role: 'assistant',
+    text,
+    createdAt: nowFactory(),
+    meta: {
+      source: 'import',
+      fileName,
+      registerState: 'registering',
+      registeringAt: nowFactory(),
+    },
+  };
+  const nextState = updateThreadMessages(
+    baseState,
+    threadId,
+    (messages) => [...messages, message],
+    nowFactory,
+  );
+  return { state: nextState, message };
+};
+
 export const appendMessageText = (
   state: AppState,
   messageId: string,
@@ -119,6 +150,22 @@ export const setMessageResponseId = (
   return updateMessageBy(state, messageId, (message) => ({
     ...message,
     meta: { ...message.meta, openaiResponseId: responseId },
+  }));
+};
+
+export const setRegisterState = (
+  state: AppState,
+  messageId: string,
+  registerState: RegisterState,
+  nowFactory: () => number,
+): AppState => {
+  return updateMessageBy(state, messageId, (message) => ({
+    ...message,
+    meta: {
+      ...message.meta,
+      registerState,
+      ...(registerState === 'registering' ? { registeringAt: nowFactory() } : {}),
+    },
   }));
 };
 

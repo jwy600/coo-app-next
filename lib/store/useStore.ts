@@ -76,3 +76,19 @@ export const selectMessagesByThread =
     const thread = state.threads.find((t) => t.id === threadId);
     return thread?.messages || [];
   };
+
+/**
+ * True while the active thread has an imported doc still embedding with the
+ * API (no `responseId` yet). Drives the Send mute so the user can't chat
+ * before the doc's context is available.
+ */
+export const selectIsRegistering = (state: StoreState): boolean => {
+  const thread = state.threads.find((t) => t.id === state.activeThreadId);
+  if (!thread) return false;
+  return thread.messages.some(
+    (m) =>
+      m.role === 'assistant' &&
+      m.meta?.source === 'import' &&
+      m.meta?.registerState === 'registering',
+  );
+};

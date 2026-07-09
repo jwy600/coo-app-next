@@ -200,6 +200,13 @@
     margin-bottom: 8px;
   }
 
+  .doc-source-marker {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--gray-500);
+    margin: 0 0 8px;
+  }
+
   .assistant-placeholder,
   .assistant-error {
     padding: 16px 0;
@@ -528,6 +535,22 @@
   .doc-blockquote--note strong {
     font-style: normal;
     font-weight: 600;
+  }
+
+  /* A note may span multiple paragraphs (an ask answer with a blank line).
+     Give sibling paragraphs a little air so they don't run together inside
+     the blockquote. */
+  .doc-blockquote--note > * + * {
+    margin-top: 0.5em;
+  }
+
+  /* Footnote reference marker (e.g. `[2](#fn:disclosure)`) — rendered as a
+     small muted superscript instead of a clickable link, so it reads as a
+     footnote reference rather than body text and never navigates. */
+  .doc-footnote-ref {
+    font-size: 0.75em;
+    color: var(--gray-500);
+    cursor: default;
   }
 
   .doc-block.is-edited .doc-content > .doc-paragraph::after,

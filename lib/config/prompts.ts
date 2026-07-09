@@ -9,6 +9,7 @@ import {
   BLOCK_ACTION_TRANSLATE_PROMPT,
   THREAD_TITLE_PROMPT,
   REWRITE_PROMPT,
+  REGISTER_DOC_PROMPT,
 } from "./promptTemplates";
 
 export const replaceLanguageTag = (
@@ -63,6 +64,8 @@ export const getTranslatePrompt = (
 };
 
 export const getThreadTitlePrompt = (): string => THREAD_TITLE_PROMPT;
+
+export const getRegisterDocumentPrompt = (): string => REGISTER_DOC_PROMPT;
 
 export const getRewritePrompt = (
   responseLanguage: ResponseLanguage = "en",

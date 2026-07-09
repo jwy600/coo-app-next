@@ -50,6 +50,15 @@ export const AssistantMessage = memo(function AssistantMessage({
       data-message-id={message.id}
     >
       <span className="assistant-label">Coo</span>
+      {message.meta?.source === 'import' && (
+        <div className="doc-source-marker">
+          from{' '}
+          {typeof message.meta?.fileName === 'string'
+            ? message.meta.fileName
+            : 'file'}
+          {message.meta?.registerState === 'registering' && ' · Embedding…'}
+        </div>
+      )}
       {renderBody()}
     </div>
   );

@@ -34,6 +34,8 @@ const makeBaseState = (): AppState =>
     error: null,
     focus: null,
     composerPrompt: '',
+    composerAttachment: null,
+    landingComposerMode: 'chat',
   }) as AppState;
 
 beforeEach(() => {
@@ -189,6 +191,22 @@ describe('appendNoteToBuffer', () => {
     expect(next.focus?.buffer).toBe('Hello\n\n> **Note:** padded');
   });
 
+  it('quotes every line of a multi-paragraph note so it stays in the blockquote', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    const next = appendNoteToBuffer(opened, 'Para one.\n\nPara two.');
+    expect(next.focus?.buffer).toBe(
+      'Hello\n\n> **Note:** Para one.\n>\n> Para two.',
+    );
+  });
+
+  it('quotes soft-wrapped continuation lines (single newline)', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    const next = appendNoteToBuffer(opened, 'line one\nline two');
+    expect(next.focus?.buffer).toBe('Hello\n\n> **Note:** line one\n> line two');
+  });
+
   it('is a no-op for an empty or whitespace-only note', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const opened = openEditor(state, messageId, [0, 5]);
@@ -332,6 +350,30 @@ describe('splitNotes', () => {
     const buffer = '> **Note:** stray\n\nactual passage';
     expect(splitNotes(buffer)).toEqual({
       passage: '> **Note:** stray\n\nactual passage',
+      notes: [],
+    });
+  });
+
+  it('splits a multi-paragraph trailing note back into its paragraphs', () => {
+    expect(
+      splitNotes('passage\n\n> **Note:** Para one.\n>\n> Para two.'),
+    ).toEqual({ passage: 'passage', notes: ['Para one.\n\nPara two.'] });
+  });
+
+  it('splits a mix of single-line and multi-paragraph trailing notes', () => {
+    expect(
+      splitNotes(
+        'p\n\n> **Note:** single\n\n> **Note:** Para one.\n>\n> Para two.',
+      ),
+    ).toEqual({
+      passage: 'p',
+      notes: ['single', 'Para one.\n\nPara two.'],
+    });
+  });
+
+  it('leaves a trailing non-note blockquote as passage', () => {
+    expect(splitNotes('passage\n\n> just a quote')).toEqual({
+      passage: 'passage\n\n> just a quote',
       notes: [],
     });
   });

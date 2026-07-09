@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseString, validatePrompt } from "@/lib/utils/validation";
+import { parseString, validatePrompt, validateMarkdownFile } from "@/lib/utils/validation";
 
 describe("parseString", () => {
   it("trims string value", () => {
@@ -55,5 +55,38 @@ describe("validatePrompt", () => {
   it("uses custom max length", () => {
     const result = validatePrompt("hello", 3);
     expect(result.valid).toBe(false);
+  });
+});
+
+describe("validateMarkdownFile", () => {
+  const mk = (name: string, size: number): File =>
+    new File(["x".repeat(Math.max(1, size))], name);
+
+  it("accepts a small .md file", () => {
+    expect(validateMarkdownFile(mk("notes.md", 10)).valid).toBe(true);
+  });
+
+  it("accepts a .markdown extension", () => {
+    expect(validateMarkdownFile(mk("doc.markdown", 10)).valid).toBe(true);
+  });
+
+  it("is case-insensitive on the extension", () => {
+    expect(validateMarkdownFile(mk("UPPER.MD", 10)).valid).toBe(true);
+  });
+
+  it("rejects a non-markdown extension", () => {
+    const result = validateMarkdownFile(mk("notes.txt", 10));
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("Markdown");
+  });
+
+  it("rejects a file over the size cap", () => {
+    const result = validateMarkdownFile(mk("big.md", 513 * 1024));
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("too large");
+  });
+
+  it("accepts a file at exactly the size cap", () => {
+    expect(validateMarkdownFile(mk("cap.md", 512 * 1024)).valid).toBe(true);
   });
 });

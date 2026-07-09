@@ -32,6 +32,9 @@ export function useComposer(): UseComposerReturn {
   const setMode = useStore((state) => state.setMode);
   const createThread = useStore((state) => state.createThread);
   const updateThreadTitle = useStore((state) => state.updateThreadTitle);
+  const landingComposerMode = useStore((state) => state.landingComposerMode);
+  const addImportedMessage = useStore((state) => state.addImportedMessage);
+  const setComposerAttachment = useStore((state) => state.setComposerAttachment);
   const isSubmitting = useStore((state) => state.isAwaitingResponse);
   const setAwaitingResponse = useStore((state) => state.setAwaitingResponse);
   const error = useStore((state) => state.error);
@@ -47,6 +50,25 @@ export function useComposer(): UseComposerReturn {
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
       if (e) e.preventDefault();
+
+      // Upload path (landing Read mode): create a fresh thread with the doc as
+      // its first message. Registration is owned by useDocRegistration once the
+      // thread view mounts — we do not await it here.
+      if (mode === 'landing' && landingComposerMode === 'read') {
+        const attachment = useStore.getState().composerAttachment;
+        if (!attachment) return;
+        createThread();
+        setMode('thread');
+        const currentThreadId = useStore.getState().activeThreadId;
+        if (!currentThreadId) {
+          setError('No active thread');
+          return;
+        }
+        addImportedMessage(currentThreadId, attachment.fileName, attachment.text);
+        updateThreadTitle(currentThreadId, attachment.fileName);
+        setComposerAttachment(null);
+        return;
+      }
 
       const trimmed = prompt.trim();
       if (isSubmitting || !trimmed) return;
@@ -116,6 +138,9 @@ export function useComposer(): UseComposerReturn {
       prompt,
       isSubmitting,
       mode,
+      landingComposerMode,
+      addImportedMessage,
+      setComposerAttachment,
       addUserMessage,
       createThread,
       setMode,

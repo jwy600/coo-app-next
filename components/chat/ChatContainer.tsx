@@ -6,8 +6,9 @@ import { Composer } from '@/components/composer/Composer';
 import { DeleteThreadButton } from './DeleteThreadButton';
 import { ExportButton } from './ExportButton';
 import { useComposer } from '@/hooks/useComposer';
+import { useDocRegistration } from '@/hooks/useDocRegistration';
 import { useShallow } from 'zustand/react/shallow';
-import { useStore, selectMessagesByThread } from '@/lib/store/useStore';
+import { useStore, selectMessagesByThread, selectIsRegistering } from '@/lib/store/useStore';
 
 interface ChatContainerProps {
   threadId: string;
@@ -27,12 +28,22 @@ export function ChatContainer({ threadId }: ChatContainerProps) {
   }, [threadId, setActiveThread, setMode]);
 
   const { prompt, setPrompt, handleSubmit, isSubmitting } = useComposer();
+  useDocRegistration(threadId);
+  const isRegistering = useStore(selectIsRegistering);
 
   const error = useStore((state) => state.error);
 
   const handleRetry = useCallback(() => {
+    // After a failed doc upload the thread is empty — Retry means "go back and
+    // reattach" rather than re-running an empty chat submit.
+    const state = useStore.getState();
+    const thread = state.threads.find((t) => t.id === threadId);
+    if (!thread || thread.messages.length === 0) {
+      state.setMode('landing');
+      return;
+    }
     handleSubmit();
-  }, [handleSubmit]);
+  }, [handleSubmit, threadId]);
 
   return (
     <div className="flex flex-col h-full">
@@ -61,7 +72,7 @@ export function ChatContainer({ threadId }: ChatContainerProps) {
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRegistering}
           />
         </div>
       </div>

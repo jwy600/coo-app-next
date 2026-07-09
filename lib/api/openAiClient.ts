@@ -90,6 +90,7 @@ const inferActionFromLabel = (label: string | undefined): any => {
   if (!label) return "chat";
   if (label === "chat:send") return "chat";
   if (label === "thread-title") return "thread-title";
+  if (label === "register-doc") return "register-doc";
   if (label === "rewrite") return "rewrite";
   if (label.startsWith("focus:")) {
     const action = label.slice(6);

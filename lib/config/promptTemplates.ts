@@ -97,3 +97,11 @@ export const REWRITE_PROMPT = `You revise a passage of Markdown according to the
 - Output the revised passage only — no preamble, no explanation, no surrounding fences
 - Match the original tone, register, and language
 </rules>`;
+
+export const REGISTER_DOC_PROMPT = `The user has shared a document. Store it in context — you'll be asked about it next.
+
+<rules>
+- Acknowledge in one short sentence that you've received it
+- Do not summarize or analyze the document yet — wait for the user's question
+- No preamble beyond that one sentence
+</rules>`;

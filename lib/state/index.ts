@@ -25,6 +25,8 @@ export const createInitialState = (
     error: null,
     focus: null,
     composerPrompt: '',
+    composerAttachment: null,
+    landingComposerMode: 'chat',
   };
 };
 

@@ -46,3 +46,32 @@ export const validatePrompt = (
   return { valid: true };
 };
 
+/** Max accepted markdown upload size (512 KB). Guards registration cost + context limits. */
+export const MAX_MARKDOWN_FILE_BYTES = 512 * 1024;
+
+const MARKDOWN_EXTENSIONS = ['.md', '.markdown'];
+
+/**
+ * Validate an uploaded file for the document-import feature.
+ * Accepts only .md / .markdown under the size cap.
+ */
+export const validateMarkdownFile = (file: File): ValidationResult => {
+  const name = file.name.toLowerCase();
+  const isMarkdown = MARKDOWN_EXTENSIONS.some((ext) => name.endsWith(ext));
+  if (!isMarkdown) {
+    return {
+      valid: false,
+      error: 'Only Markdown (.md) files are supported.',
+    };
+  }
+
+  if (file.size > MAX_MARKDOWN_FILE_BYTES) {
+    return {
+      valid: false,
+      error: 'That file is too large. Please keep it under 512 KB.',
+    };
+  }
+
+  return { valid: true };
+};
+

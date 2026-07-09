@@ -8,6 +8,8 @@ import {
   setMessageResponseId,
   removeMessage,
   findMessage,
+  addImportedMessage,
+  setRegisterState,
 } from '@/lib/state/message';
 import type { AppState } from '@/types/state';
 
@@ -150,5 +152,77 @@ describe('removeMessage', () => {
   it('is a no-op for an unknown id', () => {
     const state = makeState();
     expect(removeMessage(state, 'missing')).toBe(state);
+  });
+});
+
+describe('addImportedMessage', () => {
+  it('appends an assistant message tagged as an import', () => {
+    const result = addImportedMessage(
+      makeState(),
+      'thread-1',
+      'notes.md',
+      '# Notes',
+      idFactory,
+      nowFactory,
+    );
+    expect(result.message.role).toBe('assistant');
+    expect(result.message.text).toBe('# Notes');
+    expect(result.message.meta).toMatchObject({
+      source: 'import',
+      fileName: 'notes.md',
+      registerState: 'registering',
+      registeringAt: nowFactory(),
+    });
+    // No responseId until the API registration completes.
+    expect(result.message.meta.openaiResponseId).toBeUndefined();
+    expect(result.state.threads[0].messages).toHaveLength(1);
+  });
+
+  it('creates the thread if it does not exist', () => {
+    const result = addImportedMessage(
+      makeState({ threads: [], activeThreadId: null }),
+      'thread-2',
+      'a.md',
+      'body',
+      idFactory,
+      nowFactory,
+    );
+    expect(result.state.threads[0].id).toBe('thread-2');
+    expect(result.state.threads[0].messages).toHaveLength(1);
+  });
+});
+
+describe('setRegisterState', () => {
+  it('writes the registerState into meta', () => {
+    const seeded = addImportedMessage(
+      makeState(),
+      'thread-1',
+      'a.md',
+      'body',
+      idFactory,
+      nowFactory,
+    );
+    const next = setRegisterState(seeded.state, seeded.message.id, 'registered', nowFactory);
+    expect(findMessage(next, seeded.message.id)?.meta.registerState).toBe('registered');
+  });
+
+  it('refreshes registeringAt when transitioning back to registering', () => {
+    const seeded = addImportedMessage(
+      makeState(),
+      'thread-1',
+      'a.md',
+      'body',
+      idFactory,
+      nowFactory,
+    );
+    const registered = setRegisterState(seeded.state, seeded.message.id, 'registered', nowFactory);
+    const later = () => 9999999999999;
+    const reRegistering = setRegisterState(registered, seeded.message.id, 'registering', later);
+    expect(findMessage(reRegistering, seeded.message.id)?.meta.registeringAt).toBe(later());
+  });
+
+  it('is a no-op for an unknown id', () => {
+    const state = makeState();
+    expect(setRegisterState(state, 'missing', 'registered', nowFactory)).toBe(state);
   });
 });

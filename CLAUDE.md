@@ -2,6 +2,12 @@
 
 A focus-mode chat wiki: drag-select any passage in an assistant message and an in-place editor opens for raw-markdown editing, AI-assisted rewrites, and freeform notes. The block / card model has been removed — every message is a single markdown string.
 
+## Related repo
+
+A subset of this app's focus-mode + document-registration features is ported into an Obsidian plugin at `~/obsidian-coo`. The file-by-file concept map lives in `~/obsidian-coo/CLAUDE.md` ("Reference app" table); the live porting log is `~/obsidian-coo/SYNC.md`. Run `/coo-sync` here after a merge to record what changed and whether the plugin should mirror it.
+
+**Session-start sync check (do this early each session):** compare the newest date under `SYNC.md` → "Recent changes" against the newest commit in `git log`. If commits exist newer than the last logged entry — meaning a merge landed but `/coo-sync` hasn't been run — surface it to the user first: _"Heads up: there are unlogged commits in this repo. Run `/coo-sync` to update SYNC.md?"_ Then proceed with their request.
+
 ## Quick Reference
 
 | What | Where |

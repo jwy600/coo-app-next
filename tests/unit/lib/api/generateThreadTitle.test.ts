@@ -17,7 +17,7 @@ import type { Settings } from "@/types/settings";
 
 const baseSettings: Settings = {
   apiKey: "sk-test",
-  model: "gpt-5.4", // deliberately different — function must ignore this and use gpt-5.4-mini
+  model: "gpt-5.6-terra", // deliberately different — function must ignore this and use gpt-5.6-luna
   reasoningEffort: "none",
   webSearchEnabled: false,
   responseLanguage: "en",
@@ -154,14 +154,14 @@ describe("generateThreadTitle", () => {
     expect(result).toBeNull();
   });
 
-  it("always passes gpt-5.4-mini regardless of settings.model", async () => {
+  it("always passes gpt-5.6-luna regardless of settings.model", async () => {
     mockCreateResponse.mockResolvedValue({
       text: "React hooks",
       responseId: "resp_123",
     });
     await generateThreadTitle("How do React hooks work?", baseSettings);
     expect(mockCreateResponse).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gpt-5.4-mini" }),
+      expect.objectContaining({ model: "gpt-5.6-luna" }),
     );
   });
 

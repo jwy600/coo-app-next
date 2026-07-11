@@ -54,7 +54,7 @@ export function createMockStoreState(
     setActiveThread: vi.fn(),
     settings: {
       apiKey: '',
-      model: 'gpt-5.4-mini',
+      model: 'gpt-5.6-luna',
       reasoningEffort: 'medium',
       responseLanguage: 'en',
       translateLanguage: 'Chinese',

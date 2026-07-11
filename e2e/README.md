@@ -104,7 +104,7 @@ await apiMocker.mockAllBlockActions();
 
 Additional helpers for features added after the initial suite:
 
-- `mockTitleGeneration(title)` — background thread-title gen (`gpt-5.4-mini`).
+- `mockTitleGeneration(title)` — background thread-title gen (`gpt-5.6-luna`).
 - `captureResponseRequests()` — records every Responses API request body so
   you can assert ask-chain `previous_response_id` threading.
 - `captureObsidianUri()` + `readCapturedObsidianUris()` — patches

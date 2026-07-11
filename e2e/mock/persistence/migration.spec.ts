@@ -197,7 +197,7 @@ test('v2 payload migrates to v3: blocks array removed, messages joined into text
   });
 
   expect(migratedState).not.toBeNull();
-  expect(migratedState!.version).toBe(3);
+  expect(migratedState!.version).toBe(4);
   expect(migratedState!.hasToplevelBlocks).toBe(false);
   expect(migratedState!.hasToplevelCards).toBe(false);
   expect(migratedState!.messagesHaveText).toBe(true);
@@ -248,7 +248,7 @@ test('v1 payload migrates through v2 → v3: settings shape fixed + blocks joine
   });
 
   expect(finalState).not.toBeNull();
-  expect(finalState!.version).toBe(3);
+  expect(finalState!.version).toBe(4);
   expect(finalState!.hasVaultPath).toBe(false); // v1 → v2 migration removed this
   expect(finalState!.hasVaultName).toBe(true); // replaced with this
   expect(finalState!.vaultName).toBe(''); // default empty string

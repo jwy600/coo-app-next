@@ -55,7 +55,7 @@ describe("openAiClient", () => {
 
       const result = await createResponse({
         apiKey: "sk-test",
-        model: "gpt-5.4-mini",
+        model: "gpt-5.6-luna",
         input: "Hello",
         instructions: "Be helpful",
       });
@@ -64,7 +64,7 @@ describe("openAiClient", () => {
       expect(result.responseId).toBe("resp-123");
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "gpt-5.4-mini",
+          model: "gpt-5.6-luna",
           input: "Hello",
           instructions: "Be helpful",
           store: true,
@@ -82,7 +82,7 @@ describe("openAiClient", () => {
 
       await createResponse({
         apiKey: "sk-test",
-        model: "gpt-5.4-mini",
+        model: "gpt-5.6-luna",
         input: "Continue",
         previousResponseId: "resp-1",
       });
@@ -104,7 +104,7 @@ describe("openAiClient", () => {
 
       await createResponse({
         apiKey: "sk-test",
-        model: "gpt-5.4-mini",
+        model: "gpt-5.6-luna",
         input: "Think hard",
         reasoningEffort: "high",
       });
@@ -126,7 +126,7 @@ describe("openAiClient", () => {
 
       await createResponse({
         apiKey: "sk-test",
-        model: "gpt-5.4-mini",
+        model: "gpt-5.6-luna",
         input: "Quick",
         reasoningEffort: "none",
       });
@@ -145,7 +145,7 @@ describe("openAiClient", () => {
 
       await createResponse({
         apiKey: "sk-test",
-        model: "gpt-5.4-mini",
+        model: "gpt-5.6-luna",
         input: "Search this",
         webSearchEnabled: true,
       });
@@ -167,7 +167,7 @@ describe("openAiClient", () => {
 
       const result = await createResponse({
         apiKey: "sk-test",
-        model: "gpt-5.4-mini",
+        model: "gpt-5.6-luna",
         input: "Hello",
       });
 
@@ -184,7 +184,7 @@ describe("openAiClient", () => {
       await expect(
         createResponse({
           apiKey: "sk-test",
-          model: "gpt-5.4-mini",
+          model: "gpt-5.6-luna",
           input: "Hello",
         }),
       ).rejects.toThrow("API rate limited");
@@ -218,7 +218,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.6-luna", input: "Hello" },
         handler,
       );
 
@@ -244,7 +244,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.6-luna", input: "Hello" },
         handler,
       );
 
@@ -278,7 +278,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.6-luna", input: "Hello" },
         handler,
       );
 
@@ -304,7 +304,7 @@ describe("openAiClient", () => {
       };
 
       await createResponseStream(
-        { apiKey: "sk-test", model: "gpt-5.4-mini", input: "Hello" },
+        { apiKey: "sk-test", model: "gpt-5.6-luna", input: "Hello" },
         handler,
       );
 

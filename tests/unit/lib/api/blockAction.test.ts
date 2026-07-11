@@ -20,7 +20,7 @@ import type { Settings } from "@/types/settings";
 
 const baseSettings: Settings = {
   apiKey: "sk-test",
-  model: "gpt-5.4-mini",
+  model: "gpt-5.6-luna",
   reasoningEffort: "none",
   responseLanguage: "en",
   translateLanguage: "Chinese",
@@ -51,7 +51,7 @@ describe("fetchBlockAction", () => {
     expect(mockCreateResponse).toHaveBeenCalledTimes(1);
     const params = mockCreateResponse.mock.calls[0][0];
     expect(params.apiKey).toBe("sk-test");
-    expect(params.model).toBe("gpt-5.4-mini");
+    expect(params.model).toBe("gpt-5.6-luna");
     expect(params.input).toContain("Explain the passage like I'm 5");
     expect(params.input).toContain("<passage>\nComplex text here\n</passage>");
     expect(result.text).toBe("Simplified");

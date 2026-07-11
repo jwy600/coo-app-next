@@ -43,7 +43,7 @@ export const useStore = create<StoreState>()(
       }),
       {
         name: STORAGE_NAME,
-        version: 3,
+        version: 4,
         partialize: (state) => ({
           threads: state.threads,
           activeThreadId: state.activeThreadId,

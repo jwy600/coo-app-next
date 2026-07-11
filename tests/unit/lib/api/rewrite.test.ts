@@ -17,7 +17,7 @@ import type { Settings } from '@/types/settings';
 
 const baseSettings: Settings = {
   apiKey: 'sk-test',
-  model: 'gpt-5.4-mini',
+  model: 'gpt-5.6-luna',
   reasoningEffort: 'none',
   responseLanguage: 'en',
   translateLanguage: 'Chinese',
@@ -52,7 +52,7 @@ describe('fetchRewrite', () => {
     expect(mockCreateResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         apiKey: 'sk-test',
-        model: 'gpt-5.4-mini',
+        model: 'gpt-5.6-luna',
         instructions: 'rewrite prompt',
         input: expect.stringContaining('original passage'),
       }),

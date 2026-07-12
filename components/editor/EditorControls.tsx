@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useState } from 'react';
 import { fetchBlockAction, fetchRewrite } from '@/lib/api';
 import { useStore } from '@/lib/store/useStore';
+import { DEFAULT_ASK_QUESTION } from '@/types/settings';
 import { Badge } from '@/components/ui/badge';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { parseMinorTag, splitNotes } from '@/lib/state/focus';
@@ -14,8 +15,9 @@ import { EditorActions, type EditorActionId } from './EditorActions';
  * Left → right:
  *   - Shortcut badges (Translate / ELI5 / Summarize): mutate the buffer
  *     in place via setShortcutResult; Revert undoes the most recent.
- *   - Ask input: Enter submits a question about the buffer; the answer
- *     is appended to notes; the input clears.
+ *   - Ask input: shows a localized default question as its placeholder;
+ *     Enter submits the typed question, or falls back to that default when
+ *     the input is empty. The answer is appended to notes; the input clears.
  *   - Revert: undo the most recent buffer mutation (shortcut or rewrite).
  *   - Rewrite: bundle buffer + notes, replace the buffer atomically.
  *
@@ -23,6 +25,7 @@ import { EditorActions, type EditorActionId } from './EditorActions';
  */
 export function EditorControls() {
   const focus = useStore((s) => s.focus);
+  const responseLanguage = useStore((s) => s.settings.responseLanguage);
   const setShortcutResult = useStore((s) => s.setShortcutResult);
   const setRewriteResult = useStore((s) => s.setRewriteResult);
   const revertRewrite = useStore((s) => s.revertRewrite);
@@ -100,9 +103,10 @@ export function EditorControls() {
     async (e: FormEvent) => {
       e.preventDefault();
       if (!focus || anyBusy) return;
-      const trimmed = askInput.trim();
-      if (!trimmed) return;
       const settings = useStore.getState().settings;
+      // Empty input falls back to the localized default question — the ask
+      // input is "pre-populated" via its placeholder, and ↵ submits it.
+      const question = askInput.trim() || DEFAULT_ASK_QUESTION[settings.responseLanguage];
       const previousResponseId = focus.lastResponseId;
       const referenceQuestion = previousResponseId
         ? undefined
@@ -114,7 +118,7 @@ export function EditorControls() {
         const result = await fetchBlockAction(
           'ask',
           passage,
-          trimmed,
+          question,
           undefined,
           settings,
           previousResponseId,
@@ -172,7 +176,7 @@ export function EditorControls() {
           data-testid="focus-ask-input"
           value={askInput}
           onChange={(e) => setAskInput(e.target.value)}
-          placeholder={askBusy ? 'Asking…' : 'Ask about this passage…'}
+          placeholder={askBusy ? 'Asking…' : DEFAULT_ASK_QUESTION[responseLanguage]}
           disabled={anyBusy && !askBusy}
           aria-label="Ask about this passage"
           className="w-full bg-transparent outline-none border border-border rounded-md pl-2 pr-7 py-1 text-sm focus:ring-1 focus:ring-ring disabled:opacity-50"

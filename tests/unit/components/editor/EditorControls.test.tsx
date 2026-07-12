@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { useStore } from '@/lib/store/useStore';
+import { DEFAULT_SETTINGS } from '@/types/settings';
 
 const { mockFetchRewrite, mockFetchBlockAction } = vi.hoisted(() => ({
   mockFetchRewrite: vi.fn(),
@@ -24,6 +25,7 @@ function resetStore() {
     streamingMessageId: null,
     focus: null,
     composerPrompt: '',
+    settings: { ...DEFAULT_SETTINGS },
   });
   useStore.getState().createThread('t1');
   const message = useStore.getState().addAssistantMessage('Hello world');
@@ -44,6 +46,25 @@ describe('EditorControls', () => {
     expect(screen.getByRole('textbox', { name: /Ask about this passage/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Revert/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Rewrite/i })).toBeTruthy();
+  });
+
+  it('shows the localized default question as the ask placeholder', () => {
+    render(<EditorControls />);
+    const input = screen.getByRole('textbox', {
+      name: /Ask about this passage/i,
+    }) as HTMLInputElement;
+    expect(input.placeholder).toBe('What does this mean?');
+  });
+
+  it('localizes the ask placeholder by response language', () => {
+    useStore.setState((s) => ({
+      settings: { ...s.settings, responseLanguage: 'zh' },
+    }));
+    render(<EditorControls />);
+    const input = screen.getByRole('textbox', {
+      name: /Ask about this passage/i,
+    }) as HTMLInputElement;
+    expect(input.placeholder).toBe('这是什么意思？');
   });
 
   it('disables Revert when no buffer mutation is pending', () => {
@@ -131,7 +152,12 @@ describe('EditorControls', () => {
     );
   });
 
-  it('does not submit ask when the input is empty', async () => {
+  it('submitting with an empty input asks the localized default question', async () => {
+    mockFetchBlockAction.mockResolvedValue({
+      text: 'It is a greeting.',
+      responseId: 'r1',
+    });
+
     render(<EditorControls />);
     const input = screen.getByRole('textbox', {
       name: /Ask about this passage/i,
@@ -141,7 +167,21 @@ describe('EditorControls', () => {
       fireEvent.submit(input.closest('form')!);
     });
 
-    expect(mockFetchBlockAction).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(useStore.getState().focus?.buffer).toBe(
+        'Hello\n\n> **Note:** It is a greeting.',
+      );
+    });
+    // Empty input falls back to the response-language default ("en" here).
+    expect(mockFetchBlockAction).toHaveBeenCalledWith(
+      'ask',
+      'Hello',
+      'What does this mean?',
+      undefined,
+      expect.objectContaining({ apiKey: expect.any(String) }),
+      undefined,
+      undefined,
+    );
   });
 
   it('asking a question after a shortcut leaves prevBuffer intact and appends the answer to the transformed buffer', async () => {

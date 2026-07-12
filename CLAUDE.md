@@ -118,7 +118,7 @@ e2e/                 # Playwright tests (currently broken; rewrite in a later ph
 
 **Message model**: each `Message` carries a single `text: string` (markdown). No blocks, no per-block ids.
 
-**Focus editor**: `focus: FocusActive | null` in UIState. `FocusActive` = `{ messageId, range, buffer, notes[], prevBuffer, lastResponseId?, referenceQuestion? }`. Drag-selecting an assistant message opens an in-place textarea seeded from `message.text.slice(start, end)`. Click-outside auto-saves the buffer + notes back into the message via `replaceMessageRange`.
+**Focus editor**: `focus: FocusActive | null` in UIState. `FocusActive` = `{ messageId, range, buffer, notes[], prevBuffer, lastResponseId?, referenceQuestion? }`. Drag-selecting an assistant message opens an in-place textarea seeded from `message.text.slice(start, end)`. Click-outside auto-saves via `closeEditor`: the passage writes back at the selection range, and any trailing notes relocate to the end of the containing block (the next `\n\n` boundary, or EOF) so a note never lands mid-paragraph/mid-list.
 
 **Source-position attributes**: every rendered HTML element carries `data-md-start` / `data-md-end` (character offsets into `message.text`). Text nodes are wrapped in `<span data-md-text="true">`; math elements get an outer `<span data-md-atomic="true">` so KaTeX-rendered output keeps its source range.
 
@@ -126,7 +126,7 @@ e2e/                 # Playwright tests (currently broken; rewrite in a later ph
 
 **Editor action row** (inside `FocusEditor`, replaces the old composer-side shortcuts): ask input on top with a `↵` submit indicator, chip strip below it.
 
-**Notes live as raw markdown in the buffer** — there is no separate `focus.notes` state. Ask answers append directly to `focus.buffer` as `\n\n> **Note:** <answer>`. `closeEditor` writes the buffer back as-is; `openEditor` slices it back as-is. A `splitNotes(buffer)` parser in `lib/state/focus.ts` is the only place that knows the note pattern.
+**Notes live as raw markdown in the buffer** — there is no separate `focus.notes` state. Ask answers append directly to `focus.buffer` as `\n\n> **Note:** <answer>`. While the editor is open the buffer holds passage + notes inline; `closeEditor` writes the passage back at the selection range and relocates the trailing notes to the end of the containing block (next `\n\n` boundary, or EOF) — never mid-paragraph/mid-list. `openEditor` slices the selection back as-is. A `splitNotes(buffer)` parser in `lib/state/focus.ts` is the only place that knows the note pattern.
 
 | Action | API input | Buffer after |
 |---|---|---|

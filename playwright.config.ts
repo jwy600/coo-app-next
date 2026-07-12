@@ -44,7 +44,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3100',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -72,11 +72,15 @@ export default defineConfig({
         },
       ],
 
-  /* Run your local dev server before starting the tests */
-  /* CI uses `npm start` (production server) since the app is pre-built; local uses `npm run dev` */
+  /* Run a dedicated dev server on port 3100 before starting the tests.
+     3100 (not 3000) + COO_E2E=1 (→ distDir .next-e2e, see next.config.ts) so
+     it never collides with a `npm run dev` you may have running locally for
+     manual testing — neither on the network port nor on Next's dev lock, and
+     Playwright won't grab your non-test-mode server. CI uses `npm start`
+     (production server, pre-built); local uses `npm run dev`. */
   webServer: {
-    command: process.env.CI ? 'npm start' : 'NEXT_PUBLIC_TEST_MODE=true npm run dev',
-    url: 'http://localhost:3000',
+    command: process.env.CI ? 'PORT=3100 npm start' : 'COO_E2E=1 NEXT_PUBLIC_TEST_MODE=true PORT=3100 npm run dev',
+    url: 'http://localhost:3100',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
     env: isLive

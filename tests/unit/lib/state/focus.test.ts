@@ -362,6 +362,22 @@ describe('closeEditor', () => {
     );
   });
 
+  it('places the note before a heading that interrupts the paragraph', () => {
+    // The heading follows the paragraph with only a single newline (no blank
+    // line) — CommonMark block interruption. The note must land at the
+    // paragraph's end, before the heading, not past it.
+    const text = 'Some intro text with a term.\n## A Heading\nHeading body.';
+    const { state, messageId } = seedAssistant(text);
+    const termStart = text.indexOf('term');
+    const opened = openEditor(state, messageId, [termStart, termStart + 4]);
+    const withNote = appendNoteToBuffer(opened, 'a note');
+    const closed = closeEditor(withNote);
+
+    expect(closed.threads[0].messages[0].text).toBe(
+      'Some intro text with a term.\n\n> **Note:** a note\n\n## A Heading\nHeading body.',
+    );
+  });
+
   it('preserves the [Minor] marker when relocating a note', () => {
     const { state, messageId } = seedAssistant('alpha beta');
     const opened = openEditor(state, messageId, [0, 5]); // "alpha"

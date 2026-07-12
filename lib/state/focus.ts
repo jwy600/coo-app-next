@@ -56,12 +56,42 @@ export const openEditor = (
 };
 
 /**
- * Index of the next blank line (`\n\n`) at or after `from` — the end of the
- * containing top-level block. A paragraph ends at its `\n\n` terminator; a
- * list's items are `\n`-joined, so its next `\n\n` is the end of the whole
- * list. Returns `text.length` when the block runs to EOF.
+ * A line that begins a new markdown block — a blank line, or a heading,
+ * blockquote, code fence, or list item. Such a line ends (interrupts) the
+ * paragraph above it even without a preceding blank line (CommonMark block
+ * interruption), which is why a `\n\n`-only scan isn't enough: `text\n## H`
+ * ends the paragraph at the heading, not at some far-off blank line.
  */
-const findBlockEnd = (text: string, from: number): number => {
+const isBlockBoundaryLine = (line: string): boolean => {
+  if (line.trim() === '') return true;
+  return /^(#{1,6}(?:\s|$)|>|```|~~~|[-*+]\s|\d+[.)]\s)/.test(line);
+};
+
+/** True when the line containing `from` is a list item (starts with a marker). */
+const isListLine = (text: string, from: number): boolean => {
+  const lineStart = text.lastIndexOf('\n', from - 1) + 1;
+  return /^\s*(?:[-*+]\s|\d+[.)]\s)/.test(text.slice(lineStart));
+};
+
+/**
+ * Start of the first block-boundary line after the paragraph containing
+ * `from` — i.e. where that paragraph ends — or `text.length` if it runs to
+ * EOF.
+ */
+const findParagraphEnd = (text: string, from: number): number => {
+  let nl = text.indexOf('\n', from);
+  while (nl !== -1) {
+    const lineStart = nl + 1;
+    const nextNl = text.indexOf('\n', lineStart);
+    const lineEnd = nextNl === -1 ? text.length : nextNl;
+    if (isBlockBoundaryLine(text.slice(lineStart, lineEnd))) return lineStart;
+    nl = nextNl;
+  }
+  return text.length;
+};
+
+/** End of the containing list: the next blank line (`\n\n`), or EOF. */
+const findListEnd = (text: string, from: number): number => {
   const idx = text.indexOf('\n\n', from);
   return idx === -1 ? text.length : idx;
 };
@@ -69,12 +99,17 @@ const findBlockEnd = (text: string, from: number): number => {
 /**
  * Auto-saves and closes the editor. The edited passage writes back at the
  * selection range; trailing notes, though, RELOCATE to the end of the
- * containing block (the next `\n\n` boundary, or EOF) — never inserted at the
- * inline selection point. Otherwise a note blockquote placed mid-paragraph
- * would absorb the trailing text (markdown lazy continuation / same-line
- * glue), and would split a list. At the block end, surrounded by the existing
- * blank-line separators, the note is a clean standalone block and the
- * paragraph/list stays whole.
+ * containing block — never inserted at the inline selection point. Otherwise
+ * a note blockquote placed mid-paragraph would absorb the trailing text
+ * (markdown lazy continuation / same-line glue).
+ *
+ * The block end is the end of the whole list when the selection is in a list
+ * item (keeps the list intact), otherwise the end of the paragraph — found by
+ * scanning for the next blank line *or* block-interrupting line (a heading,
+ * blockquote, code fence, or list that starts without a blank line). The note
+ * is then written as a standalone block with blank-line separators on both
+ * sides, normalizing whatever whitespace sat between the passage and the next
+ * block so it never glues to neighbouring text.
  *
  * While the editor is open the buffer still holds passage + notes inline, so
  * editing, shortcuts, and Rewrite behave exactly as before — only the close
@@ -93,13 +128,23 @@ export const closeEditor = (state: AppState): AppState => {
 
   const message = findMessage(state, messageId);
   if (!message) return { ...state, focus: null };
-  const blockEnd = findBlockEnd(message.text, end);
+  const text = message.text;
+  const boundary = isListLine(text, end)
+    ? findListEnd(text, end)
+    : findParagraphEnd(text, end);
+
   // Re-quote the note bodies (the `[Minor]` marker lives inside the body, so
-  // it rides along) and drop them after the rest of the containing block.
+  // it rides along). Trim the inter-block whitespace on both sides and insert
+  // the notes as a clean standalone block.
   const notesBlock = notes.map((note) => quoteNote(note)).join('\n\n');
-  const replacement =
-    passage + message.text.slice(end, blockEnd) + '\n\n' + notesBlock;
-  const next = replaceMessageRange(state, messageId, [start, blockEnd], replacement);
+  const prefix =
+    text.slice(0, start) + passage + text.slice(end, boundary).replace(/\s+$/, '');
+  const suffix = text.slice(boundary).replace(/^\s+/, '');
+  const nextText = suffix
+    ? `${prefix}\n\n${notesBlock}\n\n${suffix}`
+    : `${prefix}\n\n${notesBlock}`;
+
+  const next = replaceMessageRange(state, messageId, [0, text.length], nextText);
   return { ...next, focus: null };
 };
 

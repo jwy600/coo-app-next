@@ -3,6 +3,11 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  // Separate build dir for the Playwright e2e dev server (COO_E2E=1) so it can
+  // run alongside a manual `npm run dev` — otherwise Next can't acquire its
+  // dev lock (.next/dev/lock) and the second server refuses to start.
+  distDir: process.env.COO_E2E === '1' ? '.next-e2e' : '.next',
+
   // Environment variables exposed to browser
   env: {
     NEXT_PUBLIC_APP_NAME: 'coo',

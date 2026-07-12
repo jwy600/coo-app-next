@@ -92,9 +92,9 @@ describe("getBlockActionPrompt", () => {
 
 describe("calculateCost", () => {
   it("calculates cost for known model", () => {
-    // gpt-5.6-luna: input=0.75, output=4.50 per 1M tokens
+    // gpt-5.6-luna: input=1.0, output=6.0 per 1M tokens
     const cost = calculateCost("gpt-5.6-luna", 1_000_000, 1_000_000);
-    expect(cost).toBeCloseTo(0.75 + 4.5);
+    expect(cost).toBeCloseTo(1.0 + 6.0);
   });
 
   it("returns 0 for unknown model", () => {
@@ -106,9 +106,9 @@ describe("calculateCost", () => {
   });
 
   it("calculates fractional costs correctly", () => {
-    // 100 tokens of gpt-5.6-terra: input=1.75/1M, output=14.00/1M
+    // 100 tokens of gpt-5.6-terra: input=2.5/1M, output=15.0/1M
     const cost = calculateCost("gpt-5.6-terra", 100, 100);
-    const expected = (100 / 1_000_000) * 1.75 + (100 / 1_000_000) * 14.0;
+    const expected = (100 / 1_000_000) * 2.5 + (100 / 1_000_000) * 15.0;
     expect(cost).toBeCloseTo(expected);
   });
 });

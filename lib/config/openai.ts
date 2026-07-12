@@ -8,16 +8,16 @@ export const getOpenAIModelConfig = (): OpenAIModelConfig => {
   };
 };
 
-// Model pricing per 1M tokens. Values are carryover estimates from the
-// previous gpt-5.5 / gpt-5.4 / gpt-5.4-mini tiers (sol←5.5, terra←5.4,
-// luna←5.4-mini) pending real gpt-5.6 pricing.
+// Model pricing per 1M tokens (input / cached input / output). Input and
+// output are the published gpt-5.6 prices; cached input is ~10% of input
+// (not published separately).
 const MODEL_PRICING: Record<
   string,
   { input: number; cachedInput: number; output: number }
 > = {
   "gpt-5.6-sol": { input: 5.0, cachedInput: 0.5, output: 30.0 },
   "gpt-5.6-terra": { input: 2.5, cachedInput: 0.25, output: 15.0 },
-  "gpt-5.6-luna": { input: 0.75, cachedInput: 0.075, output: 4.5 },
+  "gpt-5.6-luna": { input: 1.0, cachedInput: 0.1, output: 6.0 },
 };
 
 export const calculateCost = (

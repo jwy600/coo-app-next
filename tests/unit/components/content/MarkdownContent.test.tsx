@@ -180,6 +180,24 @@ describe('MarkdownContent', () => {
       expect(bq).toBeTruthy();
       expect(bq!.textContent).toContain('a quote');
     });
+
+    it('classifies a Note blockquote with the note class', () => {
+      const { container } = render(
+        <MarkdownContent text={'> **Note:** an annotation'} />,
+      );
+      const bq = container.querySelector('blockquote');
+      expect(bq!.className).toContain('doc-blockquote--note');
+      expect(bq!.className).not.toContain('doc-blockquote--minor');
+    });
+
+    it('classifies a [Minor] note blockquote with the minor class', () => {
+      const { container } = render(
+        <MarkdownContent text={'> **Note:** [Minor] skippable detail'} />,
+      );
+      const bq = container.querySelector('blockquote');
+      expect(bq!.className).toContain('doc-blockquote--note');
+      expect(bq!.className).toContain('doc-blockquote--minor');
+    });
   });
 
   describe('footnote references', () => {

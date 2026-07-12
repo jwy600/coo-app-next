@@ -5,7 +5,7 @@ import { fetchBlockAction, fetchRewrite } from '@/lib/api';
 import { useStore } from '@/lib/store/useStore';
 import { Badge } from '@/components/ui/badge';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
-import { splitNotes } from '@/lib/state/focus';
+import { parseMinorTag, splitNotes } from '@/lib/state/focus';
 import { EditorActions, type EditorActionId } from './EditorActions';
 
 /**
@@ -121,7 +121,8 @@ export function EditorControls() {
           referenceQuestion,
         );
         if (!isSameSession(focus)) return;
-        appendNoteToBuffer(result.text);
+        const { isMinor, body } = parseMinorTag(result.text);
+        appendNoteToBuffer(body, isMinor);
         if (result.responseId) setFocusLastResponseId(result.responseId);
         setAskInput('');
       } catch (err) {

@@ -14,36 +14,58 @@ export interface MarkdownContentProps {
   className?: string;
 }
 
+/** Recursively extract the concatenated text content of a React subtree. */
+const elementText = (node: React.ReactNode): string => {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return String(node);
+  if (React.isValidElement(node)) {
+    return React.Children.toArray(
+      (node.props as { children?: React.ReactNode }).children,
+    )
+      .map(elementText)
+      .join('');
+  }
+  return '';
+};
+
 /**
- * Returns true when the blockquote's first paragraph begins with a
- * <strong>Note:</strong> marker — i.e. it was written by closeEditor's
- * note serialization, not by the user as a generic blockquote.
+ * Classifies a blockquote written by the note serializer: 'note' for a normal
+ * `> **Note:** …` blockquote, 'minor' when its body leads with `[Minor]` (a
+ * skippable-concept Ask answer), or null for a user-authored blockquote.
+ *
+ * Uses text extraction rather than element-type checks, because the `p`
+ * component is overridden (its React type is a function, not the string 'p')
+ * and rehypeWrapText wraps every text node — including inside <strong> — in a
+ * <span data-md-text>, so direct-string inspection sees nothing.
  */
-function isNoteBlockquote(children: React.ReactNode): boolean {
+function classifyNoteBlockquote(
+  children: React.ReactNode,
+): 'note' | 'minor' | null {
   const arr = React.Children.toArray(children);
   for (const child of arr) {
     if (typeof child === 'string') {
       if (child.trim() === '') continue;
-      return false;
+      return null;
     }
     if (!React.isValidElement(child)) continue;
-    if (child.type !== 'p') return false;
     const inner = React.Children.toArray(
       (child.props as { children?: React.ReactNode }).children,
     );
-    const first = inner.find(
-      (c) => !(typeof c === 'string' && c.trim() === ''),
-    );
-    if (!React.isValidElement(first) || first.type !== 'strong') return false;
-    const strongText = React.Children.toArray(
-      (first.props as { children?: React.ReactNode }).children,
-    )
-      .filter((c) => typeof c === 'string')
-      .join('')
-      .trim();
-    return strongText === 'Note:';
+    let i = 0;
+    while (
+      i < inner.length &&
+      typeof inner[i] === 'string' &&
+      (inner[i] as string).trim() === ''
+    ) {
+      i++;
+    }
+    const first = inner[i];
+    if (!React.isValidElement(first) || first.type !== 'strong') return null;
+    if (elementText(first).trim() !== 'Note:') return null;
+    const afterStrong = inner.slice(i + 1).map(elementText).join('');
+    return afterStrong.trimStart().startsWith('[Minor]') ? 'minor' : 'note';
   }
-  return false;
+  return null;
 }
 
 const components: Components = {
@@ -122,9 +144,13 @@ const components: Components = {
     );
   },
   blockquote: ({ children, ...props }) => {
-    const className = isNoteBlockquote(children)
-      ? 'doc-blockquote doc-blockquote--note'
-      : 'doc-blockquote';
+    const kind = classifyNoteBlockquote(children);
+    const className =
+      kind === 'minor'
+        ? 'doc-blockquote doc-blockquote--note doc-blockquote--minor'
+        : kind === 'note'
+          ? 'doc-blockquote doc-blockquote--note'
+          : 'doc-blockquote';
     return (
       <blockquote className={className} {...props}>
         {children}

@@ -56,14 +56,50 @@ export const openEditor = (
 };
 
 /**
- * Auto-saves and closes the editor: writes the buffer (which already
- * contains any inline notes as raw markdown) into `message.text` at the
- * original range via `replaceMessageRange`, then clears `focus`.
+ * Index of the next blank line (`\n\n`) at or after `from` — the end of the
+ * containing top-level block. A paragraph ends at its `\n\n` terminator; a
+ * list's items are `\n`-joined, so its next `\n\n` is the end of the whole
+ * list. Returns `text.length` when the block runs to EOF.
+ */
+const findBlockEnd = (text: string, from: number): number => {
+  const idx = text.indexOf('\n\n', from);
+  return idx === -1 ? text.length : idx;
+};
+
+/**
+ * Auto-saves and closes the editor. The edited passage writes back at the
+ * selection range; trailing notes, though, RELOCATE to the end of the
+ * containing block (the next `\n\n` boundary, or EOF) — never inserted at the
+ * inline selection point. Otherwise a note blockquote placed mid-paragraph
+ * would absorb the trailing text (markdown lazy continuation / same-line
+ * glue), and would split a list. At the block end, surrounded by the existing
+ * blank-line separators, the note is a clean standalone block and the
+ * paragraph/list stays whole.
+ *
+ * While the editor is open the buffer still holds passage + notes inline, so
+ * editing, shortcuts, and Rewrite behave exactly as before — only the close
+ * path moves the notes.
  */
 export const closeEditor = (state: AppState): AppState => {
   if (!state.focus) return state;
   const { messageId, range, buffer } = state.focus;
-  const next = replaceMessageRange(state, messageId, range, buffer);
+  const [start, end] = range;
+  const { passage, notes } = splitNotes(buffer);
+
+  // No trailing notes → write the edited buffer straight back at the range.
+  if (notes.length === 0) {
+    return { ...replaceMessageRange(state, messageId, range, buffer), focus: null };
+  }
+
+  const message = findMessage(state, messageId);
+  if (!message) return { ...state, focus: null };
+  const blockEnd = findBlockEnd(message.text, end);
+  // Re-quote the note bodies (the `[Minor]` marker lives inside the body, so
+  // it rides along) and drop them after the rest of the containing block.
+  const notesBlock = notes.map((note) => quoteNote(note)).join('\n\n');
+  const replacement =
+    passage + message.text.slice(end, blockEnd) + '\n\n' + notesBlock;
+  const next = replaceMessageRange(state, messageId, [start, blockEnd], replacement);
   return { ...next, focus: null };
 };
 

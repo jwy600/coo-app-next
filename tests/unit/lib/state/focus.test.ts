@@ -308,7 +308,7 @@ describe('closeEditor', () => {
     expect(closed.threads[0].messages[0].text).toBe('Howdy world');
   });
 
-  it('persists notes already inline in the buffer (no extra serialization)', () => {
+  it('relocates trailing notes to the end of the containing block on close', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const opened = openEditor(state, messageId, [0, 5]);
     const withNotes = appendNoteToBuffer(
@@ -317,8 +317,59 @@ describe('closeEditor', () => {
     );
     const closed = closeEditor(withNotes);
 
+    // The selection ("Hello") writes back in place; the rest of the paragraph
+    // (" world") rejoins it, and the notes land after the whole paragraph —
+    // not glued onto the last note (the old absorption bug).
     expect(closed.threads[0].messages[0].text).toBe(
-      'Hello\n\n> **Note:** first\n\n> **Note:** second world',
+      'Hello world\n\n> **Note:** first\n\n> **Note:** second',
+    );
+  });
+
+  it('keeps a mid-paragraph note out of the trailing text', () => {
+    const { state, messageId } = seedAssistant('alpha beta gamma');
+    const opened = openEditor(state, messageId, [6, 10]); // "beta"
+    const withNote = appendNoteToBuffer(opened, 'a note');
+    const closed = closeEditor(withNote);
+
+    expect(closed.threads[0].messages[0].text).toBe(
+      'alpha beta gamma\n\n> **Note:** a note',
+    );
+  });
+
+  it('places the note between the containing paragraph and the next block', () => {
+    const { state, messageId } = seedAssistant(
+      'first paragraph.\n\nsecond paragraph.',
+    );
+    const opened = openEditor(state, messageId, [0, 5]); // "first"
+    const withNote = appendNoteToBuffer(opened, 'note');
+    const closed = closeEditor(withNote);
+
+    expect(closed.threads[0].messages[0].text).toBe(
+      'first paragraph.\n\n> **Note:** note\n\nsecond paragraph.',
+    );
+  });
+
+  it('moves a note past the end of a list, leaving the list intact', () => {
+    const { state, messageId } = seedAssistant(
+      '1. first item\n2. second item\n\nnext paragraph',
+    );
+    const opened = openEditor(state, messageId, [3, 8]); // "first"
+    const withNote = appendNoteToBuffer(opened, 'note');
+    const closed = closeEditor(withNote);
+
+    expect(closed.threads[0].messages[0].text).toBe(
+      '1. first item\n2. second item\n\n> **Note:** note\n\nnext paragraph',
+    );
+  });
+
+  it('preserves the [Minor] marker when relocating a note', () => {
+    const { state, messageId } = seedAssistant('alpha beta');
+    const opened = openEditor(state, messageId, [0, 5]); // "alpha"
+    const withNote = appendNoteToBuffer(opened, 'skippable', true);
+    const closed = closeEditor(withNote);
+
+    expect(closed.threads[0].messages[0].text).toBe(
+      'alpha beta\n\n> **Note:** [Minor] skippable',
     );
   });
 

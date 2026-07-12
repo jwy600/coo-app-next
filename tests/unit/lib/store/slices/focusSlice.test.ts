@@ -52,7 +52,7 @@ describe('focusSlice', () => {
     expect(useStore.getState().focus?.prevBuffer).toBeNull();
   });
 
-  it('closeEditor saves buffer (notes inline) back to the message and clears focus', () => {
+  it('closeEditor writes the passage back and relocates notes to the block end', () => {
     useStore.getState().openEditor(messageId, [0, 5]);
     useStore.getState().updateBuffer('Howdy');
     useStore.getState().appendNoteToBuffer('a note');
@@ -60,7 +60,7 @@ describe('focusSlice', () => {
 
     expect(useStore.getState().focus).toBeNull();
     expect(useStore.getState().threads[0].messages[0].text).toBe(
-      'Howdy\n\n> **Note:** a note world',
+      'Howdy world\n\n> **Note:** a note',
     );
   });
 

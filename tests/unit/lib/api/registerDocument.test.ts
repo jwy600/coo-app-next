@@ -17,7 +17,7 @@ import type { Settings } from "@/types/settings";
 
 const baseSettings: Settings = {
   apiKey: "sk-test",
-  model: "gpt-5.4-mini",
+  model: "gpt-5.6-luna",
   reasoningEffort: "none",
   responseLanguage: "en",
   translateLanguage: "Chinese",
@@ -47,7 +47,7 @@ describe("registerDocument", () => {
     expect(params.input).toBe("# Hello");
     expect(params.instructions).toBe("register prompt");
     expect(params.label).toBe("register-doc");
-    expect(params.model).toBe("gpt-5.4-mini");
+    expect(params.model).toBe("gpt-5.6-luna");
     expect(params.apiKey).toBe("sk-test");
   });
 

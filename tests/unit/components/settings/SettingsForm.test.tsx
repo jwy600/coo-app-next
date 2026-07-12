@@ -6,7 +6,7 @@ import { createMockStoreState } from "@/tests/mocks/store";
 const mockState = createMockStoreState({
   settings: {
     apiKey: "",
-    model: "gpt-5.4-mini",
+    model: "gpt-5.6-luna",
     reasoningEffort: "none",
     responseLanguage: "en",
     translateLanguage: "Chinese",
@@ -43,8 +43,8 @@ describe("SettingsForm", () => {
   it("renders Model section with options", () => {
     render(<SettingsForm />);
     expect(screen.getAllByText("Model").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("GPT-5.4-mini")).toBeTruthy();
-    expect(screen.getByText("GPT-5.4")).toBeTruthy();
+    expect(screen.getByText("GPT-5.6 Luna")).toBeTruthy();
+    expect(screen.getByText("GPT-5.6 Terra")).toBeTruthy();
   });
 
   it("renders Reasoning section", () => {
@@ -75,7 +75,7 @@ describe("SettingsForm", () => {
 
   it("calls updateModel when model button is clicked", () => {
     render(<SettingsForm />);
-    fireEvent.click(screen.getByText("GPT-5.4"));
+    fireEvent.click(screen.getByText("GPT-5.6 Terra"));
     expect(mockState.updateModel).toHaveBeenCalled();
   });
 });

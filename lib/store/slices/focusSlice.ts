@@ -19,7 +19,7 @@ export interface FocusSlice {
   openEditor: (messageId: string, range: [number, number]) => void;
   closeEditor: () => void;
   updateBuffer: (text: string) => void;
-  appendNoteToBuffer: (note: string) => void;
+  appendNoteToBuffer: (note: string, isMinor?: boolean) => void;
   setRewriteResult: (text: string) => void;
   setShortcutResult: (text: string) => void;
   revertRewrite: () => void;
@@ -49,8 +49,8 @@ export const focusSlice: StateCreator<
     set({ focus: next.focus });
   },
 
-  appendNoteToBuffer: (note) => {
-    const next = stateFns.appendNoteToBuffer(get(), note);
+  appendNoteToBuffer: (note, isMinor) => {
+    const next = stateFns.appendNoteToBuffer(get(), note, isMinor);
     set({ focus: next.focus });
   },
 

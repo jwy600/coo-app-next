@@ -36,7 +36,7 @@ describe('uiSlice', () => {
       useStore.getState().addAssistantMessage('Body');
       useStore.getState().setAwaitingResponse(true);
       useStore.getState().setError('error');
-      useStore.getState().updateModel('gpt-5.4');
+      useStore.getState().updateModel('gpt-5.6-terra');
 
       useStore.getState().reset();
 
@@ -47,7 +47,7 @@ describe('uiSlice', () => {
       expect(state.isAwaitingResponse).toBe(false);
       expect(state.error).toBeNull();
       expect(state.streamingMessageId).toBeNull();
-      expect(state.settings.model).toBe('gpt-5.4');
+      expect(state.settings.model).toBe('gpt-5.6-terra');
     });
   });
 });

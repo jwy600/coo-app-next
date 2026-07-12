@@ -32,7 +32,7 @@ import { useDocRegistration } from '@/hooks/useDocRegistration';
 const setStore = (overrides: Record<string, unknown> = {}) => {
   storeState = {
     ...mockStoreActions,
-    settings: { apiKey: 'sk-test', model: 'gpt-5.4-mini' },
+    settings: { apiKey: 'sk-test', model: 'gpt-5.6-luna' },
     ...overrides,
   };
 };

@@ -98,6 +98,33 @@ describe('migratePersistedState', () => {
     expect(migrated.threads[0].messages[0].text).toBe('hi');
   });
 
+  it('renames persisted model ids to gpt-5.6-* (v3 → v4)', () => {
+    const persisted = {
+      threads: [],
+      activeThreadId: null,
+      settings: { apiKey: 'sk-test', model: 'gpt-5.4-mini' },
+    };
+
+    const migrated = migratePersistedState(persisted, 3) as {
+      settings: { model: string };
+    };
+
+    expect(migrated.settings.model).toBe('gpt-5.6-luna');
+  });
+
+  it('leaves already-renamed gpt-5.6-* model ids untouched', () => {
+    const persisted = {
+      threads: [],
+      settings: { apiKey: '', model: 'gpt-5.6-sol' },
+    };
+
+    const migrated = migratePersistedState(persisted, 3) as {
+      settings: { model: string };
+    };
+
+    expect(migrated.settings.model).toBe('gpt-5.6-sol');
+  });
+
   it('handles a missing blocks array gracefully', () => {
     const persisted = {
       threads: [

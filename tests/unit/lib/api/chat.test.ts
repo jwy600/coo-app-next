@@ -18,7 +18,7 @@ import type { Settings } from "@/types/settings";
 
 const baseSettings: Settings = {
   apiKey: "sk-test",
-  model: "gpt-5.4-mini",
+  model: "gpt-5.6-luna",
   reasoningEffort: "none",
   responseLanguage: "en",
   translateLanguage: "Chinese",
@@ -91,7 +91,7 @@ describe("fetchChatCompletionStream", () => {
     expect(mockCreateResponseStream).toHaveBeenCalledTimes(1);
     const [params, handler] = mockCreateResponseStream.mock.calls[0];
     expect(params.apiKey).toBe("sk-test");
-    expect(params.model).toBe("gpt-5.4-mini");
+    expect(params.model).toBe("gpt-5.6-luna");
     expect(params.input).toBe("Hello world");
     expect(params.instructions).toBe("chat prompt");
     expect(params.previousResponseId).toBe("prev-resp-id");

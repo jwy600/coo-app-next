@@ -20,13 +20,13 @@ describe("getOpenAIModelConfig", () => {
   it("returns default model when env var not set", () => {
     delete process.env.OPENAI_MODEL;
     const config = getOpenAIModelConfig();
-    expect(config.model).toBe("gpt-5.4-mini");
+    expect(config.model).toBe("gpt-5.6-terra");
   });
 
   it("returns env var model when set", () => {
-    process.env.OPENAI_MODEL = "gpt-5.4";
+    process.env.OPENAI_MODEL = "gpt-5.6-terra";
     const config = getOpenAIModelConfig();
-    expect(config.model).toBe("gpt-5.4");
+    expect(config.model).toBe("gpt-5.6-terra");
   });
 });
 
@@ -92,9 +92,9 @@ describe("getBlockActionPrompt", () => {
 
 describe("calculateCost", () => {
   it("calculates cost for known model", () => {
-    // gpt-5.4-mini: input=0.75, output=4.50 per 1M tokens
-    const cost = calculateCost("gpt-5.4-mini", 1_000_000, 1_000_000);
-    expect(cost).toBeCloseTo(0.75 + 4.5);
+    // gpt-5.6-luna: input=1.0, output=6.0 per 1M tokens
+    const cost = calculateCost("gpt-5.6-luna", 1_000_000, 1_000_000);
+    expect(cost).toBeCloseTo(1.0 + 6.0);
   });
 
   it("returns 0 for unknown model", () => {
@@ -102,13 +102,13 @@ describe("calculateCost", () => {
   });
 
   it("handles zero tokens", () => {
-    expect(calculateCost("gpt-5.4-mini", 0, 0)).toBe(0);
+    expect(calculateCost("gpt-5.6-luna", 0, 0)).toBe(0);
   });
 
   it("calculates fractional costs correctly", () => {
-    // 100 tokens of gpt-5.4: input=1.75/1M, output=14.00/1M
-    const cost = calculateCost("gpt-5.4", 100, 100);
-    const expected = (100 / 1_000_000) * 1.75 + (100 / 1_000_000) * 14.0;
+    // 100 tokens of gpt-5.6-terra: input=2.5/1M, output=15.0/1M
+    const cost = calculateCost("gpt-5.6-terra", 100, 100);
+    const expected = (100 / 1_000_000) * 2.5 + (100 / 1_000_000) * 15.0;
     expect(cost).toBeCloseTo(expected);
   });
 });

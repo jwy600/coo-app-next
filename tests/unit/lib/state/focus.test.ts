@@ -9,6 +9,7 @@ import {
   revertRewrite,
   setFocusLastResponseId,
   splitNotes,
+  parseMinorTag,
 } from '@/lib/state/focus';
 import { addAssistantMessage, addUserMessage } from '@/lib/state/message';
 import type { AppState } from '@/types/state';
@@ -207,6 +208,15 @@ describe('appendNoteToBuffer', () => {
     expect(next.focus?.buffer).toBe('Hello\n\n> **Note:** line one\n> line two');
   });
 
+  it('prefixes a minor note with [Minor]', () => {
+    const { state, messageId } = seedAssistant('Hello world');
+    const opened = openEditor(state, messageId, [0, 5]);
+    const next = appendNoteToBuffer(opened, 'skippable detail', true);
+    expect(next.focus?.buffer).toBe(
+      'Hello\n\n> **Note:** [Minor] skippable detail',
+    );
+  });
+
   it('is a no-op for an empty or whitespace-only note', () => {
     const { state, messageId } = seedAssistant('Hello world');
     const opened = openEditor(state, messageId, [0, 5]);
@@ -354,6 +364,13 @@ describe('splitNotes', () => {
     });
   });
 
+  it('keeps the [Minor] marker inside a parsed minor note', () => {
+    expect(splitNotes('passage\n\n> **Note:** [Minor] a detail')).toEqual({
+      passage: 'passage',
+      notes: ['[Minor] a detail'],
+    });
+  });
+
   it('splits a multi-paragraph trailing note back into its paragraphs', () => {
     expect(
       splitNotes('passage\n\n> **Note:** Para one.\n>\n> Para two.'),
@@ -376,5 +393,41 @@ describe('splitNotes', () => {
       passage: 'passage\n\n> just a quote',
       notes: [],
     });
+  });
+});
+
+describe('parseMinorTag', () => {
+  it('detects and strips a bold Minor prefix with em-dash', () => {
+    const { isMinor, body } = parseMinorTag('**Minor** — GCC is a C compiler.');
+    expect(isMinor).toBe(true);
+    expect(body).toBe('GCC is a C compiler.');
+  });
+
+  it('detects a plain "Minor:" prefix', () => {
+    const { isMinor, body } = parseMinorTag('Minor: a passing example.');
+    expect(isMinor).toBe(true);
+    expect(body).toBe('a passing example.');
+  });
+
+  it('is case-insensitive', () => {
+    expect(parseMinorTag('**minor** — foo').isMinor).toBe(true);
+  });
+
+  it('returns the text unchanged when there is no Minor tag', () => {
+    const { isMinor, body } = parseMinorTag('表达力 means expressivity…');
+    expect(isMinor).toBe(false);
+    expect(body).toBe('表达力 means expressivity…');
+  });
+
+  it('does not false-positive on "Minority"', () => {
+    const { isMinor, body } = parseMinorTag('Minority carriers recombine…');
+    expect(isMinor).toBe(false);
+    expect(body).toBe('Minority carriers recombine…');
+  });
+
+  it('preserves a multi-line body after the tag', () => {
+    const { isMinor, body } = parseMinorTag('**Minor** — line one\nline two');
+    expect(isMinor).toBe(true);
+    expect(body).toBe('line one\nline two');
   });
 });

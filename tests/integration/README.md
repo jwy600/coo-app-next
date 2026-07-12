@@ -36,7 +36,7 @@ By default, tests use `gpt-4o-mini`. To test with a different model:
 ```bash
 export OPENAI_MODEL=gpt-5.4
 # or
-export OPENAI_MODEL=gpt-5.4-mini
+export OPENAI_MODEL=gpt-5.6-luna
 # or
 export OPENAI_MODEL=gpt-5-nano
 ```

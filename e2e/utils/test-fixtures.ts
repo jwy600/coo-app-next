@@ -19,7 +19,7 @@ const LIVE_STORAGE_KEY = 'coo-storage';
 const IS_LIVE = process.env.TEST_MODE === 'live';
 const SEEDED_SETTINGS = {
   apiKey: IS_LIVE ? process.env.OPENAI_API_KEY ?? '' : 'sk-test',
-  model: 'gpt-5.4-mini',
+  model: 'gpt-5.6-luna',
   reasoningEffort: 'none',
   webSearchEnabled: false,
   responseLanguage: 'en',

@@ -1,6 +1,6 @@
 /**
  * Browser-side thread title generator.
- * Fires a short non-streaming call to gpt-5.4-mini to produce a ≤5-word title
+ * Fires a short non-streaming call to gpt-5.6-luna to produce a ≤5-word title
  * from the user's first message. Best-effort: returns null on any failure.
  */
 
@@ -11,7 +11,7 @@ import { createResponse } from "./openAiClient";
 import { getThreadTitlePrompt } from "@/lib/config/prompts";
 import { isTestMode } from "@/lib/utils/testMode";
 
-const TITLE_MODEL = "gpt-5.4-mini";
+const TITLE_MODEL = "gpt-5.6-luna";
 const MAX_WORDS = 5;
 const MAX_CHARS = 40;
 

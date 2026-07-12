@@ -1,8 +1,11 @@
 /**
  * Persisted state migrations.
  *
- * v3 (current): text-based messages. Each message has a single `text` field;
- *   `blocks` and `cards` are gone from persisted state.
+ * v4 (current): gpt-5.6-* model ids (sol/terra/luna). Persisted
+ *   `settings.model` is remapped from the old gpt-5.5 / gpt-5.4 / gpt-5.4-mini
+ *   ids.
+ * v3: text-based messages. Each message has a single `text` field; `blocks`
+ *   and `cards` are gone from persisted state.
  * v2: pre-text messages. Each message had `content: { blockId }[]`, and
  *   blocks lived in a top-level `blocks: Block[]` array.
  * v<2: legacy settings shape (obsidianVaultPath → obsidianVaultName, apiKey).
@@ -44,6 +47,10 @@ export function migratePersistedState(
 
   if (version < 3) {
     migrateMessagesToV3(state);
+  }
+
+  if (version < 4) {
+    migrateModelNamesToV4(state);
   }
 
   return state;
@@ -88,4 +95,20 @@ function migrateMessagesToV3(state: Record<string, unknown>): void {
   delete state.blocks;
   delete state.cards;
   delete state.selectedBlockId;
+}
+
+/** Old → new model ids for the gpt-5.6 rename (see header). */
+const MODEL_NAME_RENAME: Record<string, string> = {
+  'gpt-5.5': 'gpt-5.6-sol',
+  'gpt-5.4': 'gpt-5.6-terra',
+  'gpt-5.4-mini': 'gpt-5.6-luna',
+};
+
+function migrateModelNamesToV4(state: Record<string, unknown>): void {
+  const settings = state.settings as Record<string, unknown> | undefined;
+  if (!settings) return;
+  const model = settings.model;
+  if (typeof model !== 'string') return;
+  const renamed = MODEL_NAME_RENAME[model];
+  if (renamed) settings.model = renamed;
 }

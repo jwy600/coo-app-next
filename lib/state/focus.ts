@@ -79,13 +79,15 @@ export const updateBuffer = (state: AppState, buffer: string): AppState => {
  * each continuation line the later paragraphs fall out of the blockquote and
  * lose their left-border styling.
  */
-const quoteNote = (note: string): string =>
-  note
+const quoteNote = (note: string, isMinor = false): string => {
+  const marker = isMinor ? '[Minor] ' : '';
+  return note
     .split('\n')
     .map((line, i) =>
-      i === 0 ? `> **Note:** ${line}` : line === '' ? '>' : `> ${line}`,
+      i === 0 ? `> **Note:** ${marker}${line}` : line === '' ? '>' : `> ${line}`,
     )
     .join('\n');
+};
 
 /**
  * Appends an ask answer to the buffer as a `> **Note:** <answer>` blockquote
@@ -95,6 +97,7 @@ const quoteNote = (note: string): string =>
 export const appendNoteToBuffer = (
   state: AppState,
   note: string,
+  isMinor = false,
 ): AppState => {
   if (!state.focus) return state;
   const trimmed = note.trim();
@@ -103,8 +106,30 @@ export const appendNoteToBuffer = (
   const sep = buffer.length === 0 ? '' : '\n\n';
   return {
     ...state,
-    focus: { ...state.focus, buffer: `${buffer}${sep}${quoteNote(trimmed)}` },
+    focus: {
+      ...state.focus,
+      buffer: `${buffer}${sep}${quoteNote(trimmed, isMinor)}`,
+    },
   };
+};
+
+/**
+ * Detect and strip a leading "Minor" tag from an Ask answer. The ask prompt
+ * has the model begin skippable-concept answers with **Minor** — (or "Minor —"
+ * / "Minor:"); pull the flag off so it can mark the note line and the body
+ * stays clean. Does not match "Minority"; preserves a multi-line body.
+ * Ported from obsidian-coo.
+ */
+export const parseMinorTag = (
+  text: string,
+): { isMinor: boolean; body: string } => {
+  const match = text.match(
+    /^\s*(?:\*\*\s*minor\s*\*\*|minor)\s*[—–\-:]\s*([\s\S]*)$/i,
+  );
+  if (match) {
+    return { isMinor: true, body: (match[1] ?? '').trim() };
+  }
+  return { isMinor: false, body: text };
 };
 
 /**

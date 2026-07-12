@@ -8,9 +8,9 @@ describe("settingsSlice", () => {
 
   it("should have default settings on initialization", () => {
     const { settings } = useStore.getState();
-    expect(settings.model).toBe("gpt-5.4-mini");
-    expect(settings.reasoningEffort).toBe("none");
-    expect(settings.webSearchEnabled).toBe(false);
+    expect(settings.model).toBe("gpt-5.6-terra");
+    expect(settings.reasoningEffort).toBe("low");
+    expect(settings.webSearchEnabled).toBe(true);
     expect(settings.responseLanguage).toBe("en");
     expect(settings.translateLanguage).toBe("Chinese");
     expect(settings.exportDestination).toBe("local");
@@ -18,18 +18,18 @@ describe("settingsSlice", () => {
   });
 
   describe("updateModel", () => {
-    it("should update model to gpt-5.4", () => {
-      useStore.getState().updateModel("gpt-5.4");
-      expect(useStore.getState().settings.model).toBe("gpt-5.4");
+    it("should update model to gpt-5.6-terra", () => {
+      useStore.getState().updateModel("gpt-5.6-terra");
+      expect(useStore.getState().settings.model).toBe("gpt-5.6-terra");
     });
 
     it("should preserve other settings when updating model", () => {
       useStore.getState().updateReasoningEffort("high");
       useStore.getState().updateWebSearchEnabled(true);
-      useStore.getState().updateModel("gpt-5.4");
+      useStore.getState().updateModel("gpt-5.6-terra");
 
       const { settings } = useStore.getState();
-      expect(settings.model).toBe("gpt-5.4");
+      expect(settings.model).toBe("gpt-5.6-terra");
       expect(settings.reasoningEffort).toBe("high");
       expect(settings.webSearchEnabled).toBe(true);
     });
@@ -111,7 +111,7 @@ describe("settingsSlice", () => {
 
   describe("resetSettings", () => {
     it("should reset all settings to defaults", () => {
-      useStore.getState().updateModel("gpt-5.4");
+      useStore.getState().updateModel("gpt-5.6-terra");
       useStore.getState().updateReasoningEffort("high");
       useStore.getState().updateWebSearchEnabled(true);
       useStore.getState().updateResponseLanguage("zh");
@@ -122,9 +122,9 @@ describe("settingsSlice", () => {
       useStore.getState().resetSettings();
 
       const { settings } = useStore.getState();
-      expect(settings.model).toBe("gpt-5.4-mini");
-      expect(settings.reasoningEffort).toBe("none");
-      expect(settings.webSearchEnabled).toBe(false);
+      expect(settings.model).toBe("gpt-5.6-terra");
+      expect(settings.reasoningEffort).toBe("low");
+      expect(settings.webSearchEnabled).toBe(true);
       expect(settings.responseLanguage).toBe("en");
       expect(settings.translateLanguage).toBe("Chinese");
       expect(settings.exportDestination).toBe("local");

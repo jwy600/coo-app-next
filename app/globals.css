@@ -544,6 +544,16 @@
     margin-top: 0.5em;
   }
 
+  /* A "Minor" note flags a skippable / non-load-bearing concept — the ask
+     prompt leads these answers with **Minor** —, lifted to a [Minor] prefix
+     on the note line. Render it more muted than a regular note so the reader
+     can skim past it. Placed after .doc-blockquote--note so it wins on equal
+     specificity. */
+  .doc-blockquote--minor {
+    color: var(--gray-400);
+    font-size: 0.8125rem;
+  }
+
   /* Footnote reference marker (e.g. `[2](#fn:disclosure)`) — rendered as a
      small muted superscript instead of a clickable link, so it reads as a
      footnote reference rather than body text and never navigates. */

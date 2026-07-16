@@ -163,7 +163,7 @@ Always: `addUserMessage(prompt)` → `streamChat(...)`, which creates an empty a
 
 ## Editor action row (`EditorControls`)
 
-The action row at the foot of `FocusEditor` owns every focus-mode action. Layout (top to bottom): ask input on its own line with a `↵` glyph indicating Enter submits, then a chip strip beneath it.
+The action row at the foot of `FocusEditor` owns every focus-mode action. Layout (top to bottom): ask input on its own line with a `↵` glyph indicating Enter submits, then a chip strip beneath it. The ask input's placeholder is a **localized default question** (`DEFAULT_ASK_QUESTION` in `types/settings.ts`, keyed by `settings.responseLanguage` — "What does this mean?" for `en`); submitting with the field empty falls back to it, so `↵` alone asks the pre-filled question and typing replaces it. The `aria-label` stays the literal `"Ask about this passage"` (the accessible name); only the visual placeholder is localized.
 
 ```
 [ ask input ............................................. ↵ ]

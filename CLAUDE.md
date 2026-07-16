@@ -37,13 +37,13 @@ lib/state/           # Pure functions (business logic lives here)
 
 lib/store/           # Zustand store (thin wrappers calling lib/state/)
 ├── useStore.ts      # Hook export + selectors
-├── migration.ts     # Persist v2 → v3 (joins blocks into message.text)
+├── migration.ts     # Persist migrations (current v4: remaps model ids → gpt-5.6-*; v3 joins blocks)
 └── slices/
     ├── threadSlice.ts
     ├── messageSlice.ts   # appendMessageText / replaceMessageRange / …
     ├── focusSlice.ts     # openEditor / updateBuffer / closeEditor / …
     ├── streamingSlice.ts # streamingMessageId only
-    ├── uiSlice.ts        # mode / error / composerPrompt
+    ├── uiSlice.ts        # mode / error / composerPrompt / composerAttachment
     └── settingsSlice.ts
 ```
 
@@ -64,7 +64,7 @@ components/
 │   ├── EditorControls.tsx     # Unified action row: shortcuts + ask input + Revert + Rewrite
 │   └── EditorActions.tsx      # Translate / ELI5 / Summarize badges
 ├── composer/        # Bottom chat composer (chat mode only)
-│   ├── Composer.tsx           # Top-level form: prompt + Send + hint
+│   ├── Composer.tsx           # Top-level form: prompt + Send + Markdown-file attachment
 │   ├── ComposerHint.tsx
 │   └── PromptInput.tsx
 ├── content/
@@ -80,6 +80,7 @@ lib/api/
 ├── blockAction.ts   # fetchBlockAction — one-shot transforms
                      #   (translate / eli5 / summarize / ask, plus legacy expand / example)
 ├── rewrite.ts       # fetchRewrite — atomic Markdown rewrite for the focus editor
+├── registerDocument.ts  # registerDocument — embeds an imported .md → responseId (so chat/ask chain off it)
 ├── generateThreadTitle.ts
 └── index.ts
 ```
@@ -99,6 +100,7 @@ hooks/
 ├── useComposer.ts        # Chat-mode submit handler (always streams; bottom composer is chat-only)
 ├── useStreaming.ts       # Creates an empty assistant message + appends tokens to its text
 ├── useFocusSelection.ts  # mouseup/touchend → domToSource → openEditor
+├── useDocRegistration.ts # Completes "registering" imported docs (embed → store responseId)
 ├── useKeyboardShortcuts.ts
 └── use-mobile.tsx
 ```
@@ -118,13 +120,17 @@ e2e/                 # Playwright tests (currently broken; rewrite in a later ph
 
 **Message model**: each `Message` carries a single `text: string` (markdown). No blocks, no per-block ids.
 
-**Focus editor**: `focus: FocusActive | null` in UIState. `FocusActive` = `{ messageId, range, buffer, notes[], prevBuffer, lastResponseId?, referenceQuestion? }`. Drag-selecting an assistant message opens an in-place textarea seeded from `message.text.slice(start, end)`. Click-outside auto-saves via `closeEditor`: the passage writes back at the selection range, and any trailing notes relocate to the end of the containing block (the next `\n\n` boundary, or EOF) so a note never lands mid-paragraph/mid-list.
+**Focus editor**: `focus: FocusActive | null` in UIState. `FocusActive` = `{ messageId, range, buffer, prevBuffer, lastResponseId?, referenceQuestion? }` (no `notes` field — notes live inline in `buffer`). Drag-selecting an assistant message opens an in-place textarea seeded from `message.text.slice(start, end)`. Click-outside auto-saves via `closeEditor`: the passage writes back at the selection range, and any trailing notes relocate to the end of the containing block (the next `\n\n` boundary, or EOF) so a note never lands mid-paragraph/mid-list.
 
 **Source-position attributes**: every rendered HTML element carries `data-md-start` / `data-md-end` (character offsets into `message.text`). Text nodes are wrapped in `<span data-md-text="true">`; math elements get an outer `<span data-md-atomic="true">` so KaTeX-rendered output keeps its source range.
 
 **Composer behavior**: the bottom composer is **always in chat mode**. Submit always appends a user message and streams an assistant reply, regardless of whether an editor is open. There is no longer any state-driven mode flip.
 
 **Editor action row** (inside `FocusEditor`, replaces the old composer-side shortcuts): ask input on top with a `↵` submit indicator, chip strip below it.
+
+**Document import & registration**: attaching a `.md` file in the composer (paperclip) creates an imported **assistant** message (`meta.source: 'import'`, `meta.registerState: 'registering'`) and sends the file text to OpenAI via `registerDocument` (`lib/api/registerDocument.ts`), storing the returned `responseId` on the message (`setMessageResponseId`). The `useDocRegistration` hook scans the active thread for `registering` messages and completes them on mount — which also recovers half-registered docs after a reload. Once registered, the message behaves like any assistant turn: chat and focus-mode asks chain off its `responseId`, so a question about a passage inside an imported doc inherits the whole document, not just the snippet. On failure the optimistic message is removed and an error surfaces.
+
+**Default Ask question**: the editor's ask input is pre-populated (placeholder) with a localized default (`DEFAULT_ASK_QUESTION` in `types/settings.ts`, e.g. "What does this mean?"); submitting with empty input sends that default.
 
 **Notes live as raw markdown in the buffer** — there is no separate `focus.notes` state. Ask answers append directly to `focus.buffer` as `\n\n> **Note:** <answer>`. While the editor is open the buffer holds passage + notes inline; `closeEditor` writes the passage back at the selection range and relocates the trailing notes to the end of the containing block (next `\n\n` boundary, or EOF) — never mid-paragraph/mid-list. `openEditor` slices the selection back as-is. A `splitNotes(buffer)` parser in `lib/state/focus.ts` is the only place that knows the note pattern.
 
@@ -145,7 +151,7 @@ Mode is **spatial, not temporal** — the bottom composer never changes meaning 
 
 **Rewrite**: atomic — `fetchRewrite(buffer, notes)` returns the revised passage; `setRewriteResult` swaps it in and stashes the prior buffer for one-step Revert.
 
-**Persistence**: Zustand `persist` middleware → localStorage. Persist version is `3`. The v2→v3 migration in `lib/store/migration.ts` joins per-message blocks into `message.text` and drops the `blocks` / `cards` arrays. The OpenAI API key lives in `settings.apiKey`.
+**Persistence**: Zustand `persist` middleware → localStorage. Persist version is `4`. Migrations in `lib/store/migration.ts`: v2→v3 joins per-message blocks into `message.text` (drops the `blocks` / `cards` arrays); v3→v4 remaps legacy model ids (gpt-5.5 / gpt-5.4 / gpt-5.4-mini) to the current `gpt-5.6-*` ids. The OpenAI API key lives in `settings.apiKey`.
 
 ## Commands
 ```bash

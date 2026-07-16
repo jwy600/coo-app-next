@@ -21,14 +21,16 @@ If you want a longer write-up, check out my blog post: [ChatGPT, the Slot Machin
 ## Features
 
 - **Drag-select to edit**: highlight any passage in an assistant message and an in-place editor opens, seeded with that slice of raw markdown. Click outside to auto-save it back into the message.
+- **Read documents, then ask about any passage**: attach a Markdown file to the composer and Coo embeds it with OpenAI so the whole document becomes context. You can then drag-select any part and ask about it — the answer inherits the document, not just the snippet.
 - **In-editor action row** with the AI tools you actually want at the point of friction:
   - **Translate** (English, Chinese, Spanish, French, Japanese, …)
   - **ELI5** — explain the passage like you're five
   - **Summarize** — condense the passage in place
-  - **Ask** — type a question about the passage; the answer appends as a `> **Note:**` blockquote inside the editor
+  - **Ask** — type a question about the passage (or just press `↵` on the empty input to send the default *“What does this mean?”*); the answer appends as a `> **Note:**` blockquote inside the editor
   - **Rewrite** — bundle the passage + your accumulated notes for an atomic AI rewrite
   - **Revert** — single-step undo for the most recent shortcut or rewrite
 - **Notes are just markdown**: ask answers and other annotations live as `> **Note:** ...` blockquotes inside the buffer. They survive close, reopen, and export — no hidden state.
+- **Skippable answers get a `[Minor]` tag**: when you ask about something that isn’t load-bearing, the model flags the answer as minor and Coo renders it as an even-more-muted aside, so your reading flow isn’t interrupted by tangents.
 - **Single markdown source of truth**: every message is one editable markdown string. Drag, edit, save; the thread is always exportable as a clean document.
 - **Context-aware AI**: every focus-mode call chains off the assistant message's prior turns via OpenAI's `previousResponseId`, so follow-up questions inside a passage understand what came before.
 - **Whole-thread Markdown export**: alternating User / Assistant sections with YAML frontmatter. Save locally or write directly into an Obsidian vault.
@@ -51,7 +53,7 @@ Prefer to run it yourself? Clone the repo and use your own API key — see [Gett
 - **Language**: TypeScript (strict)
 - **State**: Zustand (with localStorage persistence)
 - **UI**: Tailwind CSS + Radix UI
-- **AI**: OpenAI API (GPT-5.4, GPT-5.4-mini) — called directly from the browser
+- **AI**: OpenAI API (GPT-5.6 Luna / Terra / Sol) — called directly from the browser
 - **Tests**: Vitest + Playwright
 
 ## Getting Started
@@ -74,7 +76,7 @@ npm install
 
 No environment variables are required to run the app. On first launch, open **Settings** (gear icon in the sidebar) and paste your OpenAI API key. The key is stored in your browser's localStorage and sent directly to OpenAI from the browser — it never touches a backend.
 
-Threads, messages, blocks, and cards are also persisted to localStorage. Export periodically if you want long-term notes.
+Threads and messages are also persisted to localStorage. Export periodically if you want long-term notes.
 
 ### Run
 
@@ -89,16 +91,16 @@ npm run start
 
 ### Application Settings
 
-Access settings via the gear icon in the sidebar:
+Access settings via the gear icon in the sidebar. Changes apply live; hit **Save** to persist and close the panel.
 
-| Setting              | Options                           | Default  |
-|----------------------|-----------------------------------|----------|
-| Model                | gpt-5.4, gpt-5.4-mini            | gpt-5.4  |
-| Reasoning Effort     | none, low, medium, high           | none     |
-| Web Search           | on/off                            | off      |
-| Response Language    | English, Chinese                  | English  |
-| Translate Language   | English, Chinese, Spanish, French | Chinese  |
-| Export Destination   | Local (browser), Obsidian (vault) | Local    |
+| Setting              | Options                                              | Default         |
+|----------------------|------------------------------------------------------|-----------------|
+| Model                | GPT-5.6 Luna, GPT-5.6 Terra, GPT-5.6 Sol            | GPT-5.6 Terra   |
+| Reasoning Effort     | none, low, medium, high                              | low             |
+| Web Search           | on/off                                               | on              |
+| Response Language    | English, Español, Français, 中文, 日本語              | English         |
+| Translate Language   | English, Chinese, Spanish, French, Japanese          | Chinese         |
+| Export Destination   | Local (browser), Obsidian (vault)                    | Local           |
 
 
 ## Usage
@@ -111,11 +113,19 @@ Access settings via the gear icon in the sidebar:
 
 The bottom composer is always in chat mode. Whatever else is happening on screen, submitting it adds a user message and streams an assistant reply.
 
+### Reading a document
+
+1. Click the paperclip in the composer and choose a `.md` / `.markdown` file.
+2. Press **Send**. The document is added as an imported message and Coo embeds it with OpenAI (you’ll see a brief “Embedding…” indicator).
+3. Once embedded, the whole document is part of the conversation context — drag-select any passage to ask about it, and the answer draws on the full document rather than just the snippet you selected.
+
+If embedding fails, the imported message is removed and you’re prompted to reattach the file.
+
 ### Focus mode — drag-select to edit any passage
 
 This is the core interaction.
 
-1. **Drag-select** any passage inside an assistant message. The selection can span words, sentences, or multiple paragraphs.
+1. **Drag-select** any passage inside an assistant message (including an imported document). The selection can span words, sentences, or multiple paragraphs.
 2. An in-place **editor** opens right where the passage was, seeded with the raw markdown of your selection. The text is pre-selected, so you can immediately copy, delete, or replace it.
 3. Edit the markdown directly, or use the action row at the foot of the editor.
 4. **Click anywhere outside** the editor to auto-save your changes back into the message at the original character range. The editor closes; the rendered message reflects whatever you typed.
@@ -131,7 +141,7 @@ Inside the focus editor, the action row has two parts: an **ask input** on top w
 | **Translate** | Translates the whole buffer (passage + any inline notes) into your configured Translate language. Notes are translated alongside the passage so they stay aligned. |
 | **ELI5** | Explains the buffer like you're five. Whole-buffer transform. |
 | **Summarize** | Replaces the buffer with a concise summary. Whole-buffer transform. |
-| **Ask input** | Type a question about the passage and press Enter. The answer appends to the editor as `> **Note:** <answer>` and the input clears. The buffer's passage portion (everything before the trailing notes) is what's used as context, so prior Q&A doesn't pollute the new question. |
+| **Ask input** | Type a question about the passage and press Enter. Leave it blank and press Enter to send the localized default question (*“What does this mean?”*). The answer appends to the editor as `> **Note:** <answer>` and the input clears. The buffer's passage portion (everything before the trailing notes) is what's used as context, so prior Q&A doesn't pollute the new question. |
 | **Revert** | Single-step undo for the most recent buffer-replacing action (any shortcut or Rewrite). Survives interleaved asks — asking a question doesn't consume your undo. |
 | **Rewrite** | Bundles the passage *and* the inline notes into a single AI rewrite. The result replaces the buffer atomically; the notes are consumed (treated as the user's guidance, not content). Use this when you've accumulated notes via ask answers and want a clean, revised paragraph. |
 
@@ -146,9 +156,11 @@ Coo doesn't track notes as separate state. They're just `> **Note:** ...` blockq
 - They render as muted italic blockquotes in the rendered message after you close the editor (distinct from regular blockquotes).
 - They're included in markdown export verbatim.
 
+Answers the model judges **minor** (a skippable aside, not load-bearing) are stored as `> **Note:** [Minor] ...` and rendered in an even-more-muted style so tangents don’t compete with the main text.
+
 ### Context chaining for follow-up questions
 
-Each focus-mode call (Translate / ELI5 / Summarize / Ask) sends OpenAI's `previousResponseId` so the model inherits the conversation that produced the assistant message. The first call chains off the message itself; subsequent calls in the same editing session chain off the previous focus call. Closing the editor discards the chain head — reopening starts fresh.
+Each focus-mode call (Translate / ELI5 / Summarize / Ask) sends OpenAI's `previousResponseId` so the model inherits the conversation that produced the assistant message. The first call chains off the message itself (or the imported document it was embedded from); subsequent calls in the same editing session chain off the previous focus call. Closing the editor discards the chain head — reopening starts fresh.
 
 This is what makes asks like "and why?" or "give me an example" work without re-supplying context every time.
 
@@ -166,19 +178,21 @@ coo-app-next/
 ├── app/                    # Next.js app directory
 │   └── t/[threadId]/      # Thread detail pages
 ├── components/            # React components
-│   ├── chat/             # Chat UI (messages, blocks, controls)
-│   ├── composer/         # Message input + Ask/Edit toggle
-│   ├── content/          # Block content rendering (markdown, math)
+│   ├── chat/             # Chat UI (message list, composer wiring, export)
+│   ├── composer/         # Bottom chat input + Markdown attachment
+│   ├── content/          # Markdown + math rendering (react-markdown, KaTeX)
+│   ├── editor/           # Focus editor + action row (Translate/ELI5/Summarize/Ask/Rewrite/Revert)
 │   ├── sidebar/          # Thread list navigation
-│   ├── settings/         # Settings dialog
-│   ├── landing/          # Landing page
+│   ├── settings/         # Settings panel
+│   ├── empty-state/      # First-run / no-thread state
+│   ├── layout/           # App shell
 │   └── ui/               # Radix UI wrappers
-├── hooks/                 # Custom React hooks (composer, streaming)
+├── hooks/                 # Custom React hooks (composer, streaming, focus selection, doc registration)
 ├── lib/
 │   ├── state/            # Pure state transformations (CRITICAL)
 │   ├── store/            # Zustand store + slices (localStorage persist)
 │   ├── api/              # Browser-side OpenAI client + prompt pipelines
-│   ├── rendering/        # Markdown + KaTeX rendering
+│   ├── selection/        # DOM Range → markdown source offsets (focus-mode core)
 │   ├── export/           # Markdown export
 │   └── config/           # OpenAI settings + i18n prompts
 ├── types/                 # TypeScript definitions
@@ -199,4 +213,3 @@ coo-app-next/
 | `npm run test:coverage` | Generate coverage report |
 | `npm run test:e2e` | Run Playwright E2E tests |
 | `npm run test:e2e:ui` | Run E2E tests with UI |
-

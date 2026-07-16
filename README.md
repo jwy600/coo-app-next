@@ -1,8 +1,6 @@
 # Coo
 
-Coo brings locality to AI. It’s a chatbot that lets you edit, transform, and reuse LLM output directly in place.
-
-[Watch demo video](https://wenyi.blog/files/coo_ask.mp4)
+Coo brings locality to AI. It’s a chatbot that lets you discuss, edit, and reuse LLM output directly in place.
 
 Instead of treating AI output as immutable chat bubbles, Coo lets you drag-select any passage in an assistant reply and open an in-place editor — right inside the conversation. From there you can rewrite the passage, ask follow-up questions about it, translate or simplify it, and the edits save back into the message itself.
 

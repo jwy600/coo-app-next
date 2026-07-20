@@ -23,6 +23,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* VibeLoft Web Telemetry — single global tag, loaded once per page via
+            the root layout. Client-side web auth key only (not a server secret);
+            browser loads https://vibeloft.ai/telemetry/v1.js and posts events to
+            https://api.vibeloft.ai. See docs/architecture.md. */}
+        <script
+          defer
+          src="https://vibeloft.ai/telemetry/v1.js"
+          data-vl-product-id="8519bf37-ca4d-4e30-a632-a4e442019edc"
+          data-vl-auth-key="vl_web.CEB-SD63N_Oj1IP56K-7shda9r0Mr0sCiY5K9VCaRzA"
+        />
+      </head>
       <body>
         <Toaster position="bottom-right" />
         <ErrorBoundary>{children}</ErrorBoundary>

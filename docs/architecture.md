@@ -293,6 +293,12 @@ Users can set their preferred response language in Settings. Language is injecte
 - Chat / block-action / rewrite prompts use a `<language></language>` tag. For English, the tag is removed entirely. For other languages, it's filled with e.g. `<language>Always respond in Simplified Chinese.</language>`.
 - The Translate prompt uses a separate `<translationlanguage></translationlanguage>` tag, fed by the user's `translateLanguage` setting.
 
+## Telemetry (VibeLoft Web)
+
+A single VibeLoft Web Telemetry `<script defer>` tag lives in the root layout (`app/layout.tsx`), inside `<head>`, so it loads once on every page. It reads its own `data-vl-product-id` / `data-vl-auth-key` attributes and posts events to `https://api.vibeloft.ai`. The auth key is a **client-side web key** (`vl_web.…`), not a server secret — it is intentionally shipped to the browser and lives only in that one tag (never logged or referenced elsewhere).
+
+- **No CSP change was needed.** The product sends no `Content-Security-Policy` header (`next.config.ts` `headers()` sets only `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) and no CSP `<meta>` tag. With no policy in place, the script and its `connect-src` to `api.vibeloft.ai` load without restriction. If a CSP is added later, merge `script-src https://vibeloft.ai` and `connect-src https://api.vibeloft.ai` into it.
+
 ## Related Docs
 - [docs/testing.md](./testing.md) — Test structure and patterns
 - [docs/focus-mode-spec.md](./focus-mode-spec.md) — Original focus-mode spec (historical)
